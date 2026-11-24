@@ -33,12 +33,21 @@ Jika instruksi di sini bertentangan dengan `docs/`, ikuti `docs/` dan laporkan k
 
 ## Perintah
 
-> Diisi saat Fase 0 selesai. Sampai saat itu, jangan menebak perintah; cek `package.json`.
+Prasyarat: Node 22 (`.nvmrc`) dan pnpm 10.28 (terkunci di `packageManager`). Jalankan dari root repo.
 
-- `pnpm install`
-- `pnpm dev` — semua app lokal
-- `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm test:e2e`
-- `pnpm db:generate` · `pnpm db:migrate:local` (migrasi remote hanya lewat CI)
+| Perintah | Fungsi |
+| --- | --- |
+| `pnpm install` | Pasang dependensi semua app/paket |
+| `pnpm dev` | Jalankan semua app lokal (`turbo run dev`) |
+| `pnpm build` | Build semua app/paket (`turbo run build`) |
+| `pnpm lint` | ESLint seluruh repo + cek format Prettier |
+| `pnpm format` | Rapikan format dengan Prettier |
+| `pnpm typecheck` | `tsc` untuk file root + `turbo run typecheck` per paket |
+| `pnpm test` | Vitest: tes root (`tests/`) + setiap `apps/*`/`packages/*` yang punya `vitest.config.ts` |
+
+Belum ada (jangan dipakai sampai issue-nya selesai): `pnpm test:e2e` (#9), `pnpm db:generate` dan `pnpm db:migrate:local` (#4; migrasi remote hanya lewat CI).
+
+Setiap app/paket baru wajib `"private": true` dan punya skrip `typecheck` dan `test` (dijaga `tests/workspace.test.ts`).
 
 ## Aturan wajib
 
