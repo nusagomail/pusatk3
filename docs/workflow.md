@@ -1,18 +1,22 @@
 # Alur kerja dengan Claude Code
 
+Proses kerja memakai plugin **Superpowers** (brainstorming → rencana → TDD → review → selesai). Aturan khusus PusatK3 ada di `CLAUDE.md`, `docs/`, hooks pengaman, subagent `reviewer`, dan skill proyek. Jika Superpowers dan dokumen proyek berbeda pendapat, **aturan proyek yang menang**.
+
+Cara memasang semuanya: `docs/setup-claude-code.md`.
+
 ## Satu issue, satu sesi
 
 1. Pemilik membuat issue dari template "Fitur" (label fase).
-2. Buka sesi baru (`/clear` bila melanjutkan sesi lama).
-3. Masuk **plan mode**. Minta subagent `planner` menyusun rencana: file yang diubah, perubahan skema, endpoint, tes, risiko.
+2. Buka sesi baru (`/clear` bila melanjutkan sesi lama), lalu tulis: *"Kerjakan issue #N."*
+3. **Brainstorming & rencana (Superpowers).** Claude bertanya bila ada yang belum jelas, lalu menulis rencana berisi tugas kecil, file yang diubah, perubahan skema, endpoint, dan tes. Rencana wajib menyebut gerbang persetujuan yang tersentuh.
 4. **Gerbang 1 — pemilik menyetujui rencana.**
-5. Buat branch `feat/<nomor-issue>-<slug>`. Implementasi bertahap, commit kecil.
-6. Jalankan `pnpm lint && pnpm typecheck && pnpm test`.
-7. Minta subagent `tester` melengkapi tes (termasuk hak akses), lalu subagent `reviewer` memeriksa diff.
-8. Perbaiki temuan; perbarui `docs/` bila ada keputusan atau skema baru.
-9. Buka PR memakai template.
-10. **Gerbang 2 — pemilik menyetujui PR.** Merge ke `main` → deploy staging otomatis.
-11. **Gerbang 3 — deploy production** hanya atas perintah pemilik.
+5. **Implementasi (Superpowers).** Branch/worktree `feat/<nomor-issue>-<slug>`, tes ditulis dulu (TDD), commit kecil. Pakai skill proyek yang relevan: `tambah-endpoint`, `migrasi-db`, `halaman-seo`.
+6. Jalankan `pnpm lint && pnpm typecheck && pnpm test` dan tunjukkan hasilnya (verifikasi sebelum klaim selesai).
+7. **Review.** Jalankan subagent `reviewer` (aturan keamanan & bisnis PusatK3) selain review bawaan Superpowers. Perbaiki semua temuan **Kritis**.
+8. Perbarui `docs/` bila skema, API, atau keputusan berubah.
+9. **Selesai:** selalu pilih **buka Pull Request**. Jangan merge ke `main` secara lokal dan jangan menghapus branch sebelum PR di-merge.
+10. **Gerbang 2 — pemilik menyetujui dan me-merge PR.** Merge ke `main` → deploy staging otomatis.
+11. **Gerbang 3 — deploy production** hanya atas perintah pemilik (`/siapkan-rilis`).
 
 ## Gerbang persetujuan wajib
 
@@ -21,22 +25,26 @@
 - Deploy production, secret, binding production
 - Konten K3 yang dipublikasikan
 
-## Skill proyek
+Hooks di `.claude/hooks/guard.sh` memblokir edit file secret, deploy production, operasi D1 remote, perubahan secret, dan force push ke `main`.
 
-| Perintah | Fungsi |
+## Komponen proyek
+
+| Komponen | Fungsi |
 | --- | --- |
-| `/kerjakan-issue <nomor>` | Menjalankan alur di atas untuk satu issue |
-| `/tambah-endpoint` | Prosedur endpoint baru (skema, otorisasi, tes) |
-| `/migrasi-db` | Prosedur perubahan skema D1 + Drizzle |
-| `/halaman-seo` | Prosedur halaman publik SEO/GEO |
-| `/siapkan-rilis` | Checklist sebelum deploy production |
+| Subagent `reviewer` | Review keamanan (IDOR, otorisasi), prinsip PRD, design tokens |
+| Skill `tambah-endpoint` | Prosedur endpoint baru: skema Zod, otorisasi, tes hak akses |
+| Skill `migrasi-db` | Prosedur perubahan skema D1 + Drizzle |
+| Skill `halaman-seo` | Prosedur halaman publik SEO/GEO |
+| Skill `/siapkan-rilis` | Checklist sebelum deploy production (dipanggil manual) |
 
-## Subagent
+## Plugin yang dipakai
 
-| Nama | Peran |
+| Plugin | Fungsi |
 | --- | --- |
-| `planner` | Menyusun rencana dan spesifikasi; tidak mengubah file |
-| `reviewer` | Review keamanan dan kualitas diff; tidak mengubah file |
-| `tester` | Menulis dan menjalankan tes |
+| `superpowers` | Proses: brainstorming, rencana, TDD, debugging, verifikasi, review |
+| `frontend-design` | Kualitas UI saat membangun halaman dari mockup |
+| Plugin Cloudflare | Praktik terbaik Workers, Wrangler, D1, Turnstile |
 
-Sesi utama yang mengimplementasikan. Tambah subagent lain (SEO, data, infra) hanya bila memang dibutuhkan.
+## Review otomatis di GitHub
+
+Setelah `/install-github-app` dijalankan (lihat setup), Claude bisa dipanggil dengan menulis `@claude` di komentar issue atau PR.

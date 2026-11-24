@@ -17,6 +17,8 @@ Bahasa produk: Indonesia (utama) dan Inggris. Tulis kode, nama variabel, dan com
 | `docs/design-tokens.md` | Warna, huruf, komponen; mengikuti panduan merek |
 | `docs/glosarium-k3.md` | Istilah K3 (AK3U, SIO, PJK3, LSP, TUK, dll.) |
 | `docs/workflow.md` | Cara kerja per issue, gerbang persetujuan manusia |
+| `docs/bisnis.md` | Model bisnis, paket, risiko (hasil brainstorming) |
+| `docs/ui-halaman.md` | Spesifikasi tiap halaman berdasarkan mockup |
 | `docs/adr/` | Keputusan teknis beserta alasannya |
 
 Jika instruksi di sini bertentangan dengan `docs/`, ikuti `docs/` dan laporkan konfliknya.
@@ -59,6 +61,10 @@ Jika instruksi di sini bertentangan dengan `docs/`, ikuti `docs/` dan laporkan k
 
 ## Cara kerja
 
-Satu issue per sesi. Mulai di plan mode, tulis rencana, tunggu persetujuan, lalu implementasi di branch `feat/<issue>-<slug>`. Setelah selesai: jalankan lint, typecheck, test; minta subagent `reviewer` dan `tester`; buka PR memakai template. Detail di `docs/workflow.md`.
+Proses kerja memakai plugin **Superpowers** (brainstorming → rencana → TDD → review). Aturan di file ini dan di `docs/` selalu didahulukan di atas kebiasaan Superpowers.
+
+Satu issue per sesi. Tulis rencana dan **tunggu persetujuan pemilik** sebelum menulis kode. Implementasi di branch `feat/<issue>-<slug>` dengan tes ditulis dulu. Sebelum selesai: jalankan lint, typecheck, test; jalankan subagent `reviewer`; lalu **buka PR** memakai template (jangan merge ke `main` secara lokal). Detail di `docs/workflow.md`.
+
+Referensi tampilan: `docs/ui-halaman.md` (spesifikasi halaman dari mockup) dan aset logo di `brand/`.
 
 Setiap keputusan teknis baru → tambahkan ADR di `docs/adr/`. Setiap perubahan skema → perbarui `docs/skema-db.md` di PR yang sama.

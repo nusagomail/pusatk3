@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Beranda PusatK3</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0F1B2D}a:hover{color:#A85600}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 100vh; background: #FFFFFF; font-family: 'Plus Jakarta Sans', sans-serif; color: #0F1B2D">
+
+<header style="background: #FFFFFF; border-bottom: 1px solid #E3E6EB">
+<div style="max-width: 1200px; margin: 0 auto; padding: 12px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px">
+<a href="Main.dc.html" aria-label="Beranda PusatK3" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #0F1B2D">
+<svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><g stroke="#0F1B2D" stroke-width="3.5" stroke-linecap="round"><path d="M32 32L32 9M32 32L51.9 20.5M32 32L51.9 43.5M32 32L32 55M32 32L12.1 43.5M32 32L12.1 20.5"/></g><g fill="#0F1B2D"><circle cx="32" cy="9" r="6"/><circle cx="51.9" cy="20.5" r="6"/><circle cx="51.9" cy="43.5" r="6"/><circle cx="32" cy="55" r="6"/><circle cx="12.1" cy="43.5" r="6"/><circle cx="12.1" cy="20.5" r="6"/></g><circle cx="32" cy="32" r="11" fill="#E07400"/></svg>
+<span style="font-size: 22px; font-weight: 800; letter-spacing: -0.5px">pusat<span style="color: #E07400">k3</span></span>
+</a>
+<nav aria-label="Navigasi utama" style="display: flex; flex-wrap: wrap; gap: 4px 24px; flex: 1 1 auto; font-size: 15px; font-weight: 600">
+<a href="Hasil.dc.html" style="text-decoration: none; padding: 12px 0">Cari Pelatihan</a>
+<a href="#" style="text-decoration: none; padding: 12px 0">E-course</a>
+<a href="#" style="text-decoration: none; padding: 12px 0">Untuk Penyedia</a>
+<a href="#" style="text-decoration: none; padding: 12px 0">Bantuan</a>
+</nav>
+<div style="display: flex; align-items: center; gap: 8px">
+<button type="button" aria-label="Ganti ke mode gelap" style="width: 44px; height: 44px; border-radius: 10px; border: 1px solid #DDE1E7; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0F1B2D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+<button type="button" aria-label="Ganti bahasa" style="height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid #DDE1E7; background: #FFFFFF; font: inherit; font-size: 14px; font-weight: 700; color: #0F1B2D; cursor: pointer">ID · EN</button>
+<a href="Masuk.dc.html" style="height: 44px; padding: 0 18px; border-radius: 10px; background: #0F1B2D; color: #FFFFFF; font-size: 14px; font-weight: 700; text-decoration: none; display: flex; align-items: center">Masuk</a>
+</div>
+</div>
+</header>
+
+<section style="background: #0F1B2D; color: #FFFFFF">
+<div style="max-width: 1200px; margin: 0 auto; padding: 72px 24px 64px; display: flex; flex-direction: column; gap: 24px">
+<h1 style="margin: 0; font-size: 48px; line-height: 1.15; font-weight: 800; letter-spacing: -1px; max-width: 780px">Temukan pelatihan &amp; sertifikasi K3 terpercaya di seluruh Indonesia</h1>
+<p style="margin: 0; font-size: 18px; line-height: 1.5; color: #C9D1DC; max-width: 640px">Bandingkan jadwal, lokasi, dan legalitas penyedia, lalu hubungi langsung. Gratis untuk peserta.</p>
+<form role="search" style="background: #FFFFFF; border-radius: 16px; padding: 8px; display: flex; flex-wrap: wrap; gap: 8px; max-width: 900px">
+<label style="flex: 2 1 280px; display: flex; flex-direction: column; gap: 2px; padding: 8px 14px; color: #0F1B2D">
+<span style="font-size: 12px; font-weight: 700; color: #5B6577">Pelatihan</span>
+<input type="text" placeholder="Contoh: Ahli K3 Umum, SIO forklift" style="border: none; outline: none; padding: 4px 0; font: inherit; font-size: 16px; color: #0F1B2D; background: transparent">
+</label>
+<label style="flex: 1 1 200px; display: flex; flex-direction: column; gap: 2px; padding: 8px 14px; border-left: 1px solid #E3E6EB; color: #0F1B2D">
+<span style="font-size: 12px; font-weight: 700; color: #5B6577">Kota</span>
+<select style="border: none; outline: none; padding: 4px 0; font: inherit; font-size: 16px; color: #0F1B2D; background: transparent"><option>Semua kota &amp; online</option><option>Jakarta</option><option>Surabaya</option><option>Bekasi</option><option>Batam</option></select>
+</label>
+<a href="Hasil.dc.html" style="flex: 0 0 auto; min-height: 56px; padding: 0 28px; border-radius: 12px; background: #E07400; color: #0F1B2D; font-size: 16px; font-weight: 800; text-decoration: none; display: flex; align-items: center; gap: 8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0F1B2D" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>Cari</a>
+</form>
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px 28px; font-size: 14px; color: #C9D1DC">
+<li style="display: flex; align-items: center; gap: 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F28C1B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>Legalitas penyedia diverifikasi</li>
+<li style="display: flex; align-items: center; gap: 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F28C1B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>Sertifikasi Kemnaker &amp; BNSP</li>
+<li style="display: flex; align-items: center; gap: 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F28C1B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>Hubungi penyedia tanpa perantara</li>
+</ul>
+</div>
+</section>
+
+<section style="max-width: 1200px; margin: 0 auto; padding: 56px 24px 24px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px">
+<h2 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px">Kategori populer</h2>
+<a href="Hasil.dc.html" style="font-size: 15px; font-weight: 700">Lihat semua kategori</a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px">
+<sc-for list="{{ categories }}" as="c" hint-placeholder-count="8">
+<a href="Hasil.dc.html" style="border: 1px solid #DDE1E7; border-radius: 14px; padding: 18px; text-decoration: none; color: #0F1B2D; display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 16px; font-weight: 700">{{ c.name }}</span>
+<span style="font-size: 13px; color: #5B6577">{{ c.issuer }}</span>
+</a>
+</sc-for>
+</div>
+</section>
+
+<section style="max-width: 1200px; margin: 0 auto; padding: 40px 24px 24px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px">
+<h2 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px">Jadwal terdekat</h2>
+<a href="Hasil.dc.html" style="font-size: 15px; font-weight: 700">Lihat semua jadwal</a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px">
+<sc-for list="{{ schedules }}" as="s" hint-placeholder-count="4">
+<article style="border: 1px solid #DDE1E7; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<span style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #FDF0E3; color: #8A4600">{{ s.issuer }}</span>
+<span style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #EEF1F4; color: #3D4757">{{ s.mode }}</span>
+</div>
+<h3 style="margin: 0; font-size: 17px; font-weight: 700">{{ s.title }}</h3>
+<div style="display: flex; align-items: center; gap: 6px; font-size: 14px; color: #3D4757"><span>[Nama PJK3]</span><svg width="16" height="16" viewBox="0 0 24 24" role="img" aria-label="Terverifikasi"><circle cx="12" cy="12" r="10" fill="#0B6B3A"/><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: #3D4757">
+<span style="display: flex; align-items: center; gap: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B6577" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>{{ s.date }}</span>
+<span style="display: flex; align-items: center; gap: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B6577" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>{{ s.place }}</span>
+</div>
+<a href="Pelatihan.dc.html" style="margin-top: auto; font-size: 14px; font-weight: 700">Lihat detail</a>
+</article>
+</sc-for>
+</div>
+</section>
+
+<section style="max-width: 1200px; margin: 0 auto; padding: 40px 24px 24px; display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px">Cari berdasarkan kota</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 10px">
+<sc-for list="{{ cities }}" as="city" hint-placeholder-count="10">
+<a href="Hasil.dc.html" style="min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid #DDE1E7; font-size: 15px; font-weight: 600; text-decoration: none; display: flex; align-items: center">{{ city }}</a>
+</sc-for>
+</div>
+</section>
+
+<section style="max-width: 1200px; margin: 0 auto; padding: 48px 24px; display: flex; flex-direction: column; gap: 24px">
+<h2 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px">Cara kerja PusatK3</h2>
+<ol style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px">
+<li style="background: #F5F6F8; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 10px"><span style="width: 36px; height: 36px; border-radius: 999px; background: #0F1B2D; color: #FFFFFF; font-weight: 800; display: flex; align-items: center; justify-content: center">1</span><h3 style="margin: 0; font-size: 18px; font-weight: 700">Cari</h3><p style="margin: 0; font-size: 15px; line-height: 1.55; color: #3D4757">Cari pelatihan berdasarkan jenis, kota, dan tanggal.</p></li>
+<li style="background: #F5F6F8; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 10px"><span style="width: 36px; height: 36px; border-radius: 999px; background: #0F1B2D; color: #FFFFFF; font-weight: 800; display: flex; align-items: center; justify-content: center">2</span><h3 style="margin: 0; font-size: 18px; font-weight: 700">Bandingkan</h3><p style="margin: 0; font-size: 15px; line-height: 1.55; color: #3D4757">Lihat legalitas penyedia, penerbit sertifikat, jadwal, dan ulasan peserta.</p></li>
+<li style="background: #F5F6F8; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 10px"><span style="width: 36px; height: 36px; border-radius: 999px; background: #0F1B2D; color: #FFFFFF; font-weight: 800; display: flex; align-items: center; justify-content: center">3</span><h3 style="margin: 0; font-size: 18px; font-weight: 700">Hubungi langsung</h3><p style="margin: 0; font-size: 15px; line-height: 1.55; color: #3D4757">Chat penyedia lewat WhatsApp atau kirim pertanyaan. Pendaftaran dan pembayaran langsung ke penyedia.</p></li>
+</ol>
+</section>
+
+<section style="max-width: 1200px; margin: 0 auto; padding: 0 24px 64px">
+<div style="background: #FDF0E3; border-radius: 20px; padding: 40px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 8px; max-width: 640px">
+<h2 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px">Anda penyedia pelatihan K3?</h2>
+<p style="margin: 0; font-size: 16px; line-height: 1.55; color: #3D4757">Klaim profil gratis, verifikasi legalitas, dan terima calon peserta dari seluruh Indonesia.</p>
+</div>
+<a href="#" style="min-height: 52px; padding: 0 24px; border-radius: 12px; background: #0F1B2D; color: #FFFFFF; font-size: 16px; font-weight: 700; text-decoration: none; display: flex; align-items: center">Klaim profil gratis</a>
+</div>
+</section>
+
+<footer style="background: #0F1B2D; color: #C9D1DC">
+<div style="max-width: 1200px; margin: 0 auto; padding: 48px 24px 32px; display: flex; flex-wrap: wrap; gap: 32px 64px">
+<div style="flex: 2 1 320px; display: flex; flex-direction: column; gap: 12px">
+<span style="font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: #FFFFFF">pusat<span style="color: #F28C1B">k3</span></span>
+<p style="margin: 0; font-size: 14px; line-height: 1.6">Direktori independen pelatihan &amp; sertifikasi K3. PusatK3 bukan situs pemerintah dan tidak menyelenggarakan pelatihan.</p>
+</div>
+<nav aria-label="Platform" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 10px; font-size: 14px"><span style="font-weight: 700; color: #FFFFFF">Platform</span><a href="Hasil.dc.html" style="color: #C9D1DC">Cari Pelatihan</a><a href="#" style="color: #C9D1DC">E-course</a><a href="#" style="color: #C9D1DC">Untuk Penyedia</a></nav>
+<nav aria-label="Bantuan" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 10px; font-size: 14px"><span style="font-weight: 700; color: #FFFFFF">Bantuan</span><a href="#" style="color: #C9D1DC">FAQ</a><a href="#" style="color: #C9D1DC">Cara Kami Mengurutkan Hasil</a><a href="#" style="color: #C9D1DC">Kontak</a></nav>
+<nav aria-label="Legal" style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 10px; font-size: 14px"><span style="font-weight: 700; color: #FFFFFF">Legal</span><a href="#" style="color: #C9D1DC">Kebijakan Privasi</a><a href="#" style="color: #C9D1DC">Syarat &amp; Ketentuan</a><a href="#" style="color: #C9D1DC">Disclaimer</a></nav>
+</div>
+<div style="max-width: 1200px; margin: 0 auto; padding: 16px 24px 32px; border-top: 1px solid #24324A; font-size: 13px">© 2026 PusatK3</div>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2320}}'>
+class Component extends DCLogic {
+renderVals() {
+return {
+categories: [
+{ name: 'Ahli K3 Umum', issuer: 'Kemnaker · BNSP' },
+{ name: 'Operator Forklift', issuer: 'SIO Kemnaker' },
+{ name: 'K3 Listrik', issuer: 'Kemnaker · BNSP' },
+{ name: 'Petugas P3K', issuer: 'Kemnaker' },
+{ name: 'Operator Crane', issuer: 'SIO Kemnaker' },
+{ name: 'Petugas Kebakaran', issuer: 'Kemnaker' },
+{ name: 'K3 Konstruksi', issuer: 'BNSP' },
+{ name: 'Ahli K3 Kimia', issuer: 'Kemnaker' }
+],
+schedules: [
+{ title: 'Ahli K3 Umum', issuer: 'Kemnaker', mode: 'Offline', date: '8–19 Des 2026', place: 'Surabaya' },
+{ title: 'Operator Forklift', issuer: 'SIO Kemnaker', mode: 'Offline', date: '10–12 Des 2026', place: 'Bekasi' },
+{ title: 'K3 Listrik', issuer: 'BNSP', mode: 'Online', date: '15–18 Des 2026', place: 'Online (Zoom)' },
+{ title: 'Petugas P3K', issuer: 'Kemnaker', mode: 'Offline', date: '16–17 Des 2026', place: 'Batam' }
+],
+cities: ['Jakarta', 'Bekasi', 'Karawang', 'Surabaya', 'Batam', 'Balikpapan', 'Medan', 'Makassar', 'Semarang', 'Bandung', 'Online']
+};
+}
+}
+</script>
+</body>
+</html>

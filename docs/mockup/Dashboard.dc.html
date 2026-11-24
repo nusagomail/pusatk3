@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Dashboard penyedia PusatK3</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0F1B2D}a:hover{color:#A85600}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 100vh; background: #F5F6F8; font-family: 'Plus Jakarta Sans', sans-serif; color: #0F1B2D; display: flex; flex-wrap: wrap; align-items: stretch">
+
+<aside style="flex: 1 1 240px; max-width: 100%; background: #FFFFFF; border-right: 1px solid #E3E6EB; padding: 20px 14px; display: flex; flex-direction: column; gap: 20px; box-sizing: border-box">
+<a href="Main.dc.html" aria-label="Beranda PusatK3" style="display: flex; align-items: center; gap: 8px; text-decoration: none; padding: 0 8px">
+<svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><g stroke="#0F1B2D" stroke-width="3.5" stroke-linecap="round"><path d="M32 32L32 9M32 32L51.9 20.5M32 32L51.9 43.5M32 32L32 55M32 32L12.1 43.5M32 32L12.1 20.5"/></g><g fill="#0F1B2D"><circle cx="32" cy="9" r="6"/><circle cx="51.9" cy="20.5" r="6"/><circle cx="51.9" cy="43.5" r="6"/><circle cx="32" cy="55" r="6"/><circle cx="12.1" cy="43.5" r="6"/><circle cx="12.1" cy="20.5" r="6"/></g><circle cx="32" cy="32" r="11" fill="#E07400"/></svg>
+<span style="font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: #0F1B2D">pusat<span style="color: #E07400">k3</span></span>
+</a>
+<div style="background: #F5F6F8; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 700">[Nama PJK3]</span><span style="font-size: 12px; color: #0B6B3A; font-weight: 700">Terverifikasi · Paket Gratis</span></div>
+<nav aria-label="Menu penyedia" style="display: flex; flex-direction: column; gap: 2px; font-size: 15px; font-weight: 600">
+<a href="Dashboard.dc.html" aria-current="page" style="text-decoration: none; padding: 11px 12px; border-radius: 10px; background: #0F1B2D; color: #FFFFFF">Ringkasan</a>
+<a href="#" style="text-decoration: none; padding: 11px 12px; border-radius: 10px">Jadwal</a>
+<a href="#" style="text-decoration: none; padding: 11px 12px; border-radius: 10px">Lead &amp; pertanyaan</a>
+<a href="EditProfil.dc.html" style="text-decoration: none; padding: 11px 12px; border-radius: 10px">Profil &amp; cabang</a>
+<a href="#" style="text-decoration: none; padding: 11px 12px; border-radius: 10px">Statistik</a>
+<a href="#" style="text-decoration: none; padding: 11px 12px; border-radius: 10px">Website instan</a>
+<a href="#" style="text-decoration: none; padding: 11px 12px; border-radius: 10px">Tim</a>
+<a href="#" style="text-decoration: none; padding: 11px 12px; border-radius: 10px">Langganan</a>
+<a href="Keamanan.dc.html" style="text-decoration: none; padding: 11px 12px; border-radius: 10px">Pengaturan akun</a>
+<a href="#" style="text-decoration: none; padding: 11px 12px; border-radius: 10px">Bantuan</a>
+</nav>
+</aside>
+
+<main style="flex: 999 1 640px; min-width: 0; padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 20px; box-sizing: border-box">
+
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 4px"><h1 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px">Ringkasan</h1><span style="font-size: 14px; color: #3D4757">30 hari terakhir</span></div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap">
+<a href="Pelatihan.dc.html" style="min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1.5px solid #0F1B2D; font-size: 14px; font-weight: 700; text-decoration: none; display: flex; align-items: center">Lihat profil publik</a>
+<button type="button" style="min-height: 44px; padding: 0 16px; border-radius: 10px; border: none; background: #E07400; color: #0F1B2D; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer">+ Tambah jadwal</button>
+</div>
+</div>
+
+<div role="status" style="background: #FFF7E8; border: 1px solid #F3C98B; border-radius: 12px; padding: 14px 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px">
+<span style="font-size: 14px; color: #5A3300"><strong>[N] jadwal sudah lewat tanggal.</strong> Perbarui supaya profil Anda tetap muncul di urutan atas.</span>
+<a href="#" style="font-size: 14px; font-weight: 700; color: #5A3300">Perbarui jadwal</a>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px">
+<div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; font-weight: 700; color: #5B6577">Profil dilihat</span><span style="font-size: 28px; font-weight: 800">[N]</span></div>
+<div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; font-weight: 700; color: #5B6577">Klik WhatsApp</span><span style="font-size: 28px; font-weight: 800">[N]</span></div>
+<div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; font-weight: 700; color: #5B6577">Pertanyaan masuk</span><span style="font-size: 28px; font-weight: 800">[N]</span></div>
+<div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; font-weight: 700; color: #5B6577">Jadwal aktif</span><span style="font-size: 28px; font-weight: 800">3 <span style="font-size: 15px; font-weight: 600; color: #5B6577">dari 3</span></span></div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+
+<section style="flex: 999 1 480px; min-width: 0; background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><h2 style="margin: 0; font-size: 18px; font-weight: 700">Lead terbaru</h2><a href="#" style="font-size: 14px; font-weight: 700">Lihat semua</a></div>
+<div style="overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 520px">
+<thead><tr style="text-align: left; color: #5B6577; font-size: 12px"><th style="padding: 8px 10px; font-weight: 700">Calon peserta</th><th style="padding: 8px 10px; font-weight: 700">Pelatihan</th><th style="padding: 8px 10px; font-weight: 700">Kanal</th><th style="padding: 8px 10px; font-weight: 700">Status</th></tr></thead>
+<tbody>
+<sc-for list="{{ leads }}" as="l" hint-placeholder-count="4">
+<tr style="border-top: 1px solid #E3E6EB"><td style="padding: 12px 10px; font-weight: 600">[Nama peserta]</td><td style="padding: 12px 10px">{{ l.course }}</td><td style="padding: 12px 10px">{{ l.channel }}</td><td style="padding: 12px 10px"><span style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: {{ l.bg }}; color: {{ l.fg }}">{{ l.status }}</span></td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+
+<aside style="flex: 1 1 280px; display: flex; flex-direction: column; gap: 16px">
+<section style="background: #0F1B2D; color: #FFFFFF; border-radius: 16px; padding: 22px; display: flex; flex-direction: column; gap: 12px">
+<span style="font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #F28C1B">Paket Gratis</span>
+<h2 style="margin: 0; font-size: 18px; font-weight: 700">Kuota jadwal aktif sudah penuh</h2>
+<p style="margin: 0; font-size: 14px; line-height: 1.55; color: #C9D1DC">Pro membuka jadwal tanpa batas, statistik lead, dan mini-website.</p>
+<a href="Penyedia.dc.html" style="min-height: 46px; border-radius: 10px; background: #E07400; color: #0F1B2D; font-size: 15px; font-weight: 800; text-decoration: none; display: flex; align-items: center; justify-content: center">Coba Pro 14 hari</a>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 16px; font-weight: 700">Kelengkapan profil</h2>
+<div role="progressbar" aria-label="Kelengkapan profil" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100" style="height: 10px; border-radius: 999px; background: #EEF1F4; overflow: hidden"><div style="width: 70%; height: 100%; background: #0F1B2D"></div></div>
+<ul style="margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.8; color: #3D4757"><li>Tambahkan foto lokasi pelatihan</li><li>Lengkapi profil instruktur</li></ul>
+</section>
+</aside>
+
+</div>
+</main>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1360}}'>
+class Component extends DCLogic {
+renderVals() {
+const s = {
+baru: { status: 'Baru', bg: '#FDF0E3', fg: '#8A4600' },
+dihubungi: { status: 'Dihubungi', bg: '#EEF1F4', fg: '#3D4757' },
+daftar: { status: 'Mendaftar', bg: '#E6F4EC', fg: '#0B6B3A' }
+};
+return {
+leads: [
+{ course: 'Ahli K3 Umum', channel: 'WhatsApp', ...s.baru },
+{ course: 'Operator Forklift', channel: 'Form', ...s.baru },
+{ course: 'Ahli K3 Umum', channel: 'WhatsApp', ...s.dihubungi },
+{ course: 'Petugas P3K', channel: 'Form', ...s.daftar }
+]
+};
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>E-course K3 gratis di PusatK3</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0F1B2D}a:hover{color:#A85600}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 100vh; background: #FFFFFF; font-family: 'Plus Jakarta Sans', sans-serif; color: #0F1B2D">
+
+<header style="background: #FFFFFF; border-bottom: 1px solid #E3E6EB">
+<div style="max-width: 1200px; margin: 0 auto; padding: 12px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px">
+<a href="Main.dc.html" aria-label="Beranda PusatK3" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #0F1B2D">
+<svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><g stroke="#0F1B2D" stroke-width="3.5" stroke-linecap="round"><path d="M32 32L32 9M32 32L51.9 20.5M32 32L51.9 43.5M32 32L32 55M32 32L12.1 43.5M32 32L12.1 20.5"/></g><g fill="#0F1B2D"><circle cx="32" cy="9" r="6"/><circle cx="51.9" cy="20.5" r="6"/><circle cx="51.9" cy="43.5" r="6"/><circle cx="32" cy="55" r="6"/><circle cx="12.1" cy="43.5" r="6"/><circle cx="12.1" cy="20.5" r="6"/></g><circle cx="32" cy="32" r="11" fill="#E07400"/></svg>
+<span style="font-size: 22px; font-weight: 800; letter-spacing: -0.5px">pusat<span style="color: #E07400">k3</span></span>
+</a>
+<nav aria-label="Navigasi utama" style="display: flex; flex-wrap: wrap; gap: 4px 24px; flex: 1 1 auto; font-size: 15px; font-weight: 600">
+<a href="Hasil.dc.html" style="text-decoration: none; padding: 12px 0">Cari Pelatihan</a>
+<a href="Ecourse.dc.html" aria-current="page" style="text-decoration: none; padding: 12px 0; box-shadow: inset 0 -3px 0 #E07400">E-course</a>
+<a href="Penyedia.dc.html" style="text-decoration: none; padding: 12px 0">Untuk Penyedia</a>
+</nav>
+<a href="Akun.dc.html" style="height: 44px; padding: 0 18px; border-radius: 10px; background: #0F1B2D; color: #FFFFFF; font-size: 14px; font-weight: 700; text-decoration: none; display: flex; align-items: center">Masuk</a>
+</div>
+</header>
+
+<section style="background: #F5F6F8">
+<div style="max-width: 1200px; margin: 0 auto; padding: 56px 24px 40px; display: flex; flex-direction: column; gap: 16px">
+<span style="font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #B85F00">E-course gratis</span>
+<h1 style="margin: 0; font-size: 42px; line-height: 1.15; font-weight: 800; letter-spacing: -1px; max-width: 720px">Belajar dasar K3 gratis, kapan saja</h1>
+<p style="margin: 0; font-size: 17px; line-height: 1.55; color: #3D4757; max-width: 640px">Video singkat dan materi praktis, ditinjau Ahli K3. Cocok sebagai bekal sebelum ikut sertifikasi resmi.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px">
+<sc-for list="{{ topics }}" as="t" hint-placeholder-count="5">
+<button type="button" aria-pressed="{{ t.on }}" style="min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1.5px solid #0F1B2D; background: {{ t.bg }}; color: {{ t.fg }}; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer">{{ t.name }}</button>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section style="max-width: 1200px; margin: 0 auto; padding: 40px 24px; display: flex; flex-direction: column; gap: 20px">
+<h2 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px">Semua kursus</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px">
+<sc-for list="{{ courses }}" as="c" hint-placeholder-count="8">
+<a href="Pelajaran.dc.html" style="text-decoration: none; border: 1px solid #DDE1E7; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column">
+<div style="height: 140px; background: {{ c.tile }}; display: flex; align-items: center; justify-content: center"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="{{ c.ink }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></div>
+<div style="padding: 16px; display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 12px; font-weight: 700; color: #3D4757">{{ c.topic }} · Pemula</span>
+<h3 style="margin: 0; font-size: 16px; line-height: 1.35; font-weight: 700">{{ c.title }}</h3>
+<span style="font-size: 13px; color: #5B6577">[N] pelajaran · [durasi]</span>
+</div>
+</a>
+</sc-for>
+</div>
+</section>
+
+<section style="max-width: 1200px; margin: 0 auto; padding: 0 24px 64px">
+<div style="background: #0F1B2D; color: #FFFFFF; border-radius: 20px; padding: 32px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px">
+<div style="display: flex; flex-direction: column; gap: 6px; max-width: 680px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 800">E-course ini bukan sertifikasi resmi</h2>
+<p style="margin: 0; font-size: 15px; line-height: 1.55; color: #C9D1DC">Sertifikat dan lisensi K3 resmi diterbitkan Kemnaker atau BNSP melalui penyedia berizin. Temukan penyedianya di PusatK3.</p>
+</div>
+<a href="Hasil.dc.html" style="min-height: 50px; padding: 0 22px; border-radius: 12px; background: #E07400; color: #0F1B2D; font-size: 15px; font-weight: 800; text-decoration: none; display: flex; align-items: center">Cari sertifikasi resmi</a>
+</div>
+</section>
+
+<footer style="background: #0F1B2D; color: #C9D1DC; border-top: 1px solid #24324A">
+<div style="max-width: 1200px; margin: 0 auto; padding: 24px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 13px">
+<span>© 2026 PusatK3 · Direktori independen, bukan situs pemerintah</span>
+<span style="display: flex; gap: 16px"><a href="#" style="color: #C9D1DC">Privasi</a><a href="#" style="color: #C9D1DC">Syarat &amp; Ketentuan</a></span>
+</div>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1560}}'>
+class Component extends DCLogic {
+renderVals() {
+const picked = (this.state && this.state.topic) || 'Semua';
+const names = ['Semua', 'Dasar K3', 'APD', 'Kebakaran', 'Listrik', 'Persiapan ujian'];
+const warm = { tile: '#FDF0E3', ink: '#B85F00' };
+const cool = { tile: '#E8ECF2', ink: '#0F1B2D' };
+return {
+topics: names.map((n) => ({ name: n, on: n === picked ? 'true' : 'false', bg: n === picked ? '#0F1B2D' : '#FFFFFF', fg: n === picked ? '#FFFFFF' : '#0F1B2D' })),
+courses: [
+{ topic: 'Dasar K3', title: 'Dasar-dasar K3 di tempat kerja', ...warm },
+{ topic: 'APD', title: 'Memilih dan memakai APD dengan benar', ...cool },
+{ topic: 'Dasar K3', title: 'Identifikasi bahaya dan penilaian risiko', ...warm },
+{ topic: 'Kebakaran', title: 'Pencegahan kebakaran dan penggunaan APAR', ...cool },
+{ topic: 'Dasar K3', title: 'Bekerja aman di ketinggian', ...warm },
+{ topic: 'Listrik', title: 'Bahaya listrik di tempat kerja', ...cool },
+{ topic: 'Dasar K3', title: 'Ergonomi kerja sehari-hari', ...warm },
+{ topic: 'Persiapan ujian', title: 'Persiapan sertifikasi Ahli K3 Umum', ...cool }
+]
+};
+}
+}
+</script>
+</body>
+</html>
