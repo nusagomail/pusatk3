@@ -16,7 +16,25 @@ Hanya dari langganan penyedia. User selalu gratis.
 | Pro | Jadwal tanpa batas, slot sponsor di kota/kategori, statistik lead, inbox, coba gratis 14 hari | Mini-website di subdomain |
 | Bisnis | Multi-cabang, multi-user, permintaan penawaran in-house, profil instruktur, slot e-course | Website dengan custom domain |
 
-Harga belum ditetapkan. Patokan: biaya per bulan jauh lebih kecil dari nilai 1–2 peserta yang didapat.
+### Harga (sementara, 25 November 2026 — divalidasi lewat wawancara 10–20 PJK3 sebelum Fase 4)
+
+| Paket | Bulanan | Tahunan | Balik modal bagi penyedia |
+| --- | --- | --- | --- |
+| Gratis | Rp0 | Rp0 | — |
+| Pro | Rp349.000 | Rp3.490.000 (gratis 2 bulan) | ±1 peserta pelatihan operator per tahun |
+| Bisnis | Rp999.000 | Rp9.990.000 (gratis 2 bulan) | ±2–3 peserta per tahun |
+
+- Harga belum termasuk pajak; perlakuan PPN dikonfirmasi ke konsultan pajak.
+- Custom domain hanya untuk Bisnis tahunan.
+- Slot sponsor (kota × kategori, per bulan) dijual terpisah; harga ditetapkan setelah ada data trafik.
+- Program **Mitra Pendiri**: 100 penyedia berbayar pertama mendapat diskon 50% tahun pertama, harga terkunci.
+- Coba gratis Pro 14 hari.
+
+Dasar: harga pelatihan berbayar per peserta umumnya jutaan rupiah (mis. operator alat berat ±Rp6 juta; crane/forklift ±Rp3,7–4 juta pada penawaran 2019). Pembanding: paket agen Rumah123 Rp2,6–5,6 juta/tahun; aplikasi bisnis UMKM (Majoo) Rp249 ribu–999 ribu/bulan.
+
+Simulasi pendapatan bulanan: 100 Pro + 20 Bisnis ≈ Rp55 juta; 300 Pro + 50 Bisnis ≈ Rp155 juta.
+
+Di kode, harga disimpan di tabel `plans` (bukan hard-coded) agar bisa diubah tanpa deploy.
 
 Website instan: hanya untuk penyedia terverifikasi; custom domain dipertimbangkan dengan langganan tahunan; saat berhenti berlangganan ada masa tenggang 14–30 hari, lalu domain diarahkan ke profil gratis.
 
@@ -49,6 +67,6 @@ Alur nilai: konten & direktori → trafik user → lead ke penyedia → paket pr
 ## Pertanyaan terbuka
 
 - Segmen utama: individu atau HR perusahaan?
-- Harga paket Pro dan Bisnis
+- Validasi harga paket Pro dan Bisnis lewat wawancara penyedia
 - Wilayah prioritas kurasi
 - Pendiri tunggal atau co-founder dari dunia K3

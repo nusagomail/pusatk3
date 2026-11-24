@@ -61,5 +61,5 @@ PusatK3 adalah **direktori independen** dan tempat bertemu. Bukan situs pemerint
 
 ## Pertanyaan terbuka
 - Segmen utama: individu atau HR perusahaan?
-- Harga paket Pro dan Bisnis.
+- Validasi harga paket Pro dan Bisnis (draf ada di docs/bisnis.md).
 - Wilayah prioritas kurasi data.
