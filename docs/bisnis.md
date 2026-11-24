@@ -34,6 +34,21 @@ Dasar: harga pelatihan berbayar per peserta umumnya jutaan rupiah (mis. operator
 
 Simulasi pendapatan bulanan: 100 Pro + 20 Bisnis ≈ Rp55 juta; 300 Pro + 50 Bisnis ≈ Rp155 juta.
 
+### Model keuangan v2 (25 Nov 2026)
+
+File: `docs/model/PusatK3-Model-Keuangan-2027-2031.xlsx` (semua asumsi di sheet Asumsi, 3 skenario berdampingan).
+
+| Skenario dasar | 2027 | 2028 | 2029 | 2030 | 2031 |
+| --- | --- | --- | --- | --- | --- |
+| Penyedia berbayar (akhir th) | 38 | 192 | 384 | 553 | 685 |
+| Pendapatan (Rp juta) | 20 | 569 | 2.188 | 3.950 | 5.606 |
+| EBITDA (Rp juta) | −1.080 | −1.779 | −823 | −464 | +510 |
+
+- EBITDA positif berkelanjutan Jan 2031 (optimis Jun 2029; konservatif belum, perlu rem biaya).
+- Total kas terbakar sebelum impas ±Rp4,15 M. Usulan: pre-seed Rp3,5 M (Jan 2027), seed Rp5 M (Jan 2029).
+- Model dasar **bergantung pada** ekspansi ke penyedia jasa K3 non-pelatihan (riksa uji, audit, konsultan) mulai 2029 dan slot sponsor; tanpa salah satunya 2031 masih rugi.
+- Semesta penyedia ±2.990 (pelatihan ±1.790 + jasa K3 ±1.200), SAM ±2.090.
+
 Di kode, harga disimpan di tabel `plans` (bukan hard-coded) agar bisa diubah tanpa deploy.
 
 Website instan: hanya untuk penyedia terverifikasi; custom domain dipertimbangkan dengan langganan tahunan; saat berhenti berlangganan ada masa tenggang 14–30 hari, lalu domain diarahkan ke profil gratis.
@@ -48,7 +63,11 @@ Alur nilai: konten & direktori → trafik user → lead ke penyedia → paket pr
 
 ## Konteks pasar (data publik)
 
-- 875.641 perusahaan peserta BPJS Ketenagakerjaan (Des 2025).
+- 875.641 perusahaan peserta BPJS Ketenagakerjaan (Des 2025); ±19 ribu menerapkan SMK3 (Kemnaker, Agu 2026).
+- Hampir 1.000 PJK3 (pakta integritas 2025); 2.339 LSP terlisensi BNSP (Laporan BNSP 2025); 1,37 jt asesi tersertifikasi BNSP pada 2024.
+- Biaya pembinaan Ahli K3 Umum di PJK3 Rp6–12 jt (Menaker, Feb 2026). Menaker (Sep 2025): sertifikasi Ahli K3 diarahkan ke LSP.
+- Estimasi belanja pelatihan & sertifikasi K3 ±Rp1 T/tahun (bottom-up, lihat sheet Pasar).
+- Daftar kategori: `docs/kategori-k3.md`.
 - 319.224 klaim kecelakaan kerja (2025).
 - Kemnaker menggratiskan pembinaan Ahli K3 Umum (2026); PJK3 butuh kanal akuisisi untuk program berbayar lain.
 - Kanal pemerintah: Skillhub/Sertihub di SIAPkerja, fokus program vokasi.

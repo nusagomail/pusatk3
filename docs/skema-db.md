@@ -28,8 +28,9 @@ Sumber kebenaran skema. Setiap perubahan skema di kode wajib memperbarui file in
 | Tabel | Kolom utama | Catatan |
 | --- | --- | --- |
 | `cities` | slug, name, province | |
-| `course_categories` | slug, name, issuers (kemnaker/bnsp), synonyms | Sinonim untuk pencarian |
-| `schedules` | provider_id, branch_id, category_id, title, issuer, mode (offline/online), start_date, end_date, price_idr (nullable), quota, description, requirements, status (draft/published/expired) | Expired otomatis lewat Cron |
+| `course_fields` | slug, name, sort_order | Bidang (14), lihat `docs/kategori-k3.md` |
+| `course_categories` | field_id, slug, name, issuers (kemnaker/bnsp/pupr/esdm/intl, array), document_type, typical_validity_years (nullable), regulation_ref, synonyms | Seed dari `docs/data/kategori-k3.csv`; sinonim untuk pencarian |
+| `schedules` | provider_id, branch_id, category_id, title, issuer, mode (offline/online), start_date, end_date, price_idr (nullable), quota, description, requirements, level (nullable, mis. Kelas I / Madya), certificate_kind (official/training_only), status (draft/published/expired) | Expired otomatis lewat Cron |
 | `saved_schedules` | user_id, schedule_id | |
 
 ## Lead & ulasan

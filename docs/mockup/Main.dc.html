@@ -61,8 +61,8 @@ a{color:#0F1B2D}a:hover{color:#A85600}
 
 <section style="max-width: 1200px; margin: 0 auto; padding: 56px 24px 24px; display: flex; flex-direction: column; gap: 20px">
 <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px">
-<h2 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px">Kategori populer</h2>
-<a href="Hasil.dc.html" style="font-size: 15px; font-weight: 700">Lihat semua kategori</a>
+<h2 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px">Bidang K3</h2>
+<a href="Hasil.dc.html" style="font-size: 15px; font-weight: 700">Lihat semua 14 bidang</a>
 </div>
 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px">
 <sc-for list="{{ categories }}" as="c" hint-placeholder-count="8">
@@ -146,14 +146,14 @@ class Component extends DCLogic {
 renderVals() {
 return {
 categories: [
-{ name: 'Ahli K3 Umum', issuer: 'Kemnaker · BNSP' },
-{ name: 'Operator Forklift', issuer: 'SIO Kemnaker' },
-{ name: 'K3 Listrik', issuer: 'Kemnaker · BNSP' },
-{ name: 'Petugas P3K', issuer: 'Kemnaker' },
-{ name: 'Operator Crane', issuer: 'SIO Kemnaker' },
-{ name: 'Petugas Kebakaran', issuer: 'Kemnaker' },
-{ name: 'K3 Konstruksi', issuer: 'BNSP' },
-{ name: 'Ahli K3 Kimia', issuer: 'Kemnaker' }
+{ name: 'K3 Umum & SMK3', issuer: '5 sertifikasi · Kemnaker · BNSP' },
+{ name: 'Pesawat Angkat & Angkut', issuer: '8 sertifikasi · crane, forklift, alat berat' },
+{ name: 'Bekerja di Ketinggian', issuer: '4 sertifikasi · TKBT, TKPK, perancah' },
+{ name: 'Ruang Terbatas', issuer: '3 sertifikasi · Permenaker 11/2023' },
+{ name: 'Listrik', issuer: '3 sertifikasi · Kemnaker · ESDM' },
+{ name: 'Penanggulangan Kebakaran', issuer: '4 sertifikasi · Kelas A–D' },
+{ name: 'Konstruksi', issuer: '3 sertifikasi · Kemnaker · SKK PUPR' },
+{ name: 'Lingkungan Kerja & P3K', issuer: '5 sertifikasi · Hiperkes, P3K' }
 ],
 schedules: [
 { title: 'Ahli K3 Umum', issuer: 'Kemnaker', mode: 'Offline', date: '8–19 Des 2026', place: 'Surabaya' },

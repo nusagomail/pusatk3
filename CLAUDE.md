@@ -16,6 +16,7 @@ Bahasa produk: Indonesia (utama) dan Inggris. Tulis kode, nama variabel, dan com
 | `docs/keamanan.md` | Aturan keamanan dan checklist per endpoint |
 | `docs/design-tokens.md` | Warna, huruf, komponen; mengikuti panduan merek |
 | `docs/glosarium-k3.md` | Istilah K3 (AK3U, SIO, PJK3, LSP, TUK, dll.) |
+| `docs/kategori-k3.md` | 14 bidang & 59 kategori sertifikasi K3 resmi + penerbit + regulasi |
 | `docs/workflow.md` | Cara kerja per issue, gerbang persetujuan manusia |
 | `docs/bisnis.md` | Model bisnis, paket, risiko (hasil brainstorming) |
 | `docs/ui-halaman.md` | Spesifikasi tiap halaman berdasarkan mockup |
