@@ -33,7 +33,7 @@ Jika instruksi di sini bertentangan dengan `docs/`, ikuti `docs/` dan laporkan k
 
 ## Perintah
 
-Prasyarat: Node 22 (`.nvmrc`) dan pnpm 10.28 (terkunci di `packageManager`). Jalankan dari root repo.
+Prasyarat: Node 22.23.4+ (`.nvmrc`) dan pnpm 10.28 (terkunci di `packageManager`). Jalankan dari root repo.
 
 | Perintah | Fungsi |
 | --- | --- |
@@ -47,7 +47,7 @@ Prasyarat: Node 22 (`.nvmrc`) dan pnpm 10.28 (terkunci di `packageManager`). Jal
 
 Belum ada (jangan dipakai sampai issue-nya selesai): `pnpm test:e2e` (#9), `pnpm db:generate` dan `pnpm db:migrate:local` (#4; migrasi remote hanya lewat CI).
 
-Setiap app/paket baru wajib `"private": true` dan punya skrip `typecheck` dan `test` (dijaga `tests/workspace.test.ts`).
+Setiap app/paket baru wajib `"private": true`, punya skrip `typecheck` dan `test`, dan punya `vitest.config.ts` agar tesnya ikut dijalankan `pnpm test` (dijaga `tests/workspace.test.ts`). Syarat lain per app: `apps/README.md`.
 
 ## Aturan wajib
 

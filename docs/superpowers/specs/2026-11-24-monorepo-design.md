@@ -32,9 +32,10 @@ Membuat kerangka repo agar semua issue berikutnya punya struktur folder, standar
 
 - `pnpm lint` = ESLint untuk seluruh repo + `prettier --check`. Lint dijalankan dari root (bukan per paket lewat Turbo) agar satu konfigurasi berlaku di mana pun.
 - `pnpm typecheck` = `tsc` untuk file root + `turbo run typecheck` untuk tiap paket.
-- `pnpm test` = Vitest root dengan `projects` yang otomatis mencakup `apps/*` dan `packages/*` bila punya konfigurasi Vitest.
+- `pnpm test` = Vitest root dengan `projects` yang mencakup `apps/*` dan `packages/*`; setiap paket wajib punya `vitest.config.ts` (dijaga tes).
+- Vitest dikunci 4.1.x (kompatibel `@cloudflare/vitest-pool-workers`); Node `>=22.23.4` (syarat Astro 7). Lihat ADR 0005.
 - `pnpm build` / `pnpm dev` = `turbo run build` / `turbo run dev`.
-- Tes penjaga `tests/workspace.test.ts`: Node 22 dan pnpm terkunci; setiap paket workspace `private` dan punya skrip `typecheck` dan `test`.
+- Tes penjaga `tests/workspace.test.ts`: Node 22 dan pnpm terkunci; setiap paket workspace `private`, punya skrip `typecheck` dan `test`, dan punya `vitest.config.ts`.
 - TypeScript dikunci ke 6.0.x karena `typescript-eslint` (<6.1) dan `@astrojs/check` (^5 || ^6) belum mendukung TypeScript 7.
 
 ## Keputusan builder (bisa dikoreksi pemilik)

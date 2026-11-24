@@ -16,7 +16,7 @@ Direktori independen pelatihan & sertifikasi K3 di Indonesia — [pusatk3.id](ht
 
 ## Menjalankan proyek
 
-Prasyarat: **Node 22** (lihat `.nvmrc`) dan **pnpm** (`npm install -g pnpm`; versi dikunci otomatis lewat `packageManager`).
+Prasyarat: **Node 22.23.4 atau lebih baru di seri 22** (lihat `.nvmrc`) dan **pnpm**. Cara termudah memasang pnpm: `corepack enable` (bawaan Node), yang otomatis memakai versi terkunci di `packageManager`.
 
 ```bash
 pnpm install     # pasang dependensi
