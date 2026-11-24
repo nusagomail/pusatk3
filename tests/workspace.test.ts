@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const root = resolve(import.meta.dirname, '..');
@@ -32,7 +32,7 @@ describe('workspace', () => {
     const pkg = readJson(join(root, 'package.json'));
     expect(pkg.private).toBe(true);
     expect(pkg.packageManager).toMatch(/^pnpm@10\.\d+\.\d+$/);
-    expect(pkg.engines?.node).toBe('>=22.12.0 <23');
+    expect(pkg.engines?.node).toBe('>=22.23.4 <23');
     expect(readFileSync(join(root, '.nvmrc'), 'utf8').trim()).toBe('22');
   });
 
@@ -49,6 +49,17 @@ describe('workspace', () => {
       expect(pkg.private, `${file} must be private`).toBe(true);
       expect(pkg.scripts?.typecheck, `${file} needs a "typecheck" script`).toBeTruthy();
       expect(pkg.scripts?.test, `${file} needs a "test" script`).toBeTruthy();
+    }
+  });
+
+  it('every workspace package has a vitest.config.ts so root `pnpm test` runs its tests', () => {
+    // Root vitest.config.ts only discovers packages through this exact file name.
+    // Without it, a package's tests (including access-control tests) would be skipped silently.
+    for (const file of workspacePackageFiles()) {
+      expect(
+        existsSync(join(dirname(file), 'vitest.config.ts')),
+        `${dirname(file)} needs a vitest.config.ts`,
+      ).toBe(true);
     }
   });
 });

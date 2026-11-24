@@ -14,6 +14,8 @@ export default defineConfig(
       '**/.wrangler/**',
       '**/.turbo/**',
       '**/coverage/**',
+      '**/playwright-report/**',
+      '**/test-results/**',
       'docs/**',
       'brand/**',
     ],
@@ -24,7 +26,6 @@ export default defineConfig(
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'module',
-      globals: { ...globals.node },
     },
     rules: {
       '@typescript-eslint/consistent-type-imports': 'error',
@@ -33,6 +34,12 @@ export default defineConfig(
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
     },
+  },
+  {
+    // Node globals only for root tooling and tests. Workers (apps/api) and browser
+    // code (apps/web) get their own globals when those apps are added.
+    files: ['*.{js,ts}', 'tests/**/*.ts', '{apps,packages}/*/*.config.{js,ts}'],
+    languageOptions: { globals: { ...globals.node } },
   },
   prettier,
 );

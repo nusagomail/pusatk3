@@ -1,7 +1,9 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "types": ["node"]
+    "types": ["node"],
+    "allowJs": true,
+    "checkJs": true
   },
   "include": ["tests/**/*.ts", "*.ts", "*.js"],
   "exclude": ["node_modules", "apps", "packages"]

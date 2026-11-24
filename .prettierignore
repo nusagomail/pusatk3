@@ -14,8 +14,9 @@ docs/**/*.md
 docs/mockup/
 docs/model/
 docs/data/
-brand/
-.claude/
-.github/
-CLAUDE.md
-README.md
+/brand/
+/.claude/
+/.github/*.md
+/.github/ISSUE_TEMPLATE/
+/CLAUDE.md
+/README.md
