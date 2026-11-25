@@ -35,6 +35,14 @@ describe('production build', () => {
     expect(existsSync(client('internal'))).toBe(false);
   });
 
+  it('inlines no fonts as data: URIs (CSP font-src allows only same-origin files)', () => {
+    const css = execFileSync('find', [client('_astro'), '-name', '*.css'])
+      .toString()
+      .trim()
+      .split('\n');
+    for (const file of css) expect(readFileSync(file, 'utf8')).not.toMatch(/url\(\s*["']?data:/);
+  });
+
   it('does not bundle the intro video', () => {
     const files = execFileSync('find', [out, '-name', '*.mp4']).toString().trim();
     expect(files).toBe('');

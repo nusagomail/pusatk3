@@ -45,6 +45,8 @@ export default defineConfig({
     },
   },
   integrations: [devOnlyPages],
+  // Never inline assets as data: URIs (small font files would be blocked by the CSP).
+  vite: { build: { assetsInlineLimit: 0 } },
   adapter: cloudflare({
     // Local bindings only; never proxy to remote resources during dev/build.
     remoteBindings: false,
