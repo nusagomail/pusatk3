@@ -10,7 +10,7 @@ Konfigurasi deploy terpisah untuk staging dan production (API dan web), nama res
 
 - `env.staging` dan `env.production` di `apps/api/wrangler.jsonc` dan `apps/web/wrangler.jsonc`.
 - D1 `pusatk3-staging` (dibuat sekarang) dan `pusatk3-production` (ID diisi pemilik; teks penanda sampai saat itu). R2 `pusatk3-media-staging` untuk video (production: `pusatk3-media-production`, dibuat pemilik).
-- Staging tidak diindeks (X-Robots-Tag + robots.txt) — build web dengan `DEPLOY_ENV`; bawaan = bukan production (aman).
+- Staging tidak diindeks (X-Robots-Tag + robots.txt) — build web dengan `CLOUDFLARE_ENV` (satu variabel; awalnya `DEPLOY_ENV`, disatukan setelah review); bawaan = bukan production (aman).
 - Observability: staging aktif, production mati sampai Fase 3.
 - `.dev.vars.example`, dokumentasi lingkungan, langkah pemilik (pindah domain, resource production, secret CI).
 - Hook pengaman memblokir `--remote` untuk semua perintah D1 dan skrip `db:*`.

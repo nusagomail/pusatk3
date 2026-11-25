@@ -23,8 +23,9 @@ const devOnlyPages: AstroIntegration = {
 // the CSP, so they can never disagree. A .env file is deliberately not used for this value.
 const mediaBaseUrl = process.env.PUBLIC_MEDIA_BASE_URL ?? '';
 
-// Only DEPLOY_ENV=production builds are indexable (ADR 0011); staging/local get noindex.
-const deployEnv = process.env.DEPLOY_ENV ?? '';
+// Single source for the target environment: CLOUDFLARE_ENV (also read by the Cloudflare adapter
+// to pick the wrangler env). Only "production" builds are indexable (ADR 0011).
+const deployEnv = process.env.CLOUDFLARE_ENV ?? '';
 const noindexOutsideProduction: AstroIntegration = {
   name: 'pusatk3:noindex-outside-production',
   hooks: {
@@ -71,7 +72,6 @@ export default defineConfig({
     build: { assetsInlineLimit: 0 },
     define: {
       'import.meta.env.PUBLIC_MEDIA_BASE_URL': JSON.stringify(mediaBaseUrl),
-      'import.meta.env.DEPLOY_ENV': JSON.stringify(deployEnv),
     },
   },
   adapter: cloudflare({

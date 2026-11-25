@@ -20,4 +20,4 @@ API adalah satu-satunya tempat logika bisnis (ADR 0001). Pola error, validasi, d
 - `createApp({ extend })` hanya untuk tes (memasang rute uji di `/api/v1`).
 - `Cross-Origin-Resource-Policy: same-origin` (bawaan `secureHeaders`) perlu ditinjau saat web memanggil API dari origin lain.
 - Untuk #7/#8: `vars` tidak diwariskan ke `env.*` di wrangler, jadi `APP_VERSION` wajib diisi per lingkungan (tanpa itu `/health` 500); saat observability Workers diaktifkan, log invocation memuat URL + query string yang bisa berisi data pribadi.
-- `workers_dev: false` sampai lingkungan disiapkan, agar `wrangler deploy` tak sengaja tidak membuat URL publik.
+- `workers_dev: false` untuk lokal dan production; staging memakai `*.workers.dev` (ADR 0011).

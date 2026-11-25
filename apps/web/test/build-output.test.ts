@@ -29,12 +29,15 @@ function headerRules(text: string): Map<string, string[]> {
   return rules;
 }
 
-beforeAll(() => {
-  out = mkdtempSync(join(tmpdir(), 'pusatk3-web-build-'));
-  // Empty (not just unset) so a local .env cannot enable the video in this build.
-  const env = { ...process.env, PUBLIC_MEDIA_BASE_URL: '', DEPLOY_ENV: 'production' };
+let localOut = '';
+
+function build(outDir: string, cloudflareEnv: string | undefined): void {
+  // Media URL empty (not just unset) so the environment cannot enable the video in this build.
+  const env: NodeJS.ProcessEnv = { ...process.env, PUBLIC_MEDIA_BASE_URL: '' };
+  delete env.CLOUDFLARE_ENV;
+  if (cloudflareEnv) env.CLOUDFLARE_ENV = cloudflareEnv;
   try {
-    execFileSync('pnpm', ['exec', 'astro', 'build', '--outDir', out], {
+    execFileSync('pnpm', ['exec', 'astro', 'build', '--outDir', outDir], {
       cwd: root,
       env,
       stdio: 'pipe',
@@ -46,10 +49,38 @@ beforeAll(() => {
       { cause: error },
     );
   }
-}, 180_000);
+}
+
+beforeAll(() => {
+  // Sequential builds: parallel workerd prerenders would race for the inspector port.
+  out = mkdtempSync(join(tmpdir(), 'pusatk3-web-build-'));
+  build(out, 'production');
+  localOut = mkdtempSync(join(tmpdir(), 'pusatk3-web-build-local-'));
+  build(localOut, undefined);
+}, 300_000);
 
 afterAll(() => {
-  if (out) rmSync(out, { recursive: true, force: true });
+  for (const dir of [out, localOut]) if (dir) rmSync(dir, { recursive: true, force: true });
+});
+
+describe('non-production build (no CLOUDFLARE_ENV)', () => {
+  const local = (...parts: string[]) => join(localOut, 'client', ...parts);
+
+  it('is noindex on every path and blocks crawlers', () => {
+    const rules = headerRules(readFileSync(local('_headers'), 'utf8'));
+    expect(rules.get('/*')).toContain('X-Robots-Tag: noindex, nofollow');
+    expect(rules.get('/_astro/*')).toContain('Cache-Control: public, max-age=31536000, immutable');
+    expect(readFileSync(local('robots.txt'), 'utf8')).toBe('User-agent: *\nDisallow: /\n');
+  });
+
+  it('builds the private top-level worker', () => {
+    const config = JSON.parse(readFileSync(local('wrangler.json'), 'utf8')) as {
+      name?: string;
+      workers_dev?: boolean;
+    };
+    expect(config.name).toBe('pusatk3-web');
+    expect(config.workers_dev).toBe(false);
+  });
 });
 
 describe('production build', () => {
@@ -80,7 +111,11 @@ describe('production build', () => {
       preview_urls?: boolean;
       observability?: { enabled?: boolean };
       kv_namespaces?: unknown[];
+      name?: string;
+      routes?: { pattern: string }[];
     };
+    expect(config.name).toBe('pusatk3-web-production');
+    expect(config.routes?.map((route) => route.pattern)).toEqual(['pusatk3.id/*']);
     expect(config.assets?.not_found_handling).toBe('404-page');
     expect(config.workers_dev).toBe(false);
     expect(config.preview_urls).toBe(false);

@@ -19,4 +19,4 @@ Setiap app wajib `"private": true`, punya skrip `typecheck` dan `test`, dan puny
 
 ## Lingkungan
 
-`staging` dan `production` ada di `wrangler.jsonc` tiap app (ADR 0011). Build web per lingkungan: `CLOUDFLARE_ENV=<env> DEPLOY_ENV=<env> pnpm --filter @pusatk3/web build` (tanpa `DEPLOY_ENV=production` hasilnya selalu `noindex`). Secret lokal API: salin `apps/api/.dev.vars.example` ke `.dev.vars`.
+`staging` dan `production` ada di `wrangler.jsonc` tiap app (ADR 0011). Build web per lingkungan: `CLOUDFLARE_ENV=<env> pnpm --filter @pusatk3/web build` (satu variabel untuk pilihan config wrangler dan indeks; selain `production` hasilnya selalu `noindex`). Turborepo memperhitungkan `CLOUDFLARE_ENV` dan `PUBLIC_MEDIA_BASE_URL` di cache build. Secret lokal API: salin `apps/api/.dev.vars.example` ke `.dev.vars`.

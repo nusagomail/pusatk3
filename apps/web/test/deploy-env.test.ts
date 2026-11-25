@@ -30,6 +30,11 @@ describe('withNoindexHeaders', () => {
     expect(after).toMatch(/\n\/\*\n {2}X-Robots-Tag: noindex, nofollow\n$/);
   });
 
+  it('still adds the site-wide rule when only one path is noindex', () => {
+    const before = '/internal/*\n  X-Robots-Tag: noindex\n';
+    expect(withNoindexHeaders(before)).toMatch(/\n\/\*\n {2}X-Robots-Tag: noindex, nofollow\n$/);
+  });
+
   it('is idempotent', () => {
     const once = withNoindexHeaders('/*\n  A: b\n');
     expect(withNoindexHeaders(once)).toBe(once);

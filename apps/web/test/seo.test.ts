@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import JsonLd from '../src/components/JsonLd.astro';
+import { isProductionDeploy, robotsTxt } from '../src/lib/deploy';
 import { GET as robots } from '../src/pages/robots.txt';
 import { GET as sitemap } from '../src/pages/sitemap.xml';
 import Home from '../src/pages/index.astro';
@@ -65,9 +66,9 @@ describe('JsonLd', () => {
 });
 
 describe('robots.txt and sitemap.xml', () => {
-  it('block crawlers outside production builds (tests do not set DEPLOY_ENV)', async () => {
+  it('follow the build environment (CLOUDFLARE_ENV)', async () => {
     const text = await (await robots({} as never)).text();
-    expect(text).toBe('User-agent: *\nDisallow: /\n');
+    expect(text).toBe(robotsTxt(isProductionDeploy(process.env.CLOUDFLARE_ENV)));
   });
 
   it('list the public pages and never internal ones', async () => {
