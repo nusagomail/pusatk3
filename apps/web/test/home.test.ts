@@ -61,6 +61,33 @@ describe('homepage', () => {
     expect(section.match(/>Contoh</g)).toHaveLength(SAMPLE_SCHEDULES.length);
   });
 
+  it('makes the sample status audible and never links a sample to a detail page', async () => {
+    const html = await render(Home);
+    const cards = [...html.matchAll(/<article[^>]*schedule-card[\s\S]*?<\/article>/g)].map(
+      (m) => m[0],
+    );
+    expect(cards).toHaveLength(SAMPLE_SCHEDULES.length);
+    for (const [index, card] of cards.entries()) {
+      const title = SAMPLE_SCHEDULES[index]?.title ?? '';
+      expect(card).toMatch(/<h3[^>]*>[\s\S]*class="visually-hidden"[^>]*>Contoh: <\/span>/);
+      expect(card).not.toContain('Lihat detail');
+      expect(card).toContain(`href="/cari?q=${encodeURIComponent(title)}"`);
+      expect(card).toContain(`Cari jadwal ${title}`);
+      expect(card).toMatch(/Desember/);
+    }
+  });
+
+  it('offers every seeded city in the search form', async () => {
+    const seed = readFileSync(
+      resolve(import.meta.dirname, '../../../packages/db/src/seed/cities.ts'),
+      'utf8',
+    );
+    const slugs = [...seed.matchAll(/slug: '([a-z-]+)'/g)].map((m) => m[1]);
+    expect(slugs.length).toBeGreaterThan(0);
+    const html = await render(Home);
+    for (const slug of slugs) expect(html).toMatch(new RegExp(`<option\\b[^>]*value="${slug}"`));
+  });
+
   it('links the provider call to action to /untuk-penyedia', async () => {
     expect(await render(Home)).toMatch(/href="\/untuk-penyedia"[^>]*>\s*Klaim profil gratis/);
   });
@@ -92,6 +119,9 @@ describe('IntroVideo', () => {
     expect(html).not.toContain('<video');
     expect(attr(tag(html, 'img'), 'alt')).toBeTruthy();
     expect(html).toMatch(/<details[\s\S]*Baca transkrip[\s\S]*Kenalkan, PusatK3/);
+    expect(html).toContain('Ringkasan PusatK3');
+    expect(html).not.toContain('dalam 1 menit');
+    expect(attr(tag(html, 'img'), 'alt')).toMatch(/mulai hari ini/);
   });
 
   it('with a media URL plays only on request, with Indonesian captions', async () => {

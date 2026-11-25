@@ -25,6 +25,9 @@ describe('homepage SEO', () => {
     expect(meta(html, 'og:description')).toMatch(/Gratis untuk peserta/);
     expect(meta(html, 'og:image')).toMatch(/^https:\/\/pusatk3\.id\//);
     expect(meta(html, 'og:locale')).toBe('id_ID');
+    expect(meta(html, 'og:image:width')).toBe('1920');
+    expect(meta(html, 'og:image:height')).toBe('1080');
+    expect(meta(html, 'og:image:alt')).toBeTruthy();
     expect(meta(html, 'twitter:card')).toBe('summary_large_image');
   });
 

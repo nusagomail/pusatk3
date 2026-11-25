@@ -38,6 +38,8 @@ export interface SampleSchedule {
   issuer: string;
   mode: 'Offline' | 'Online';
   month: string;
+  /** Full month name for screen readers ("DES" would be spelled out). */
+  monthName: string;
   days: string;
   place: string;
 }
@@ -48,6 +50,7 @@ export const SAMPLE_SCHEDULES: readonly SampleSchedule[] = [
     issuer: 'Kemnaker',
     mode: 'Offline',
     month: 'DES',
+    monthName: 'Desember',
     days: '8–19',
     place: 'Surabaya',
   },
@@ -56,6 +59,7 @@ export const SAMPLE_SCHEDULES: readonly SampleSchedule[] = [
     issuer: 'SIO Kemnaker',
     mode: 'Offline',
     month: 'DES',
+    monthName: 'Desember',
     days: '10–12',
     place: 'Bekasi',
   },
@@ -64,6 +68,7 @@ export const SAMPLE_SCHEDULES: readonly SampleSchedule[] = [
     issuer: 'BNSP',
     mode: 'Online',
     month: 'DES',
+    monthName: 'Desember',
     days: '15–18',
     place: 'Online (Zoom)',
   },
@@ -72,6 +77,7 @@ export const SAMPLE_SCHEDULES: readonly SampleSchedule[] = [
     issuer: 'Kemnaker',
     mode: 'Offline',
     month: 'DES',
+    monthName: 'Desember',
     days: '16–17',
     place: 'Batam',
   },
@@ -91,10 +97,15 @@ export const CITY_CHIPS: readonly { label: string; query: string }[] = [
   { label: 'Online', query: 'mode=online' },
 ];
 
+/** Same cities as the local seed (packages/db SAMPLE_CITIES); Fase 1 loads them from /cities. */
 export const SEARCH_CITIES = [
   { value: '', label: 'Semua kota & online' },
   { value: 'jakarta', label: 'Jakarta' },
   { value: 'surabaya', label: 'Surabaya' },
   { value: 'bekasi', label: 'Bekasi' },
   { value: 'batam', label: 'Batam' },
+  { value: 'tangerang', label: 'Tangerang' },
+  { value: 'karawang', label: 'Karawang' },
+  { value: 'semarang', label: 'Semarang' },
+  { value: 'balikpapan', label: 'Balikpapan' },
 ] as const;

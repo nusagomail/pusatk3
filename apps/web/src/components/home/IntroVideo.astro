@@ -48,7 +48,7 @@ const transcript = [
     ) : (
       <img
         src={poster}
-        alt="Logo PusatK3 dan tulisan: Gratis untuk peserta, selamanya"
+        alt="Logo PusatK3 dan tulisan: Gratis untuk peserta, selamanya. Temukan pelatihan K3 yang tepat, mulai hari ini."
         width="1920"
         height="1080"
         loading="lazy"
@@ -56,7 +56,7 @@ const transcript = [
       />
     )}
   </div>
-  <figcaption>Kenali PusatK3 dalam 1 menit</figcaption>
+  <figcaption>{base ? 'Kenali PusatK3 dalam 1 menit' : 'Ringkasan PusatK3'}</figcaption>
   <details class="intro__transcript">
     <summary>Baca transkrip</summary>
     {transcript.map((paragraph) => (

@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import cloudflare from '@astrojs/cloudflare';
 import { defineConfig } from 'astro/config';
 import type { AstroIntegration } from 'astro';
+import { mediaOrigin } from './src/lib/media';
 import { THEME_INIT_SCRIPT } from './src/lib/theme';
 
 /** Internal component showcase: only routed in `astro dev`, never in a build. */
@@ -15,6 +16,11 @@ const devOnlyPages: AstroIntegration = {
     },
   },
 };
+
+// Intro video bucket URL: one source (the build environment, e.g. CI) for both the page and
+// the CSP, so they can never disagree. A .env file is deliberately not used for this value.
+const mediaBaseUrl = process.env.PUBLIC_MEDIA_BASE_URL ?? '';
+const videoOrigin = mediaOrigin(mediaBaseUrl);
 
 // Astro hashes bundled scripts, but not the hand-inlined theme script in <head>.
 const themeScriptHash =
@@ -33,9 +39,9 @@ export default defineConfig({
     csp: {
       directives: [
         "default-src 'self'",
-        "img-src 'self' data:",
+        "img-src 'self'",
         "font-src 'self'",
-        "media-src 'self' https:",
+        `media-src 'self'${videoOrigin ? ` ${videoOrigin}` : ''}`,
         "connect-src 'self'",
         "object-src 'none'",
         "base-uri 'self'",
@@ -46,7 +52,10 @@ export default defineConfig({
   },
   integrations: [devOnlyPages],
   // Never inline assets as data: URIs (small font files would be blocked by the CSP).
-  vite: { build: { assetsInlineLimit: 0 } },
+  vite: {
+    build: { assetsInlineLimit: 0 },
+    define: { 'import.meta.env.PUBLIC_MEDIA_BASE_URL': JSON.stringify(mediaBaseUrl) },
+  },
   adapter: cloudflare({
     // Local bindings only; never proxy to remote resources during dev/build.
     remoteBindings: false,
