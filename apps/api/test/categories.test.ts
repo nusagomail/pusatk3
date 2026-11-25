@@ -2,9 +2,10 @@ import { categoriesResponseSchema } from '@pusatk3/shared';
 import { parseCategoriesCsv, SAMPLE_CITIES, seedReferenceData } from '@pusatk3/db';
 import { env, SELF } from 'cloudflare:test';
 import { drizzle } from 'drizzle-orm/d1';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createApp } from '../src/app';
 import csv from '../../../docs/data/kategori-k3.csv?raw';
-import { expectApiError } from './helpers';
+import { call, expectApiError } from './helpers';
 
 const url = 'https://api.test/api/v1/categories';
 
@@ -26,7 +27,7 @@ describe('GET /api/v1/categories (public)', () => {
     expect(body.items[0]?.slug).toBe('k3-umum');
     for (const field of body.items) {
       const names = field.categories.map((c) => c.name);
-      expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+      expect(names).toEqual([...names].sort(new Intl.Collator('id').compare));
     }
   });
 
@@ -68,5 +69,28 @@ describe('GET /api/v1/categories (public)', () => {
 
   it('rejects any query parameter with 422', async () => {
     await expectApiError(await SELF.fetch(`${url}?field=k3-umum`), 422, 'VALIDATION_ERROR');
+  });
+});
+
+describe('GET /api/v1/categories edge cases', () => {
+  it('does not cache an empty list at the edge', async () => {
+    await env.DB.prepare('DELETE FROM course_categories').run();
+    const res = await SELF.fetch(url);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ items: [] });
+    expect(res.headers.get('cache-control')).toBe('no-store');
+  });
+
+  it('returns 500 without details when the database fails', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const brokenDb = {
+      prepare: () => {
+        throw new Error('D1_ERROR: no such table: course_fields');
+      },
+    } as unknown as D1Database;
+    const res = await call(createApp(), '/api/v1/categories', undefined, { ...env, DB: brokenDb });
+    const body = await expectApiError(res, 500, 'INTERNAL_ERROR');
+    expect(JSON.stringify(body)).not.toContain('course_fields');
+    vi.restoreAllMocks();
   });
 });

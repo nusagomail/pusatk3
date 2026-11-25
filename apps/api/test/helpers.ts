@@ -7,8 +7,13 @@ import type { createApp } from '../src/app';
 type App = ReturnType<typeof createApp>;
 
 /** Calls the app in-process (inside workerd) with the test bindings. */
-export function call(app: App, path: string, init?: RequestInit): Promise<Response> {
-  return Promise.resolve(app.request(`https://api.test${path}`, init, env));
+export function call(
+  app: App,
+  path: string,
+  init?: RequestInit,
+  bindings: Cloudflare.Env = env,
+): Promise<Response> {
+  return Promise.resolve(app.request(`https://api.test${path}`, init, bindings));
 }
 
 /** Asserts a standard error body with the expected status and code, and returns it. */

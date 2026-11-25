@@ -1,3 +1,4 @@
+import { inArray, not } from 'drizzle-orm';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { cities, courseCategories, courseFields } from '../schema';
 import type { CategoriesSeed } from './categories-csv';
@@ -7,16 +8,31 @@ export interface ReferenceData extends CategoriesSeed {
   cities: readonly CitySeed[];
 }
 
+/** Slugs present in the database but missing from the seed data (never deleted automatically). */
+export interface SeedReport {
+  orphans: { fields: string[]; categories: string[]; cities: string[] };
+}
+
 type Db = DrizzleD1Database<Record<string, unknown>>;
 
 /**
  * Upserts reference data by slug, one statement per row, each stage in one D1 batch
  * (transaction). Idempotent: ids and created_at are kept, other values updated. Rows missing
- * from `data` are left alone (removing reference data needs owner approval).
+ * from `data` are reported, not removed (removing reference data needs owner approval).
+ * Note: a remote D1 batch is limited to 50 queries on the Free plan; this is used locally.
  */
-export async function seedReferenceData(db: Db, data: ReferenceData): Promise<void> {
-  const now = new Date();
+export async function seedReferenceData(db: Db, data: ReferenceData): Promise<SeedReport> {
+  // Validate references before writing anything.
+  const knownFields = new Set(data.fields.map((f) => f.slug));
+  for (const category of data.categories) {
+    if (!knownFields.has(category.fieldSlug)) {
+      throw new Error(
+        `Seed: category "${category.slug}" refers to unknown field "${category.fieldSlug}"`,
+      );
+    }
+  }
 
+  const now = new Date();
   const fieldAndCityStatements = [
     ...data.fields.map(({ slug, name, sortOrder }) =>
       db
@@ -45,9 +61,7 @@ export async function seedReferenceData(db: Db, data: ReferenceData): Promise<vo
 
   const categoryStatements = data.categories.map(({ fieldSlug, ...category }) => {
     const fieldId = fieldIds.get(fieldSlug);
-    if (!fieldId) {
-      throw new Error(`Seed: category "${category.slug}" refers to unknown field "${fieldSlug}"`);
-    }
+    if (!fieldId) throw new Error(`Seed: field "${fieldSlug}" was not written`);
     const values = { ...category, fieldId };
     const { slug: _slug, ...changes } = values;
     return db
@@ -57,4 +71,32 @@ export async function seedReferenceData(db: Db, data: ReferenceData): Promise<vo
   });
   const [firstCategory, ...otherCategories] = categoryStatements;
   if (firstCategory) await db.batch([firstCategory, ...otherCategories]);
+
+  const orphanSlugs = async (
+    table: typeof courseFields | typeof courseCategories | typeof cities,
+    slugs: string[],
+  ) =>
+    (
+      await db
+        .select({ slug: table.slug })
+        .from(table)
+        .where(slugs.length > 0 ? not(inArray(table.slug, slugs)) : undefined)
+    ).map((r) => r.slug);
+
+  return {
+    orphans: {
+      fields: await orphanSlugs(
+        courseFields,
+        data.fields.map((f) => f.slug),
+      ),
+      categories: await orphanSlugs(
+        courseCategories,
+        data.categories.map((c) => c.slug),
+      ),
+      cities: await orphanSlugs(
+        cities,
+        data.cities.map((c) => c.slug),
+      ),
+    },
+  };
 }

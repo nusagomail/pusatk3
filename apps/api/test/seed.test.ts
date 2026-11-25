@@ -67,12 +67,27 @@ describe('seedReferenceData', () => {
     expect(rows.find((r) => r.category === 'ahli-k3-umum')?.field).toBe('k3-umum');
   });
 
-  it('rejects a category whose field is missing', async () => {
+  it('reports rows in the DB that are no longer in the data (never deletes them)', async () => {
     const db = drizzle(env.DB);
+    await seedReferenceData(db, data);
+    const report = await seedReferenceData(db, {
+      ...data,
+      categories: data.categories.filter((c) => c.slug !== 'juru-ikat'),
+    });
+    expect(report.orphans.categories).toEqual(['juru-ikat']);
+    expect((await db.select().from(courseCategories)).length).toBe(59);
+  });
+
+  it('rejects a category whose field is missing before writing anything', async () => {
+    const db = drizzle(env.DB);
+    await env.DB.prepare('DELETE FROM course_categories').run();
+    await env.DB.prepare('DELETE FROM course_fields').run();
+    await env.DB.prepare('DELETE FROM cities').run();
     const bad = {
       ...data,
       categories: data.categories.slice(0, 1).map((c) => ({ ...c, fieldSlug: 'tidak-ada' })),
     };
     await expect(seedReferenceData(db, bad)).rejects.toThrow(/tidak-ada/);
+    expect(await counts(db)).toEqual({ fields: 0, categories: 0, cities: 0 });
   });
 });

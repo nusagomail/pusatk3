@@ -44,7 +44,6 @@ Prasyarat: Node 22.23.4+ (`.nvmrc`) dan pnpm 10.28 (terkunci di `packageManager`
 | `pnpm format` | Rapikan format dengan Prettier |
 | `pnpm typecheck` | `tsc` untuk file root + `turbo run typecheck` per paket |
 | `pnpm test` | Vitest: tes root (`tests/`) + setiap `apps/*`/`packages/*` yang punya `vitest.config.ts` |
-
 | `pnpm db:generate` | Buat file migrasi SQL dari skema Drizzle (`packages/db/migrations`); periksa hasilnya baris demi baris |
 | `pnpm db:migrate:local` | Terapkan migrasi ke D1 **lokal** (`apps/api/.wrangler/state`) |
 | `pnpm db:seed:local` | Isi D1 lokal: 14 bidang + 59 kategori (CSV) + 8 kota contoh; aman diulang |

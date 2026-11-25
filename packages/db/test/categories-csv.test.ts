@@ -95,6 +95,24 @@ describe('parseCategoriesCsv rules', () => {
     expect(parseCategoriesCsv(`${bom}${HEADER}\n${row()}`).categories).toHaveLength(1);
   });
 
+  it.each(['0 th', '99999999999999999999 th'])(
+    'rejects implausible validity %j',
+    (masa_berlaku) => {
+      expect(() => parse(row({ masa_berlaku }))).toThrow(/line 2/);
+    },
+  );
+
+  it('rejects slugs that are not URL-safe', () => {
+    expect(() => parse(row({ slug: 'Bad Slug!' }))).toThrow(/slug/);
+    expect(() => parse(row({ bidang_slug: 'K3 Umum' }))).toThrow(/slug/);
+  });
+
+  it('de-duplicates repeated issuers', () => {
+    expect(parse(row({ penerbit: 'KEMNAKER;KEMNAKER' })).categories[0]?.issuers).toEqual([
+      'kemnaker',
+    ]);
+  });
+
   it('rejects an unknown issuer', () => {
     expect(() => parse(row({ penerbit: 'KEMENKES' }))).toThrow(/issuer/i);
   });

@@ -1,4 +1,4 @@
-import { issuerSchema } from '@pusatk3/shared';
+import { categorySchema, issuerSchema, slugSchema } from '@pusatk3/shared';
 import type { Issuer } from '@pusatk3/shared';
 import { parseCsv } from './csv';
 
@@ -56,14 +56,26 @@ function parseValidity(value: string, line: number): number | null {
 
 /** "KEMNAKER" → "kemnaker"; several issuers may be separated by ";". */
 function parseIssuers(value: string, line: number): Issuer[] {
-  return value.split(';').map((code) => {
+  const issuers = value.split(';').map((code) => {
     const result = issuerSchema.safeParse(code.trim().toLowerCase());
     if (!result.success) throw new Error(`CSV line ${line}: unknown issuer "${code.trim()}"`);
     return result.data;
   });
+  return [...new Set(issuers)];
 }
 
-/** Parses docs/data/kategori-k3.csv into fields (in CSV order) and categories. Throws on bad data. */
+function parseSlug(value: string, column: string, line: number): string {
+  if (!slugSchema.safeParse(value).success) {
+    throw new Error(`CSV line ${line}: ${column} "${value}" is not a valid slug (a-z, 0-9, -)`);
+  }
+  return value;
+}
+
+/**
+ * Parses docs/data/kategori-k3.csv into fields (in CSV order) and categories. Throws on bad data.
+ * "line" in errors is the record number (header = 1), which differs from the physical line only
+ * when a quoted value contains a newline.
+ */
 export function parseCategoriesCsv(text: string): CategoriesSeed {
   const [header, ...rows] = parseCsv(text);
   if (header?.join(',') !== HEADER.join(',')) {
@@ -83,7 +95,7 @@ export function parseCategoriesCsv(text: string): CategoriesSeed {
       if (get(column) === '') throw new Error(`CSV line ${line}: ${column} is empty`);
     }
 
-    const fieldSlug = get('bidang_slug');
+    const fieldSlug = parseSlug(get('bidang_slug'), 'bidang_slug', line);
     const existing = fields.get(fieldSlug);
     if (existing && existing.name !== get('bidang')) {
       throw new Error(`CSV line ${line}: bidang "${fieldSlug}" has two names`);
@@ -91,19 +103,27 @@ export function parseCategoriesCsv(text: string): CategoriesSeed {
     if (!existing)
       fields.set(fieldSlug, { slug: fieldSlug, name: get('bidang'), sortOrder: fields.size + 1 });
 
-    const slug = get('slug');
+    const slug = parseSlug(get('slug'), 'slug', line);
     if (seen.has(slug)) throw new Error(`CSV line ${line}: duplicate category slug "${slug}"`);
     seen.add(slug);
 
-    categories.push({
-      fieldSlug,
+    const category = {
       slug,
       name: get('nama'),
       issuers: parseIssuers(get('penerbit'), line),
       documentType: get('dokumen'),
       typicalValidityYears: parseValidity(get('masa_berlaku'), line),
       regulationRef: get('regulasi'),
-    });
+    };
+    // Same rules as the public API output, so a bad row fails here, not in GET /categories.
+    const check = categorySchema.safeParse(category);
+    if (!check.success) {
+      const issue = check.error.issues[0];
+      throw new Error(
+        `CSV line ${line}: invalid ${issue?.path.join('.') ?? 'row'} (${issue?.message ?? ''})`,
+      );
+    }
+    categories.push({ fieldSlug, ...category });
   });
 
   return { fields: [...fields.values()], categories };

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { categoriesQuerySchema, categoriesResponseSchema } from '../src/index';
+import {
+  categoriesQuerySchema,
+  categoriesResponseSchema,
+  categorySchema,
+  slugSchema,
+} from '../src/index';
 
 const category = {
   slug: 'ahli-k3-umum',
@@ -43,5 +48,22 @@ describe('categoriesQuerySchema', () => {
   it('accepts no parameters and rejects any', () => {
     expect(categoriesQuerySchema.safeParse({}).success).toBe(true);
     expect(categoriesQuerySchema.safeParse({ field: 'k3-umum' }).success).toBe(false);
+  });
+});
+
+describe('slugSchema', () => {
+  it.each(['k3-umum', 'ahli-k3-umum', 'pjk3', 'a1'])('accepts %j', (slug) => {
+    expect(slugSchema.safeParse(slug).success).toBe(true);
+  });
+  it.each(['', 'Bad Slug!', 'K3-umum', '-a', 'a-', 'a--b', 'a_b'])('rejects %j', (slug) => {
+    expect(slugSchema.safeParse(slug).success).toBe(false);
+  });
+});
+
+describe('categorySchema validity', () => {
+  it.each([0, -1, 1.5, 51])('rejects typicalValidityYears %j', (years) => {
+    expect(categorySchema.safeParse({ ...category, typicalValidityYears: years }).success).toBe(
+      false,
+    );
   });
 });

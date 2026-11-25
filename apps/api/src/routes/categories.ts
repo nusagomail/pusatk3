@@ -9,6 +9,8 @@ import { getDb } from '../lib/db';
 import { validateQuery } from '../lib/validate';
 
 // Public (no login). Purge `/api/v1/categories` when reference data changes.
+// Fields without categories are omitted (inner join).
+const byName = new Intl.Collator('id');
 export const categoriesRoutes = new Hono<AppEnv>().get(
   '/categories',
   validateQuery(categoriesQuerySchema),
@@ -35,12 +37,13 @@ export const categoriesRoutes = new Hono<AppEnv>().get(
       fields.set(fieldSlug, field);
     }
     for (const field of fields.values()) {
-      field.categories.sort((a, b) => a.name.localeCompare(b.name));
+      field.categories.sort((a, b) => byName.compare(a.name, b.name) || (a.slug < b.slug ? -1 : 1));
     }
 
     // Explicit output schema: only documented fields leave the API.
     const body = categoriesResponseSchema.parse({ items: [...fields.values()] });
-    c.header('Cache-Control', PUBLIC_REFERENCE_CACHE);
+    // An empty list means the database is not seeded yet: never let the edge keep it.
+    c.header('Cache-Control', body.items.length > 0 ? PUBLIC_REFERENCE_CACHE : 'no-store');
     return c.json(body);
   },
 );
