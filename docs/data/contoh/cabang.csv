@@ -1,0 +1,6 @@
+penyedia_slug,nama,kota_slug,alamat,lat,lng,kantor_pusat
+contoh-mitra-k3-jakarta,Kantor Pusat Jakarta,jakarta,"Jl. Contoh Raya No. 1, Jakarta Selatan (alamat fiktif)",,,ya
+contoh-mitra-k3-jakarta,Cabang Bekasi,bekasi,"Jl. Contoh Industri No. 2, Bekasi (alamat fiktif)",,,tidak
+contoh-lsp-k3-nusantara,Kantor LSP Jakarta,jakarta,"Jl. Contoh Kompetensi No. 3, Jakarta Pusat (alamat fiktif)",,,ya
+contoh-tuk-k3-tangerang,TUK Tangerang,tangerang,"Jl. Contoh Uji No. 4, Tangerang (alamat fiktif)",,,ya
+contoh-pusat-pelatihan-k3-bekasi,Kampus Bekasi,bekasi,"Jl. Contoh Pelatihan No. 5, Bekasi (alamat fiktif)",,,ya

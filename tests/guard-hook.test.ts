@@ -31,6 +31,7 @@ describe('guard hook: remote database access is blocked', () => {
     'pnpm db:migrate:local --remote',
     'pnpm --filter @pusatk3/api db:migrate:local -- --remote',
     'pnpm db:seed:local --remote',
+    'pnpm db:import:local -- --remote',
     'cd apps/api && pnpm db:migrate:local -- --no-local --remote',
   ])('blocks %j', (command) => {
     expect(bash(command)).toBe(2);
@@ -152,6 +153,7 @@ describe('guard hook: everyday commands are allowed', () => {
   it.each([
     'pnpm db:migrate:local',
     'pnpm db:seed:local',
+    'pnpm db:import:local',
     'pnpm exec wrangler d1 migrations apply DB --local',
     'pnpm exec wrangler d1 execute DB --local --command "select 1"',
     'pnpm exec wrangler deploy --dry-run --env staging --outdir /tmp/out',

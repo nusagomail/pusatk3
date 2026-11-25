@@ -7,7 +7,8 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json && tsc -p tsconfig.scripts.json",
     "test": "vitest run",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
-    "db:seed:local": "tsx scripts/seed-local.ts"
+    "db:seed:local": "tsx scripts/seed-local.ts",
+    "db:import:local": "tsx scripts/import-sql.ts --dir ../../docs/data/contoh --sample --out .wrangler/import/contoh.sql && wrangler d1 execute DB --local --file .wrangler/import/contoh.sql"
   },
   "dependencies": {
     "@pusatk3/db": "workspace:*",

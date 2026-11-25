@@ -62,7 +62,7 @@ if [[ "$tool" == "Bash" ]]; then
   if has "$D1" && has "(^|[[:space:]])(create|delete|info|list|insights|time-travel)([^[:alnum:]_-]|$)"; then
     block "subperintah D1 ini selalu bekerja pada database remote; hanya lewat CI/pemilik."
   fi
-  if { has "$D1" || has 'db:(migrate|seed|generate)'; } && has "$REMOTE"; then
+  if { has "$D1" || has 'db:(migrate|seed|generate|import)'; } && has "$REMOTE"; then
     block "operasi D1 remote hanya lewat CI."
   fi
   # Any dev session with --remote or its alias -r (`pnpm dev` runs `wrangler dev` without the word).

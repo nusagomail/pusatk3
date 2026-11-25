@@ -20,7 +20,7 @@ Status: Fase 0 **selesai** (25 November 2026). PR lolos CI termasuk e2e; staging
 ## Fase 1 — Direktori publik
 
 - [ ] Skema: penyedia, cabang, kategori pelatihan, jadwal, legalitas
-- [ ] Skrip impor data hasil kurasi (CSV → D1) dengan deduplikasi
+- [x] Skrip impor data hasil kurasi (CSV → D1) dengan deduplikasi (#22; data contoh Jabodetabek, data asli menyusul)
 - [ ] Halaman: beranda, hasil pencarian, detail jadwal, profil penyedia
 - [ ] Pencarian dengan filter + sinonim K3; sinkronisasi index
 - [ ] Halaman SEO kota × jenis pelatihan (hanya terbit jika data cukup), sitemap, schema.org

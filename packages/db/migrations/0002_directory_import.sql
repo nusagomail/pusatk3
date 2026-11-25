@@ -1,0 +1,2 @@
+ALTER TABLE `providers` ADD `is_sample` integer DEFAULT false NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX `schedules_natural_key_unique` ON `schedules` (`provider_id`,`category_id`,`start_date`,`title`);

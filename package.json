@@ -16,7 +16,8 @@
     "test:e2e": "turbo run build --filter=@pusatk3/web && playwright test",
     "db:generate": "pnpm --filter @pusatk3/db db:generate",
     "db:migrate:local": "pnpm --filter @pusatk3/api db:migrate:local",
-    "db:seed:local": "pnpm --filter @pusatk3/api db:seed:local"
+    "db:seed:local": "pnpm --filter @pusatk3/api db:seed:local",
+    "db:import:local": "pnpm --filter @pusatk3/api db:import:local"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

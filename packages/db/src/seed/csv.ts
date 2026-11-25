@@ -1,11 +1,29 @@
-/** Minimal RFC 4180 CSV reader: quoted fields, escaped quotes (""), CRLF/LF, BOM. */
-export function parseCsv(text: string): string[][] {
+/** One CSV record and the physical line (1-based) where it starts. */
+export interface CsvRecord {
+  line: number;
+  cells: string[];
+}
+
+/**
+ * Minimal RFC 4180 CSV reader: quoted fields (may span lines), escaped quotes (""), CRLF/LF,
+ * BOM. Blank lines are skipped; `line` keeps the real line number for error messages.
+ */
+export function parseCsvRecords(text: string): CsvRecord[] {
   const BOM = String.fromCharCode(0xfeff);
   const input = text.startsWith(BOM) ? text.slice(1) : text;
-  const rows: string[][] = [];
+  const records: CsvRecord[] = [];
   let row: string[] = [];
   let field = '';
   let inQuotes = false;
+  let line = 1;
+  let recordLine = 1;
+
+  const endRecord = () => {
+    row.push(field);
+    records.push({ line: recordLine, cells: row });
+    row = [];
+    field = '';
+  };
 
   for (let i = 0; i < input.length; i++) {
     const ch = input[i];
@@ -16,6 +34,7 @@ export function parseCsv(text: string): string[][] {
       } else if (ch === '"') {
         inQuotes = false;
       } else {
+        if (ch === '\n') line++;
         field += ch;
       }
     } else if (ch === '"' && field === '') {
@@ -25,18 +44,19 @@ export function parseCsv(text: string): string[][] {
       field = '';
     } else if (ch === '\n' || ch === '\r') {
       if (ch === '\r' && input[i + 1] === '\n') i++;
-      row.push(field);
-      rows.push(row);
-      row = [];
-      field = '';
+      endRecord();
+      line++;
+      recordLine = line;
     } else {
       field += ch;
     }
   }
   if (inQuotes) throw new Error('CSV: unterminated quote');
-  if (field !== '' || row.length > 0) {
-    row.push(field);
-    rows.push(row);
-  }
-  return rows.filter((r) => !(r.length === 1 && r[0] === ''));
+  if (field !== '' || row.length > 0) endRecord();
+  return records.filter((r) => !(r.cells.length === 1 && r.cells[0] === ''));
+}
+
+/** Records without line numbers (see `parseCsvRecords`). */
+export function parseCsv(text: string): string[][] {
+  return parseCsvRecords(text).map((r) => r.cells);
 }

@@ -62,6 +62,8 @@ export const providers = sqliteTable(
     verifiedAt: integer('verified_at', { mode: 'timestamp_ms' }),
     /** Subscription plan; never affects the verification badge or organic ranking. */
     plan: text('plan', { enum: PLAN_CODE_VALUES }).notNull().default('free'),
+    /** Sample data (staging/local only): always labelled "Contoh" in the UI (owner decision, #22). */
+    isSample: integer('is_sample', { mode: 'boolean' }).notNull().default(false),
   },
   (t) => [
     check('providers_type_check', oneOf(t.type, PROVIDER_TYPE_VALUES)),
@@ -186,6 +188,13 @@ export const schedules = sqliteTable(
     }),
     // Public listings: published schedules by date; provider and category pages.
     index('schedules_status_start_date_idx').on(t.status, t.startDate),
+    // Natural key for imports: one schedule per provider, category, start date and title.
+    uniqueIndex('schedules_natural_key_unique').on(
+      t.providerId,
+      t.categoryId,
+      t.startDate,
+      t.title,
+    ),
     index('schedules_provider_id_idx').on(t.providerId),
     index('schedules_category_id_idx').on(t.categoryId),
     index('schedules_branch_id_idx').on(t.branchId),

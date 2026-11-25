@@ -64,6 +64,7 @@ describe('schema matches docs/skema-db.md', () => {
         ...base,
         'description',
         'email',
+        'is_sample',
         'logo_key',
         'name',
         'phone',
