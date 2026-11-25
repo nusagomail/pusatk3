@@ -41,5 +41,18 @@ export default defineConfig(
     files: ['*.{js,ts}', 'tests/**/*.ts', '{apps,packages}/*/*.config.{js,ts}'],
     languageOptions: { globals: { ...globals.node } },
   },
+  {
+    // Workers runtime: no Node globals (no nodejs_compat). Use bindings from `c.env`.
+    files: ['apps/api/src/**/*.ts'],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        ...['process', 'Buffer', 'require', '__dirname', '__filename', 'global'].map((name) => ({
+          name,
+          message: 'Not available in Cloudflare Workers; use bindings from c.env.',
+        })),
+      ],
+    },
+  },
   prettier,
 );

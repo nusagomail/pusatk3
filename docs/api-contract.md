@@ -24,12 +24,19 @@
 - Otorisasi: middleware `requireUser`, `requireProviderRole(providerId, ['owner','admin'])`, `requireAdmin(role)`. **Selalu ambil `providerId` dari data di database, bukan dari body.**
 - Rate limiting per IP + per user di endpoint auth, lead, dan pencarian.
 
+## Perilaku umum (`apps/api`)
+
+- Setiap respons membawa `X-Request-Id` (dipakai ulang dari klien hanya bila aman, selain itu dibuat baru) dan header keamanan: `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Strict-Transport-Security: max-age=31536000; includeSubDomains`, `X-Frame-Options: DENY`, `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`.
+- Rute tak dikenal atau metode salah → 404 `NOT_FOUND`. JSON rusak → 400 `BAD_REQUEST`. Input gagal Zod → 422 `VALIDATION_ERROR` + `fields` (helper `validateJson`/`validateQuery`). Error tak terduga → 500 `INTERNAL_ERROR` tanpa detail; log hanya request id + nama error.
+- Penjaga `requireUser`, `requireProviderRole(roles, resolveProviderId)`, `requireAdmin(roles)` saat ini **selalu menolak 401** sampai auth dibuat (Fase 2). `resolveProviderId` mengambil penyedia pemilik dari database (mis. jadwal → `provider_id`), bukan dari body/query.
+- CORS belum dibuka; diputuskan saat web dan API disambungkan.
+
 ## Endpoint awal
 
 ### Publik (tanpa login, dapat di-cache)
 | Metode | Path | Fungsi |
 | --- | --- | --- |
-| GET | `/health` | Cek layanan |
+| GET | `/health` | Cek layanan: `{ "status": "ok", "version": "<sha commit / dev>" }`, `Cache-Control: no-store` (`healthResponseSchema`) |
 | GET | `/search` | Cari jadwal/penyedia (q, city, category, mode, issuer, month, priceMin, priceMax) |
 | GET | `/schedules/:id` | Detail jadwal |
 | GET | `/providers/:slug` | Profil publik penyedia |
