@@ -35,6 +35,8 @@ describe('Button', () => {
     expect(source).toMatch(/\.btn--primary\s*\{[^}]*background:\s*var\(--color-accent\)/);
     expect(source).toMatch(/\.btn--primary\s*\{[^}]*color:\s*var\(--color-on-accent\)/);
     expect(source).toMatch(/min-height:\s*var\(--touch-target\)/);
+    // Native button styling must never override theme colours (seen when the theme switches).
+    expect(source).toMatch(/\.btn\s*\{[^}]*appearance:\s*none/);
   });
 });
 
