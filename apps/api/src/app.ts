@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { requestId } from 'hono/request-id';
+import { secureHeaders } from 'hono/secure-headers';
 import type { AppEnv } from './env';
 import { notFound, onError } from './middleware/errors';
 import { healthRoutes } from './routes/health';
@@ -16,6 +17,15 @@ export interface CreateAppOptions {
 export function createApp(options: CreateAppOptions = {}) {
   const app = new Hono<AppEnv>();
   app.use(requestId());
+  // JSON-only API: nothing may load from it or frame it (docs/keamanan.md).
+  app.use(
+    secureHeaders({
+      contentSecurityPolicy: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] },
+      referrerPolicy: 'no-referrer',
+      strictTransportSecurity: 'max-age=31536000; includeSubDomains',
+      xFrameOptions: 'DENY',
+    }),
+  );
   // Hono only routes `Error` instances to onError; normalise anything else thrown.
   app.use(async (_c, next) => {
     try {
