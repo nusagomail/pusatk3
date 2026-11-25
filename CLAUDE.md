@@ -18,6 +18,7 @@ Bahasa produk: Indonesia (utama) dan Inggris. Tulis kode, nama variabel, dan com
 | `docs/glosarium-k3.md` | Istilah K3 (AK3U, SIO, PJK3, LSP, TUK, dll.) |
 | `docs/kategori-k3.md` | 14 bidang & 59 kategori sertifikasi K3 resmi + penerbit + regulasi |
 | `docs/workflow.md` | Cara kerja per issue, gerbang persetujuan manusia |
+| `docs/onboarding.md`, `docs/akses.md` | Panduan developer manusia; daftar akun dan akses |
 | `docs/bisnis.md` | Model bisnis, paket, risiko (hasil brainstorming) |
 | `docs/ui-halaman.md` | Spesifikasi tiap halaman berdasarkan mockup |
 | `docs/adr/` | Keputusan teknis beserta alasannya |
@@ -29,7 +30,7 @@ Jika instruksi di sini bertentangan dengan `docs/`, ikuti `docs/` dan laporkan k
 - Monorepo pnpm + Turborepo: `apps/web` (Astro), `apps/api` (Hono di Cloudflare Workers), `packages/shared` (tipe + skema Zod), nanti `apps/mobile` (Expo).
 - Database: Cloudflare D1 via Drizzle ORM. Pencarian: Meilisearch/Typesense. File: R2. Background: Queues + Cron Triggers.
 - Auth: tanpa password (Google + email OTP), 2FA wajib untuk penyedia dan admin.
-- Deploy: Cloudflare, lewat GitHub Actions. Lingkungan: `staging` dan `production`.
+- Deploy: Cloudflare. `staging` otomatis dari setiap commit di `main` lewat Cloudflare Workers Builds (ADR 0015); `production` manual lewat GitHub Actions dengan persetujuan pemilik (ADR 0012). Akun Cloudflare dipakai bersama proyek lain (ADR 0016): jangan sentuh resource selain `pusatk3-*`.
 
 ## Perintah
 
@@ -48,8 +49,9 @@ Prasyarat: Node 22.23.4+ (`.nvmrc`) dan pnpm 10.28 (terkunci di `packageManager`
 | `pnpm db:generate` | Buat file migrasi SQL dari skema Drizzle (`packages/db/migrations`); periksa hasilnya baris demi baris |
 | `pnpm db:migrate:local` | Terapkan migrasi ke D1 **lokal** (`apps/api/.wrangler/state`) |
 | `pnpm db:seed:local` | Isi D1 lokal: 14 bidang + 59 kategori (CSV) + 8 kota contoh; aman diulang |
+| `pnpm db:import:local` | Impor data referensi + data contoh Jabodetabek (`docs/data/contoh/`, format `docs/data/README.md`) ke D1 lokal; aman diulang |
 
-Migrasi ke D1 staging/production hanya lewat CI, tidak pernah dari sesi ini. Di sesi cloud, Chromium untuk Playwright sudah terpasang: jangan jalankan `playwright install` (CI memasangnya sendiri). Hentikan `pnpm dev` sebelum `pnpm test:e2e`: tes selalu menyalakan server sendiri dan gagal bila port 4322/8787 terpakai.
+Migrasi ke D1 staging/production hanya lewat pipeline deploy (Workers Builds untuk staging, GitHub Actions untuk production), tidak pernah dari sesi ini. Jangan push langsung ke `main`: setiap commit di `main` langsung di-deploy ke staging. Di sesi cloud, Chromium untuk Playwright sudah terpasang: jangan jalankan `playwright install` (CI memasangnya sendiri). Hentikan `pnpm dev` sebelum `pnpm test:e2e`: tes selalu menyalakan server sendiri dan gagal bila port 4322/8787 terpakai.
 
 Setiap app/paket baru wajib `"private": true`, punya skrip `typecheck` dan `test`, dan punya `vitest.config.ts` agar tesnya ikut dijalankan `pnpm test` (dijaga `tests/workspace.test.ts`). Syarat lain per app: `apps/README.md`.
 

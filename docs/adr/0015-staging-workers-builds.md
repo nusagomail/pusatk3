@@ -1,6 +1,6 @@
 # ADR 0015: Deploy staging lewat Cloudflare Workers Builds
 
-Status: diterima · 25 November 2026 · keputusan pemilik ("ribet, beresin aja"). Menggantikan bagian staging dari ADR 0012.
+Status: diterima · 25 November 2026 · keputusan pemilik ("ribet, beresin aja"). Menggantikan bagian staging dari ADR 0012. Langkah impor data contoh ditambahkan di #22 (ADR 0017).
 
 ## Konteks
 Deploy staging lewat GitHub Actions (ADR 0012) butuh token Cloudflare yang disimpan sebagai secret environment GitHub. Pemilik memilih menghubungkan repo langsung ke Cloudflare (Workers Builds), sehingga tidak ada token yang perlu disalin ke GitHub.
@@ -10,7 +10,7 @@ Deploy staging lewat GitHub Actions (ADR 0012) butuh token Cloudflare yang disim
 
   | Worker | Folder | Build | Deploy |
   | --- | --- | --- | --- |
-  | `pusatk3-api-staging` | `apps/api` | `true` | `npx wrangler d1 migrations apply DB --env staging --remote && npx wrangler deploy --env staging --var APP_VERSION:$(git rev-parse HEAD) && curl -sf --retry 6 --retry-delay 5 --retry-all-errors https://pusatk3-api-staging.nusagomail.workers.dev/api/v1/health` |
+  | `pusatk3-api-staging` | `apps/api` | `true` | `npx wrangler d1 migrations apply DB --env staging --remote && npx tsx scripts/import-sql.ts --dir ../../docs/data/contoh --sample --out .wrangler/import/contoh.sql && npx wrangler d1 execute DB --env staging --remote --file .wrangler/import/contoh.sql && npx wrangler deploy --env staging --var APP_VERSION:$(git rev-parse HEAD) && curl -sf --retry 6 --retry-delay 5 --retry-all-errors https://pusatk3-api-staging.nusagomail.workers.dev/api/v1/health` |
   | `pusatk3-web-staging` | `apps/web` | `pnpm run build` dengan variabel build `CLOUDFLARE_ENV=staging` | `node -e "process.exit(require('./dist/client/wrangler.json').name==='pusatk3-web-staging'?0:1)" && grep -q 'X-Robots-Tag: noindex' dist/client/_headers && npx wrangler deploy` |
 
   Keduanya: `branch_includes: ["main"]`, tanpa build cabang lain/PR, *watch paths* `*` (seluruh repo, sehingga perubahan `packages/` ikut memicu build). Deploy web gagal bila hasil build bukan untuk `pusatk3-web-staging` atau tidak `noindex`; deploy API diakhiri uji asap health.
