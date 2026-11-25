@@ -1,0 +1,22 @@
+# Generated
+node_modules/
+dist/
+.astro/
+.wrangler/
+.turbo/
+coverage/
+playwright-report/
+test-results/
+pnpm-lock.yaml
+
+# Owner documents and assets: never reformat automatically
+docs/**/*.md
+docs/mockup/
+docs/model/
+docs/data/
+/brand/
+/.claude/
+/.github/*.md
+/.github/ISSUE_TEMPLATE/
+/CLAUDE.md
+/README.md
