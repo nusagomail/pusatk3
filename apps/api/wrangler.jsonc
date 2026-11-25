@@ -1,0 +1,10 @@
+// Local development only. Staging/production environments and bindings: issue #7.
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "pusatk3-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "vars": {
+    "APP_VERSION": "dev",
+  },
+}
