@@ -12,6 +12,8 @@ export const requestId: MiddlewareHandler<AppEnv> = async (c, next) => {
   c.set('requestId', id);
   await next();
   c.res.headers.set(REQUEST_ID_HEADER, id);
+  // JSON API: never indexed by search engines, in any environment (ADR 0011).
+  c.res.headers.set('X-Robots-Tag', 'noindex');
 };
 
 /**

@@ -28,7 +28,7 @@
 
 ## Perilaku umum (`apps/api`)
 
-- Setiap respons (termasuk error, redirect, dan `Response` mentah dari handler) membawa `X-Request-Id` (selalu dibuat server, `X-Request-Id` dari klien diabaikan) dan header keamanan: `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Strict-Transport-Security: max-age=31536000; includeSubDomains`, `X-Frame-Options: DENY`, `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`.
+- Setiap respons (termasuk error, redirect, dan `Response` mentah dari handler) membawa `X-Request-Id` (selalu dibuat server, `X-Request-Id` dari klien diabaikan) dan header keamanan: `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Strict-Transport-Security: max-age=31536000; includeSubDomains`, `X-Frame-Options: DENY`, `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`, `X-Robots-Tag: noindex` (JSON tidak pernah diindeks).
 - Rute tak dikenal atau metode salah → 404 `NOT_FOUND`. Body bukan JSON → 415 (juga menutup celah CSRF lewat `text/plain`). JSON rusak → 400 `BAD_REQUEST`. `HTTPException` 4xx lain → 400, tidak pernah 500. Input gagal Zod → 422 `VALIDATION_ERROR` + `fields` (helper `validateJson`/`validateQuery`; kunci query yang berulang menjadi array dan ditolak skema skalar). Error tak terduga → 500 `INTERNAL_ERROR` tanpa detail; log hanya request id + nama error.
 - Penjaga `requireUser`, `requireProviderRole(roles, resolveProviderId)`, `requireAdmin(roles)` saat ini **selalu menolak 401** sampai auth dibuat (Fase 2). `resolveProviderId` mengambil penyedia pemilik dari database (mis. jadwal → `provider_id`), bukan dari body/query.
 - CORS belum dibuka; diputuskan saat web dan API disambungkan.

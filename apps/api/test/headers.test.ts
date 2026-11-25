@@ -34,6 +34,8 @@ describe.each(Object.entries(paths))('security headers on %s', (_name, path) => 
       "default-src 'none'; frame-ancestors 'none'",
     );
     expect(res.headers.get('x-powered-by')).toBeNull();
+    // JSON API: never indexed, in any environment.
+    expect(res.headers.get('x-robots-tag')).toBe('noindex');
     vi.restoreAllMocks();
   });
 

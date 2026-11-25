@@ -1,0 +1,8 @@
+# Local secrets for `pnpm dev` (copy to .dev.vars, which is git-ignored). NEVER commit real values.
+# Non-secret settings live in wrangler.jsonc `vars` (APP_VERSION) and are not repeated here.
+# Staging/production secrets are set by the owner (Cloudflare dashboard / CI), never in files.
+#
+# No secrets are needed yet. Planned (Fase 2):
+# RESEND_API_KEY=        # email OTP (Fase 2)
+# GOOGLE_CLIENT_SECRET=  # Google sign-in (Fase 2)
+# TWO_FACTOR_ENCRYPTION_KEY=  # encrypts 2FA secrets at rest (Fase 2)

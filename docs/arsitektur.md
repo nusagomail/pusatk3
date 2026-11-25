@@ -45,9 +45,13 @@ Layanan pihak ketiga: Meilisearch/Typesense (pencarian), Resend (email), Midtran
 
 ## Lingkungan
 
-- `local`: wrangler dev + D1 lokal
-- `staging`: deploy otomatis dari `main`
-- `production`: deploy manual dengan persetujuan pemilik
+| Lingkungan | API | Web | Database | Diindeks | Deploy |
+| --- | --- | --- | --- | --- | --- |
+| `local` | `pnpm dev` (127.0.0.1:8787) | `pnpm dev` (localhost:4321) | D1 lokal (`.wrangler/`) | tidak | — |
+| `staging` | `pusatk3-api-staging` (`*.workers.dev`) | `pusatk3-web-staging` (`*.workers.dev`) | `pusatk3-staging` | tidak (`noindex`) | otomatis dari `main` (CI, #8) |
+| `production` | `pusatk3-api-production` (`pusatk3.id/api/*`) | `pusatk3-web-production` (`pusatk3.id/*`) | `pusatk3-production` | ya | manual, persetujuan pemilik |
+
+Konfigurasi: `apps/{api,web}/wrangler.jsonc` (`env.staging`, `env.production`). Keputusan: ADR 0011. Langkah pemilik (domain, resource production, secret): `docs/setup-cloudflare.md`.
 
 ## Keputusan
 

@@ -1,7 +1,9 @@
 import { createHash } from 'node:crypto';
+import { readFile, writeFile } from 'node:fs/promises';
 import cloudflare from '@astrojs/cloudflare';
 import { defineConfig } from 'astro/config';
 import type { AstroIntegration } from 'astro';
+import { isProductionDeploy, withNoindexHeaders } from './src/lib/deploy';
 import { mediaOrigin } from './src/lib/media';
 import { THEME_INIT_SCRIPT } from './src/lib/theme';
 
@@ -20,6 +22,20 @@ const devOnlyPages: AstroIntegration = {
 // Intro video bucket URL: one source (the build environment, e.g. CI) for both the page and
 // the CSP, so they can never disagree. A .env file is deliberately not used for this value.
 const mediaBaseUrl = process.env.PUBLIC_MEDIA_BASE_URL ?? '';
+
+// Single source for the target environment: CLOUDFLARE_ENV (also read by the Cloudflare adapter
+// to pick the wrangler env). Only "production" builds are indexable (ADR 0011).
+const deployEnv = process.env.CLOUDFLARE_ENV ?? '';
+const noindexOutsideProduction: AstroIntegration = {
+  name: 'pusatk3:noindex-outside-production',
+  hooks: {
+    'astro:build:done': async ({ dir }) => {
+      if (isProductionDeploy(deployEnv)) return;
+      const file = new URL('_headers', dir);
+      await writeFile(file, withNoindexHeaders(await readFile(file, 'utf8')));
+    },
+  },
+};
 const videoOrigin = mediaOrigin(mediaBaseUrl);
 
 // Astro hashes bundled scripts, but not the hand-inlined theme script in <head>.
@@ -50,11 +66,13 @@ export default defineConfig({
       scriptDirective: { hashes: [themeScriptHash] },
     },
   },
-  integrations: [devOnlyPages],
+  integrations: [devOnlyPages, noindexOutsideProduction],
   // Never inline assets as data: URIs (small font files would be blocked by the CSP).
   vite: {
     build: { assetsInlineLimit: 0 },
-    define: { 'import.meta.env.PUBLIC_MEDIA_BASE_URL': JSON.stringify(mediaBaseUrl) },
+    define: {
+      'import.meta.env.PUBLIC_MEDIA_BASE_URL': JSON.stringify(mediaBaseUrl),
+    },
   },
   adapter: cloudflare({
     // Local bindings only; never proxy to remote resources during dev/build.

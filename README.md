@@ -10,6 +10,7 @@ Direktori independen pelatihan & sertifikasi K3 di Indonesia — [pusatk3.id](ht
 - Rencana kerja: [`docs/roadmap.md`](docs/roadmap.md)
 - Arsitektur: [`docs/arsitektur.md`](docs/arsitektur.md)
 - **Setup pertama kali:** [`docs/setup-claude-code.md`](docs/setup-claude-code.md)
+- **Cloudflare (domain, resource production, secret):** [`docs/setup-cloudflare.md`](docs/setup-cloudflare.md)
 - Cara kerja dengan Claude Code: [`docs/workflow.md`](docs/workflow.md) dan [`CLAUDE.md`](CLAUDE.md)
 - Model bisnis: [`docs/bisnis.md`](docs/bisnis.md)
 - Tampilan: [`docs/ui-halaman.md`](docs/ui-halaman.md), mockup di [`docs/mockup/`](docs/mockup/), logo di [`brand/`](brand/)

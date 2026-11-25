@@ -1,13 +1,32 @@
-// Local/build configuration for the web Worker. staging/production environments: issue #7.
+// Web Worker (Astro static assets). Top level = local build/preview. Deploys only from CI (#8):
+// build with CLOUDFLARE_ENV=<env> (only the production build is indexable).
+// Wrangler does NOT inherit routes or vars into environments: declare them per env.
+// See docs/adr/0011-lingkungan-cloudflare.md.
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "pusatk3-web",
   "compatibility_date": "2026-11-01",
-  // No public *.workers.dev URL until environments are set up (#7).
   "workers_dev": false,
   "preview_urls": false,
   // Unknown paths get the static 404 page (src/pages/404.astro) instead of an empty body.
   "assets": { "not_found_handling": "404-page" },
-  // Off until #7 decides log retention: invocation logs include full URLs (possible PII).
+  // Invocation logs include full URLs (possible personal data): off unless stated per env.
   "observability": { "enabled": false },
+  "env": {
+    "staging": {
+      "name": "pusatk3-web-staging",
+      // Owner decision 1A: staging on *.workers.dev until pusatk3.id is on Cloudflare.
+      "workers_dev": true,
+      "preview_urls": false,
+      "observability": { "enabled": true },
+    },
+    "production": {
+      "name": "pusatk3-web-production",
+      "workers_dev": false,
+      "preview_urls": false,
+      "observability": { "enabled": false },
+      // Needs the pusatk3.id zone on Cloudflare (docs/setup-cloudflare.md).
+      "routes": [{ "pattern": "pusatk3.id/*", "zone_name": "pusatk3.id" }],
+    },
+  },
 }
