@@ -6,6 +6,26 @@
 - **Edge-cache halaman publik:** sebagian besar trafik dilayani dari CDN; database hanya untuk yang dinamis.
 - **Satu sumber data:** jadwal diperbarui sekali, tampil di direktori, profil, dan website instan.
 
+## Peta sistem
+
+```mermaid
+flowchart LR
+  dev["Developer / Claude Code"] -->|branch + PR| gh["GitHub<br/>nusagomail/pusatk3"]
+  gh -->|setiap PR| ci["GitHub Actions: ci.yml<br/>lint, typecheck, test, build, e2e"]
+  ci -->|hijau = boleh merge| main["cabang main<br/>(dilindungi ruleset)"]
+  main -->|setiap commit| wb["Cloudflare Workers Builds"]
+  wb -->|migrasi + deploy| apiS["pusatk3-api-staging"]
+  wb -->|build CLOUDFLARE_ENV=staging + deploy| webS["pusatk3-web-staging"]
+  apiS --> d1S[("D1 pusatk3-staging")]
+  main -.->|manual, persetujuan pemilik<br/>deploy-production.yml| prod["pusatk3-api/web-production<br/>pusatk3.id (belum aktif)"]
+  prod -.-> d1P[("D1 pusatk3-production<br/>(belum dibuat)")]
+  user["Pengunjung"] -->|halaman| webS
+  webS -.->|data (Fase 1)| apiS
+  apiS -.-> r2[("R2 media")]
+```
+
+Garis putus-putus = belum aktif. Staging: https://pusatk3-web-staging.nusagomail.workers.dev (web) dan https://pusatk3-api-staging.nusagomail.workers.dev/api/v1/health (API). Semua resource ada di satu akun Cloudflare yang juga dipakai selfgrow (keputusan pemilik B, `docs/akses.md`).
+
 ## Struktur repo
 
 ```

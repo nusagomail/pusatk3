@@ -2,10 +2,11 @@
 
 Direktori independen pelatihan & sertifikasi K3 di Indonesia — [pusatk3.id](https://pusatk3.id).
 
-> Status: Fase 0 (fondasi). Kerangka monorepo sudah ada; aplikasi belum dibuat.
+> Status: Fase 0 (fondasi) selesai; Fase 1 (direktori publik) berjalan. Staging: https://pusatk3-web-staging.nusagomail.workers.dev
 
 ## Mulai dari mana
 
+- **Developer baru:** mulai dari [`docs/onboarding.md`](docs/onboarding.md); akses dan akun: [`docs/akses.md`](docs/akses.md)
 - Gambaran produk: [`docs/prd.md`](docs/prd.md)
 - Rencana kerja: [`docs/roadmap.md`](docs/roadmap.md)
 - Arsitektur: [`docs/arsitektur.md`](docs/arsitektur.md)

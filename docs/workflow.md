@@ -2,7 +2,7 @@
 
 Proses kerja memakai plugin **Superpowers** (brainstorming → rencana → TDD → review → selesai). Aturan khusus PusatK3 ada di `CLAUDE.md`, `docs/`, hooks pengaman, subagent `reviewer`, dan skill proyek. Jika Superpowers dan dokumen proyek berbeda pendapat, **aturan proyek yang menang**.
 
-Cara memasang semuanya: `docs/setup-claude-code.md`.
+Cara memasang semuanya: `docs/setup-claude-code.md`. Developer manusia: `docs/onboarding.md`.
 
 ## Satu issue, satu sesi
 

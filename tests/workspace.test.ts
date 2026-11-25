@@ -28,6 +28,13 @@ function workspacePackageFiles(): string[] {
 }
 
 describe('workspace', () => {
+  it('only installs npm releases that are at least 3 days old (supply-chain guard, ADR 0011)', () => {
+    // Compromised packages are usually caught and pulled within hours or days.
+    const config = readFileSync(join(root, 'pnpm-workspace.yaml'), 'utf8');
+    const minutes = Number(/^minimumReleaseAge: (\d+)$/m.exec(config)?.[1]);
+    expect(minutes).toBeGreaterThanOrEqual(3 * 24 * 60);
+  });
+
   it('root package pins pnpm and Node 22', () => {
     const pkg = readJson(join(root, 'package.json'));
     expect(pkg.private).toBe(true);

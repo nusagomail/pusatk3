@@ -7,3 +7,7 @@ packages:
 onlyBuiltDependencies:
   - esbuild
   - workerd
+# Supply-chain guard: resolve only npm releases at least 3 days old (in minutes). Compromised
+# packages are usually pulled within hours or days. Staging builds run with an account-wide
+# Cloudflare token in a shared account (owner decision B, ADR 0011/0015).
+minimumReleaseAge: 4320
