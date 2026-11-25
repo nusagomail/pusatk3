@@ -24,7 +24,7 @@ Status 25 November 2026:
 
 1. Dashboard → **Storage & Databases → D1 → Create** → nama `pusatk3-production`, lokasi **Asia-Pacific**.
 2. Salin **Database ID**.
-3. Di `apps/api/wrangler.jsonc`, ganti `ISI-ID-D1-PRODUCTION-OLEH-PEMILIK` dengan ID tersebut (lewat PR; ID database bukan rahasia).
+3. Di `apps/api/wrangler.jsonc`, ganti `ISI-ID-D1-PRODUCTION-OLEH-PEMILIK` dengan ID tersebut (lewat PR; ID database bukan rahasia). Tes dan pemeriksaan rilis menerima ID berformat UUID yang berbeda dari ID staging.
 
 ## 3. Buat penyimpanan video production (R2)
 
@@ -35,21 +35,31 @@ Status 25 November 2026:
 
 Untuk staging: bucket `pusatk3-media-staging` sudah ada tetapi belum bisa diakses publik. Untuk menampilkan video di staging, aktifkan **Public Development URL (r2.dev)** di bucket itu dan unggah video yang sama, atau minta Claude Code melakukannya (perlu persetujuan Anda). URL r2.dev dibatasi lajunya dan hanya untuk staging, bukan production.
 
-## 4. Secret untuk GitHub Actions (#8)
+## 4. Environment dan secret GitHub Actions (#8)
 
-Akun Cloudflare ini juga berisi proyek lain, dan izin token Workers/D1 berlaku untuk seluruh akun. Karena itu:
+**Urutan penting: lindungi environment dulu, baru isi secret.** Secret environment tersedia untuk workflow dari branch mana pun yang menyebut environment itu, kecuali environment dibatasi ke `main`. Yang benar-benar menjaga deploy adalah pengaturan environment ini, bukan isi file workflow.
 
-1. **Dua token terpisah**, masing-masing dengan izin minimal: *Account → Workers Scripts: Edit*, *Account → D1: Edit*, *Account → Account Settings: Read*. Token production juga *Zone → Workers Routes: Edit* untuk zona `pusatk3.id` (baru bisa dipilih setelah langkah 1 selesai; buat token staging dulu, token production setelah domain aktif).
-2. Di GitHub → repo → **Settings → Environments**, buat environment `staging` dan `production`. Untuk `production`, aktifkan **Required reviewers** (Anda sendiri).
-3. Simpan token sebagai **environment secret** (bukan repository secret), agar workflow dari PR atau branch lain tidak bisa memakainya:
+1. **Buat environment sebelum PR #8 di-merge.** Di GitHub → repo → **Settings → Environments → New environment**, buat `staging` dan `production`.
+2. **`staging`:** **Deployment branches and tags** → *Selected branches and tags* → tambahkan `main`.
+3. **`production`:**
+   - **Required reviewers** → centang dan pilih akun Anda. Jangan centang *Prevent self-review*, karena Anda sendiri yang memicu dan menyetujui.
+   - **Deployment branches and tags** → *Selected branches and tags* → `main`.
+4. **Pastikan akun Cloudflare punya subdomain `workers.dev`:** dashboard → **Workers & Pages** → bila diminta, pilih nama subdomain. Deploy otomatis gagal bila subdomain belum ada.
+5. **Buat dua token Cloudflare terpisah** (dashboard → **My Profile → API Tokens → Create Token → Custom token**), masing-masing dengan izin minimal:
+   - *Account → Workers Scripts: Edit*
+   - *Account → D1: Edit*
+   - *Account → Account Settings: Read*
+   - Token **production** juga butuh *Zone → Workers Routes: Edit* dan *Zone → Zone: Read* untuk zona `pusatk3.id`. Pilihan zona baru muncul setelah langkah 1 selesai, jadi buat token staging dulu dan token production setelah domain aktif.
+6. **Simpan sebagai environment secret** (bukan repository secret), di masing-masing environment:
 
 | Environment | Secret | Isi |
 | --- | --- | --- |
 | `staging` | `CLOUDFLARE_API_TOKEN` | token staging |
+| `staging` | `CLOUDFLARE_ACCOUNT_ID` | ID akun Cloudflare (dashboard, halaman Workers & Pages) |
 | `production` | `CLOUDFLARE_API_TOKEN` | token production |
-| keduanya | `CLOUDFLARE_ACCOUNT_ID` | ID akun Cloudflare (dashboard, halaman Workers) |
+| `production` | `CLOUDFLARE_ACCOUNT_ID` | ID akun yang sama |
 
-4. Pertimbangkan akun Cloudflare terpisah khusus PusatK3 sebelum rilis production (ADR 0011).
+7. Pertimbangkan akun Cloudflare terpisah khusus PusatK3 sebelum rilis production, karena izin token Workers/D1 berlaku untuk seluruh akun (ADR 0011).
 
 ## 5. Variabel environment GitHub (bukan rahasia)
 
@@ -63,4 +73,4 @@ Di **Settings → Environments → (staging / production) → Environment variab
 ## 6. Cara kerja deploy (#8, ADR 0012)
 
 - **Staging:** otomatis setiap kali PR di-merge ke `main` dan CI hijau. Selama secret staging belum diisi, deploy dilewati dengan pesan "Deploy staging dilewati" di tab **Actions** (bukan error). Setelah secret diisi, merge berikutnya akan men-deploy; alamat staging tercetak di ringkasan run ("Staging: web … · API …").
-- **Production:** tidak pernah otomatis. Tab **Actions → Deploy production → Run workflow** (cabang `main`), lalu setujui di halaman run (reviewer environment `production`). Deploy ditolak otomatis selama ID database production masih teks penanda atau beranda masih memakai jadwal contoh.
+- **Production:** tidak pernah otomatis. Tab **Actions → Deploy production → Run workflow** (cabang `main`), lalu setujui di halaman run (reviewer environment `production`). Deploy ditolak otomatis bila ID database production belum benar, situs masih memakai jadwal contoh, secret belum ada, atau dijalankan dari cabang selain `main`. Sebelum menjalankannya, ikuti checklist `/siapkan-rilis` (pastikan commit itu sudah hijau di CI dan sudah dicek di staging).

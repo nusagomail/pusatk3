@@ -25,7 +25,7 @@ Cara memasang semuanya: `docs/setup-claude-code.md`.
 - Deploy production, secret, binding production
 - Konten K3 yang dipublikasikan
 
-Hooks di `.claude/hooks/guard.sh` memblokir edit file secret, deploy production, operasi D1 remote, perubahan secret, dan force push ke `main`.
+Hooks di `.claude/hooks/guard.sh` memblokir edit file secret, deploy production (termasuk memicu workflow `Deploy production` lewat `gh`), operasi D1 remote, perubahan secret, dan force push ke `main`.
 
 ## Komponen proyek
 
