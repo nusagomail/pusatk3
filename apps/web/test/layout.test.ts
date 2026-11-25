@@ -8,6 +8,7 @@ describe('Footer', () => {
   it('always states it is an independent directory, not a government site', async () => {
     const html = await render(Footer);
     expect(html).toContain('Direktori independen, bukan situs pemerintah');
+    expect(html).toMatch(/<\/strong>\s+PusatK3/);
     expect(html).toMatch(/tidak menyelenggarakan pelatihan/);
   });
 
@@ -33,6 +34,14 @@ describe('Header', () => {
     for (const href of ['/cari', '/belajar', '/untuk-penyedia', '/bantuan', '/masuk']) {
       expect(html).toContain(`href="${href}"`);
     }
+  });
+
+  it('shows the links inline on desktop, outside the collapsible mobile menu', async () => {
+    const html = await render(Header);
+    const desktop = /<ul\b[^>]*header__links--desktop[^>]*>([\s\S]*?)<\/ul>/.exec(html);
+    expect(desktop?.[1]).toContain('href="/cari"');
+    const details = /<details[\s\S]*?<\/details>/.exec(html)?.[0] ?? '';
+    expect(details).not.toContain('header__links--desktop');
   });
 
   it('marks the current page', async () => {

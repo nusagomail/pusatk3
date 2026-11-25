@@ -23,9 +23,18 @@ const links = [
     </a>
 
     <nav class="header__nav" aria-label="Navigasi utama">
+      <ul class="header__links header__links--desktop">
+        {links.map((link) => (
+          <li>
+            <a href={link.href} aria-current={current === link.href ? 'page' : undefined}>
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
       <details class="header__menu">
         <summary class="header__menu-button">Menu</summary>
-        <ul class="header__links">
+        <ul class="header__links header__links--mobile">
           {links.map((link) => (
             <li>
               <a href={link.href} aria-current={current === link.href ? 'page' : undefined}>
@@ -86,13 +95,21 @@ const links = [
     display: none;
   }
   .header__links {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  /* Mobile: links inside the <details> menu; desktop list hidden. */
+  .header__links--desktop {
+    display: none;
+  }
+  .header__links--mobile {
     position: absolute;
     right: 1rem;
     z-index: 10;
     display: grid;
-    margin: 0.5rem 0 0;
+    margin-top: 0.5rem;
     padding: 0.5rem;
-    list-style: none;
     background: var(--color-bg);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-card);
@@ -132,23 +149,14 @@ const links = [
     text-decoration: none;
   }
 
-  /* Desktop: inline navigation, no menu button. */
+  /* Desktop: inline list, no menu button. */
   @media (min-width: 900px) {
-    .header__menu > summary {
-      display: none;
-    }
-    .header__menu,
-    .header__menu:not([open]) > .header__links {
-      display: contents;
-    }
-    .header__links {
-      position: static;
+    .header__links--desktop {
       display: flex;
       gap: 0.25rem;
-      margin: 0;
-      padding: 0;
-      border: 0;
-      background: none;
+    }
+    .header__menu {
+      display: none;
     }
     .header__lang {
       display: inline;

@@ -1,0 +1,147 @@
+---
+/**
+ * Internal component showcase (noindex). Data shown here are placeholders, as in the mockups.
+ * Toggle dark mode with the header button to check both themes.
+ */
+import Button from '../../components/Button.astro';
+import Card from '../../components/Card.astro';
+import Input from '../../components/Input.astro';
+import Pill from '../../components/Pill.astro';
+import Select from '../../components/Select.astro';
+import VerifiedBadge from '../../components/VerifiedBadge.astro';
+import WhatsAppButton from '../../components/WhatsAppButton.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const cities = [
+  { value: '', label: 'Semua kota & online' },
+  { value: 'jakarta', label: 'Jakarta' },
+  { value: 'surabaya', label: 'Surabaya' },
+];
+---
+
+<BaseLayout
+  title="Komponen — PusatK3 (internal)"
+  description="Katalog komponen UI internal."
+  noindex
+>
+  <div class="showcase">
+    <div>
+      <h1>Komponen UI</h1>
+      <p class="lead">
+        Halaman internal untuk cek visual. Ganti mode gelap lewat tombol di header.
+      </p>
+    </div>
+
+    <section aria-labelledby="h-tombol">
+      <h2 id="h-tombol">Tombol</h2>
+      <div class="row">
+        <Button>Cari</Button>
+        <Button variant="secondary">Lihat detail</Button>
+        <Button href="/untuk-penyedia">Klaim profil gratis</Button>
+        <WhatsAppButton
+          phone="0812-0000-0000"
+          message="Halo, saya ingin bertanya tentang jadwal [Pelatihan]."
+        >
+          Chat WhatsApp
+        </WhatsAppButton>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-label">
+      <h2 id="h-label">Pill & badge</h2>
+      <div class="row">
+        <Pill tone="accent">Kemnaker</Pill>
+        <Pill tone="accent">BNSP</Pill>
+        <Pill>Offline</Pill>
+        <Pill>Online</Pill>
+        <Pill>Sponsor</Pill>
+        <VerifiedBadge />
+        <VerifiedBadge compact />
+      </div>
+    </section>
+
+    <section aria-labelledby="h-form">
+      <h2 id="h-form">Form</h2>
+      <form class="form" action="/cari" method="get">
+        <Input label="Pelatihan" name="q" type="search" placeholder="Mis. Ahli K3 Umum, forklift" />
+        <Select label="Kota" name="city" options={cities} />
+        <Input
+          label="Nomor WhatsApp"
+          name="phone"
+          type="tel"
+          hint="Format 08xx atau +62"
+          error="Nomor wajib diisi"
+        />
+        <Button type="submit">Cari</Button>
+      </form>
+    </section>
+
+    <section aria-labelledby="h-kartu">
+      <h2 id="h-kartu">Kartu</h2>
+      <div class="grid">
+        <Card>
+          <div class="row">
+            <Pill tone="accent">Kemnaker</Pill>
+            <Pill>Offline</Pill>
+          </div>
+          <h3>[Nama Pelatihan]</h3>
+          <p class="muted">
+            [Nama PJK3] <VerifiedBadge compact />
+          </p>
+          <p class="muted">[Tanggal] · [Kota]</p>
+          <Button variant="secondary" block>
+            Lihat detail
+          </Button>
+        </Card>
+        <Card muted>
+          <h3>Kartu latar surface</h3>
+          <p class="muted">Untuk panel dan ringkasan.</p>
+        </Card>
+      </div>
+    </section>
+
+    <section class="hero" aria-labelledby="h-hero">
+      <h2 id="h-hero">Latar hero</h2>
+      <p>Teks pendukung di atas hero navy.</p>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .showcase {
+    display: grid;
+    gap: 2rem;
+    max-width: var(--content-width);
+    margin: 0 auto;
+    padding: 2rem 1rem 3rem;
+  }
+  .lead,
+  .muted {
+    color: var(--color-ink-muted);
+  }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .form {
+    display: grid;
+    gap: 1rem;
+    max-width: 28rem;
+  }
+  .grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  }
+  .hero {
+    padding: 1.5rem;
+    border-radius: var(--radius-card);
+    background: var(--color-hero);
+    color: var(--color-on-hero-muted);
+  }
+  .hero h2 {
+    color: var(--color-on-hero);
+  }
+</style>
