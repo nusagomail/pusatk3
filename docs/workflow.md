@@ -2,7 +2,7 @@
 
 Proses kerja memakai plugin **Superpowers** (brainstorming → rencana → TDD → review → selesai). Aturan khusus PusatK3 ada di `CLAUDE.md`, `docs/`, hooks pengaman, subagent `reviewer`, dan skill proyek. Jika Superpowers dan dokumen proyek berbeda pendapat, **aturan proyek yang menang**.
 
-Cara memasang semuanya: `docs/setup-claude-code.md`.
+Cara memasang semuanya: `docs/setup-claude-code.md`. Developer manusia: `docs/onboarding.md`.
 
 ## Satu issue, satu sesi
 
@@ -25,7 +25,7 @@ Cara memasang semuanya: `docs/setup-claude-code.md`.
 - Deploy production, secret, binding production
 - Konten K3 yang dipublikasikan
 
-Hooks di `.claude/hooks/guard.sh` memblokir edit file secret, deploy production (termasuk memicu workflow `Deploy production` lewat `gh`), operasi D1 remote, perubahan secret, dan force push ke `main`.
+Hooks di `.claude/hooks/guard.sh` memblokir edit file secret, deploy production (termasuk memicu workflow `Deploy production` lewat `gh`), operasi D1 remote, perubahan secret, force push ke `main`, dan semua push langsung ke `main` (setiap commit di `main` men-deploy staging, ADR 0015).
 
 ## Komponen proyek
 

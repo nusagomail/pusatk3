@@ -10,7 +10,7 @@ Deploy staging lewat GitHub Actions (ADR 0012) butuh token Cloudflare yang disim
 
   | Worker | Folder | Build | Deploy |
   | --- | --- | --- | --- |
-  | `pusatk3-api-staging` | `apps/api` | `true` | `npx wrangler d1 migrations apply DB --env staging --remote && npx wrangler deploy --env staging --var APP_VERSION:$WORKERS_CI_COMMIT_SHA && curl -sf --retry 6 --retry-delay 5 --retry-all-errors https://pusatk3-api-staging.nusagomail.workers.dev/api/v1/health` |
+  | `pusatk3-api-staging` | `apps/api` | `true` | `npx wrangler d1 migrations apply DB --env staging --remote && npx wrangler deploy --env staging --var APP_VERSION:$(git rev-parse HEAD) && curl -sf --retry 6 --retry-delay 5 --retry-all-errors https://pusatk3-api-staging.nusagomail.workers.dev/api/v1/health` |
   | `pusatk3-web-staging` | `apps/web` | `pnpm run build` dengan variabel build `CLOUDFLARE_ENV=staging` | `node -e "process.exit(require('./dist/client/wrangler.json').name==='pusatk3-web-staging'?0:1)" && grep -q 'X-Robots-Tag: noindex' dist/client/_headers && npx wrangler deploy` |
 
   Keduanya: `branch_includes: ["main"]`, tanpa build cabang lain/PR, *watch paths* `*` (seluruh repo, sehingga perubahan `packages/` ikut memicu build). Deploy web gagal bila hasil build bukan untuk `pusatk3-web-staging` atau tidak `noindex`; deploy API diakhiri uji asap health.
@@ -21,7 +21,8 @@ Deploy staging lewat GitHub Actions (ADR 0012) butuh token Cloudflare yang disim
 
 ## Konsekuensi
 - Deploy staging berjalan untuk setiap commit di `main` **tanpa menunggu CI**. Penjaganya: PR hanya di-merge bila CI (termasuk e2e) hijau. Bila `main` rusak, staging ikut rusak sampai perbaikan di-merge; production tidak terpengaruh.
-- **Token build berlaku untuk seluruh akun** (izin persisnya tidak terlihat dari sesi ini) dan tersedia selama install dan build, jadi kode dependensi yang berjalan saat build `main` secara teknis bisa menyentuh resource lain di akun bersama ini. Ini kemunduran dibanding ADR 0012 (token hanya di langkah deploy). Mitigasi: hanya `main` yang di-build, pnpm memblokir skrip install yang tidak diizinkan, dan **akun Cloudflare terpisah wajib sebelum production dibuat** (ADR 0011).
+- **Token build berlaku untuk seluruh akun** (izin persisnya tidak terlihat dari sesi ini) dan tersedia selama install dan build, jadi kode dependensi yang berjalan saat build `main` secara teknis bisa menyentuh resource lain di akun bersama ini. Ini kemunduran dibanding ADR 0012 (token hanya di langkah deploy). Pemilik memilih tetap satu akun (ADR 0016). Mitigasi: hanya `main` yang di-build, pnpm memblokir skrip install yang tidak diizinkan dan hanya memasang rilis npm berumur ≥ 3 hari (`minimumReleaseAge`), serta jaring pengaman lain di `docs/akses.md`.
+- `APP_VERSION` memakai `git rev-parse HEAD`: dengan `WORKERS_CI_COMMIT_SHA`, health staging setelah merge PR #31 menjawab `"version":"main"` (nama cabang); setelah diganti, menjawab SHA lengkap `d7fd7a8…`. Perintah di dashboard sudah diperbarui (25 November 2026).
 - `main` wajib dilindungi (PR + cek CI wajib, tanpa push langsung; `docs/setup-cloudflare.md` langkah 4), dan hook pengaman memblokir `git push` ke `main` dari sesi Claude Code.
 - Mengubah pengaturan build (perintah, variabel, cabang) di Cloudflare termasuk perubahan deploy: catat di ADR ini dan beri tahu pemilik.
 - API dan web di-build terpisah dan bisa selesai tidak bersamaan; perubahan yang butuh keduanya sekaligus sebaiknya kompatibel mundur.
