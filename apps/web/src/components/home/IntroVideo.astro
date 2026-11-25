@@ -4,15 +4,14 @@
  * `mediaBaseUrl` (R2/CDN, https only). Without it: poster + transcript, no play button.
  * No autoplay: the video has narration.
  */
+import { safeMediaBaseUrl } from '../../lib/media';
+
 interface Props {
   mediaBaseUrl?: string | undefined;
 }
 
 const { mediaBaseUrl } = Astro.props;
-const base =
-  mediaBaseUrl && /^https:\/\/[^\s"'<>]+$/.test(mediaBaseUrl)
-    ? mediaBaseUrl.replace(/\/$/, '')
-    : null;
+const base = safeMediaBaseUrl(mediaBaseUrl);
 const poster = '/video/pusatk3-intro-poster.jpg';
 const transcript = [
   'Butuh pelatihan atau sertifikasi K3, tapi bingung harus mulai dari mana? Jadwalnya tersebar di mana-mana, biayanya tidak jelas, dan sulit memastikan penyedianya benar-benar berizin.',

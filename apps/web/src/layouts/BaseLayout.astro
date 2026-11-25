@@ -2,6 +2,7 @@
 import '../styles/base.css';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
+import { absoluteUrl } from '../data/site';
 import { THEME_INIT_SCRIPT } from '../lib/theme';
 
 interface Props {
@@ -9,9 +10,17 @@ interface Props {
   description: string;
   /** Keep the page out of search engines (internal pages). */
   noindex?: boolean;
+  /** Open Graph image path (absolute URL is built from SITE_URL). */
+  image?: string;
 }
 
-const { title, description, noindex = false } = Astro.props;
+const {
+  title,
+  description,
+  noindex = false,
+  image = '/video/pusatk3-intro-poster.jpg',
+} = Astro.props;
+const canonical = absoluteUrl(Astro.url.pathname);
 ---
 
 <html lang="id">
@@ -22,6 +31,16 @@ const { title, description, noindex = false } = Astro.props;
     <title>{title}</title>
     <meta name="description" content={description} />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
+    {!noindex && <link rel="canonical" href={canonical} />}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="PusatK3" />
+    <meta property="og:locale" content="id_ID" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={absoluteUrl(image)} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <slot name="head" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body>

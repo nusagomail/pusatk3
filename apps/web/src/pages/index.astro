@@ -5,8 +5,48 @@ import HomeHero from '../components/home/HomeHero.astro';
 import IntroVideo from '../components/home/IntroVideo.astro';
 import ScheduleCard from '../components/home/ScheduleCard.astro';
 import Section from '../components/home/Section.astro';
+import JsonLd from '../components/JsonLd.astro';
 import { CITY_CHIPS, SAMPLE_SCHEDULES } from '../data/home';
+import { SITE_URL, absoluteUrl } from '../data/site';
+import { safeMediaBaseUrl } from '../lib/media';
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const mediaBaseUrl = safeMediaBaseUrl(import.meta.env.PUBLIC_MEDIA_BASE_URL);
+const description =
+  'Temukan dan bandingkan jadwal pelatihan dan sertifikasi K3 (Kemnaker, BNSP) beserta legalitas penyedianya, lalu hubungi penyedia langsung. Gratis untuk peserta.';
+
+const organization = {
+  '@type': 'Organization',
+  name: 'PusatK3',
+  url: `${SITE_URL}/`,
+  logo: absoluteUrl('/favicon.svg'),
+  description:
+    'Direktori independen pelatihan dan sertifikasi K3 di Indonesia, bukan situs pemerintah. PusatK3 tidak menyelenggarakan pelatihan, tidak menerbitkan sertifikat, dan tidak memproses pembayaran pelatihan.',
+};
+const website = {
+  '@type': 'WebSite',
+  name: 'PusatK3',
+  url: `${SITE_URL}/`,
+  inLanguage: 'id',
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: `${SITE_URL}/cari?q={search_term_string}`,
+    'query-input': 'required name=search_term_string',
+  },
+};
+const video = mediaBaseUrl
+  ? {
+      '@type': 'VideoObject',
+      name: 'Kenali PusatK3',
+      description:
+        'Perkenalan PusatK3 dalam 1 menit: cara mencari, membandingkan, dan menghubungi penyedia pelatihan K3.',
+      thumbnailUrl: absoluteUrl('/video/pusatk3-intro-poster.jpg'),
+      uploadDate: '2026-11-25',
+      duration: 'PT1M21S',
+      contentUrl: `${mediaBaseUrl}/pusatk3-intro.mp4`,
+      inLanguage: 'id',
+    }
+  : null;
 
 const steps = [
   { title: 'Cari', text: 'Cari pelatihan berdasarkan jenis, kota, dan tanggal.' },
@@ -23,8 +63,13 @@ const steps = [
 
 <BaseLayout
   title="PusatK3 — Direktori pelatihan & sertifikasi K3 di Indonesia"
-  description="Temukan dan bandingkan jadwal pelatihan dan sertifikasi K3 (Kemnaker, BNSP) beserta legalitas penyedianya, lalu hubungi penyedia langsung. Gratis untuk peserta."
+  description={description}
 >
+  <Fragment slot="head">
+    <JsonLd data={organization} />
+    <JsonLd data={website} />
+    {video && <JsonLd data={video} />}
+  </Fragment>
   <HomeHero />
 
   <Section id="bidang" title="Bidang K3" more={{ href: '/cari', label: 'Lihat semua 14 bidang' }}>
@@ -54,6 +99,12 @@ const steps = [
   </Section>
 
   <Section id="cara-kerja" title="Cara kerja PusatK3" muted>
+    <p class="about">
+      PusatK3 adalah direktori independen pelatihan dan sertifikasi K3 di Indonesia: tempat
+      membandingkan jadwal, penerbit sertifikat, dan legalitas penyedia (PJK3, LSP, TUK), lalu
+      menghubungi penyedia langsung. Gratis untuk peserta; PusatK3 tidak menyelenggarakan pelatihan
+      dan tidak memproses pembayaran.
+    </p>
     <ol class="steps">
       {steps.map((step, index) => (
         <li>
@@ -68,7 +119,7 @@ const steps = [
   </Section>
 
   <Section id="kenali" title="Kenali PusatK3">
-    <IntroVideo mediaBaseUrl={import.meta.env.PUBLIC_MEDIA_BASE_URL} />
+    <IntroVideo mediaBaseUrl={mediaBaseUrl ?? undefined} />
   </Section>
 
   <section class="cta" aria-labelledby="cta-title">
@@ -119,6 +170,11 @@ const steps = [
   }
   .chips a:hover {
     background: var(--color-surface);
+  }
+  .about {
+    max-width: 70ch;
+    margin: 0 0 1.25rem;
+    color: var(--color-ink-muted);
   }
   .steps {
     display: grid;
