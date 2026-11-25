@@ -11,6 +11,7 @@ describe('/internal/komponen', () => {
       'btn--secondary',
       'wa.me/',
       'Terverifikasi',
+      'sponsor-label',
       'pill--accent',
       'class="card',
       '<select',

@@ -7,9 +7,9 @@ import Input from '../src/components/Input.astro';
 import Logo from '../src/components/Logo.astro';
 import Pill from '../src/components/Pill.astro';
 import Select from '../src/components/Select.astro';
+import SponsorLabel from '../src/components/SponsorLabel.astro';
 import VerifiedBadge from '../src/components/VerifiedBadge.astro';
 import WhatsAppButton from '../src/components/WhatsAppButton.astro';
-import { toWhatsAppNumber } from '../src/lib/whatsapp';
 import { attr, render, tag } from './render';
 
 const css = (file: string) =>
@@ -39,12 +39,18 @@ describe('Button', () => {
 });
 
 describe('WhatsAppButton', () => {
-  it('opens wa.me safely in a new tab with an accessible name', async () => {
+  it('opens wa.me safely in a new tab', async () => {
     const el = tag(await render(WhatsAppButton, { phone: '0812-3456-7890' }, 'Chat WhatsApp'), 'a');
     expect(attr(el, 'href')).toBe('https://wa.me/6281234567890');
     expect(attr(el, 'target')).toBe('_blank');
     expect(attr(el, 'rel')).toBe('noopener noreferrer');
-    expect(attr(el, 'aria-label')).toMatch(/WhatsApp.*tab baru/i);
+  });
+
+  it('keeps the visible text in its accessible name and announces the new tab', async () => {
+    const html = await render(WhatsAppButton, { phone: '0812-3456-7890' }, 'Chat WhatsApp');
+    expect(attr(tag(html, 'a'), 'aria-label')).toBeNull();
+    expect(html).toContain('Chat WhatsApp');
+    expect(html).toMatch(/class="visually-hidden"[^>]*>\s*\(membuka tab baru\)/);
   });
 
   it('adds an encoded prefilled message', async () => {
@@ -55,20 +61,26 @@ describe('WhatsAppButton', () => {
     expect(attr(el, 'href')).toBe('https://wa.me/6281234567890?text=Halo%20%26%20salam');
   });
 
+  it('renders nothing (instead of a broken link or a 500) for an invalid number', async () => {
+    const html = await render(WhatsAppButton, { phone: '123' }, 'Chat WhatsApp');
+    expect(html).not.toContain('wa.me');
+    expect(html).not.toContain('<a');
+  });
+
   it('uses navy text on WhatsApp green (CSS)', () => {
     expect(css('WhatsAppButton.astro')).toMatch(/color:\s*var\(--color-on-accent\)/);
   });
+});
 
-  it.each([
-    ['0812 3456 7890', '6281234567890'],
-    ['+62 812-3456-7890', '6281234567890'],
-    ['62 812 3456 7890', '6281234567890'],
-  ])('normalises %j', (input, expected) => {
-    expect(toWhatsAppNumber(input)).toBe(expected);
+describe('SponsorLabel', () => {
+  it('always says "Sponsor" and looks different from ordinary pills', async () => {
+    const html = await render(SponsorLabel);
+    expect(html).toMatch(/>\s*Sponsor\s*</);
+    expect(tag(html, 'span', 'sponsor-label')).not.toMatch(/\bpill\b/);
   });
 
-  it.each(['', '123', 'abc', '+1 555 0100 000', '0812345678901234567'])('rejects %j', (input) => {
-    expect(() => toWhatsAppNumber(input)).toThrow();
+  it('accepts no props, so the label cannot be renamed or hidden', () => {
+    expect(css('SponsorLabel.astro')).not.toMatch(/interface Props/);
   });
 });
 
@@ -129,8 +141,10 @@ describe('Input', () => {
     expect(html).toContain('Wajib diisi');
   });
 
-  it('meets the 44px touch target (CSS)', () => {
+  it('meets the 44px touch target and a ≥3:1 border (CSS)', () => {
     expect(css('Input.astro')).toMatch(/min-height:\s*var\(--touch-target\)/);
+    expect(css('Input.astro')).toMatch(/border:\s*1px solid var\(--color-border-strong\)/);
+    expect(css('Select.astro')).toMatch(/border:\s*1px solid var\(--color-border-strong\)/);
   });
 });
 

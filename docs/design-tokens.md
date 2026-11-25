@@ -15,7 +15,8 @@ Sumber: panduan merek konsep Simpul dan mockup website PusatK3.
 | `--color-ink-subtle` | `#5B6577` | `#A9B4C4` | Label kecil |
 | `--color-bg` | `#FFFFFF` | `#0B1422` | Latar halaman |
 | `--color-surface` | `#F5F6F8` | `#121E31` | Panel, kartu |
-| `--color-border` | `#E3E6EB` | `#24324A` | Garis |
+| `--color-border` | `#E3E6EB` | `#24324A` | Garis pemisah (dekoratif) |
+| `--color-border-strong` | `#7D879A` | `#5E6E8C` | Garis tepi kontrol form (≥ 3:1, WCAG 1.4.11) |
 | `--color-hero` | `#0F1B2D` | `#13213A` | Hero, footer |
 | `--color-on-hero` | `#FFFFFF` | `#FFFFFF` | Teks utama di atas hero/footer |
 | `--color-on-hero-muted` | `#C9D1DC` | `#C9D1DC` | Teks pendukung di atas hero/footer |
@@ -24,7 +25,7 @@ Sumber: panduan merek konsep Simpul dan mockup website PusatK3.
 | `--color-danger` | `#B42318` | `#F97066` | Aksi berbahaya |
 | `--color-whatsapp` | `#25D366` | `#25D366` | Tombol WhatsApp (teks navy) |
 
-Kontras setiap pasangan teks/latar di atas dihitung otomatis oleh tes (`apps/web/test/tokens.test.ts`) dan wajib ≥ 4.5:1. Token `accent-text`, `accent-soft`, `on-hero`, `on-hero-muted`, serta nilai gelap `warning-bg`/`danger` ditambahkan 25 Nov 2026 (#6) dari mockup; `#B85F00` di mockup diganti `#A85600` karena kontrasnya 4.49:1.
+Kontras setiap pasangan teks/latar di atas dihitung otomatis oleh tes (`apps/web/test/tokens.test.ts`) dan wajib ≥ 4.5:1; bagian non-teks (garis tepi kontrol form, cincin fokus, garis error) wajib ≥ 3:1. Token `accent-text`, `accent-soft`, `on-hero`, `on-hero-muted`, serta nilai gelap `warning-bg`/`danger` ditambahkan 25 Nov 2026 (#6) dari mockup; `#B85F00` di mockup diganti `#A85600` karena kontrasnya 4.49:1.
 
 ## Huruf
 

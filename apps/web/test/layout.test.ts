@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import Footer from '../src/components/Footer.astro';
 import Header from '../src/components/Header.astro';
@@ -10,6 +12,20 @@ describe('Footer', () => {
     expect(html).toContain('Direktori independen, bukan situs pemerintah');
     expect(html).toMatch(/<\/strong>\s+PusatK3/);
     expect(html).toMatch(/tidak menyelenggarakan pelatihan/);
+  });
+
+  it('labels each link group by its heading and keeps links ≥44px wide (CSS)', async () => {
+    const html = await render(Footer);
+    const nav = tag(html, 'nav');
+    const labelledBy = attr(nav, 'aria-labelledby');
+    expect(labelledBy).toBeTruthy();
+    expect(html).toContain(`id="${labelledBy}"`);
+    expect(attr(nav, 'aria-label')).toBeNull();
+    const source = readFileSync(
+      resolve(import.meta.dirname, '../src/components/Footer.astro'),
+      'utf8',
+    );
+    expect(source).toMatch(/min-width:\s*var\(--touch-target\)/);
   });
 
   it('links to how results are ordered and the legal pages', async () => {

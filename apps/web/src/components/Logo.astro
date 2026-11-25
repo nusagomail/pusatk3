@@ -50,15 +50,10 @@ const { onDark = false, height = 36 } = Astro.props;
     color: var(--color-on-hero);
   }
   .logo__k3 {
-    fill: #e07400;
+    fill: var(--color-accent);
   }
-  :global(:root[data-theme='dark']) .logo__k3,
+  /* White logo on navy in the light theme still uses the dark-theme orange (brand file). */
   .logo--on-dark .logo__k3 {
     fill: #f28c1b;
-  }
-  @media (prefers-color-scheme: dark) {
-    :global(:root:not([data-theme='light'])) .logo__k3 {
-      fill: #f28c1b;
-    }
   }
 </style>

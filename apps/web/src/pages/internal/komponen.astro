@@ -8,6 +8,7 @@ import Card from '../../components/Card.astro';
 import Input from '../../components/Input.astro';
 import Pill from '../../components/Pill.astro';
 import Select from '../../components/Select.astro';
+import SponsorLabel from '../../components/SponsorLabel.astro';
 import VerifiedBadge from '../../components/VerifiedBadge.astro';
 import WhatsAppButton from '../../components/WhatsAppButton.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
@@ -54,7 +55,7 @@ const cities = [
         <Pill tone="accent">BNSP</Pill>
         <Pill>Offline</Pill>
         <Pill>Online</Pill>
-        <Pill>Sponsor</Pill>
+        <SponsorLabel />
         <VerifiedBadge />
         <VerifiedBadge compact />
       </div>

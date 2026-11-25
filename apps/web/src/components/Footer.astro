@@ -40,9 +40,11 @@ const columns = [
         pelatihan.
       </p>
     </div>
-    {columns.map((column) => (
-      <nav class="footer__column" aria-label={column.title}>
-        <h2 class="footer__title">{column.title}</h2>
+    {columns.map((column, index) => (
+      <nav class="footer__column" aria-labelledby={`footer-col-${index}`}>
+        <h2 class="footer__title" id={`footer-col-${index}`}>
+          {column.title}
+        </h2>
         <ul>
           {column.links.map((link) => (
             <li>
@@ -86,6 +88,7 @@ const columns = [
     display: inline-flex;
     align-items: center;
     min-height: var(--touch-target);
+    min-width: var(--touch-target);
     color: var(--color-on-hero-muted);
     text-decoration: none;
   }

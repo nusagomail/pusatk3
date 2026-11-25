@@ -48,7 +48,9 @@ describe('tokens.css matches docs/design-tokens.md', () => {
   });
 
   it('declares no undocumented color tokens', () => {
-    for (const token of [...light.keys(), ...dark.keys()]) expect(docs.has(token)).toBe(true);
+    for (const token of [...light.keys(), ...dark.keys(), ...darkAuto.keys()]) {
+      expect(docs.has(token)).toBe(true);
+    }
   });
 });
 
@@ -67,6 +69,7 @@ const PAIRS: [text: string, background: string][] = [
   ['--color-success', '--color-bg'],
   ['--color-success', '--color-surface'],
   ['--color-danger', '--color-bg'],
+  ['--color-danger', '--color-surface'],
   ['--color-ink', '--color-warning-bg'],
   // WhatsApp button text is navy in both themes (docs: "teks navy"), not --color-ink.
   ['--color-on-accent', '--color-whatsapp'],
@@ -82,6 +85,28 @@ describe.each([
     const fg = values.get(text);
     const bg = values.get(background);
     expect(fg && bg ? contrastRatio(fg, bg) : 0).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+// Non-text UI parts (WCAG 1.4.11): form control borders and the focus ring need ≥ 3:1.
+const NON_TEXT_PAIRS: [part: string, background: string][] = [
+  ['--color-border-strong', '--color-bg'],
+  ['--color-border-strong', '--color-surface'],
+  ['--color-danger', '--color-bg'],
+  ['--color-danger', '--color-surface'],
+  ['--color-accent-text', '--color-bg'],
+  ['--color-accent-text', '--color-surface'],
+  ['--color-accent-text', '--color-hero'],
+];
+
+describe.each([
+  ['light', light],
+  ['dark', dark],
+] as const)('non-text contrast (%s theme)', (_theme, values) => {
+  it.each(NON_TEXT_PAIRS)('%s on %s ≥ 3:1', (part, background) => {
+    const fg = values.get(part);
+    const bg = values.get(background);
+    expect(fg && bg ? contrastRatio(fg, bg) : 0).toBeGreaterThanOrEqual(3);
   });
 });
 
