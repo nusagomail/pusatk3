@@ -51,4 +51,16 @@ Akun Cloudflare ini juga berisi proyek lain, dan izin token Workers/D1 berlaku u
 
 4. Pertimbangkan akun Cloudflare terpisah khusus PusatK3 sebelum rilis production (ADR 0011).
 
-Workflow yang memakai secret ini disiapkan di #8.
+## 5. Variabel environment GitHub (bukan rahasia)
+
+Di **Settings → Environments → (staging / production) → Environment variables**:
+
+| Environment | Variabel | Isi |
+| --- | --- | --- |
+| `staging` | `PUBLIC_MEDIA_BASE_URL` | Kosongkan dulu; nanti alamat r2.dev bucket `pusatk3-media-staging` bila video staging diaktifkan |
+| `production` | `PUBLIC_MEDIA_BASE_URL` | `https://media.pusatk3.id` (setelah langkah 3) |
+
+## 6. Cara kerja deploy (#8, ADR 0012)
+
+- **Staging:** otomatis setiap kali PR di-merge ke `main` dan CI hijau. Selama secret staging belum diisi, deploy dilewati dengan pesan "Deploy staging dilewati" di tab **Actions** (bukan error). Setelah secret diisi, merge berikutnya akan men-deploy; alamat staging tercetak di ringkasan run ("Staging: web … · API …").
+- **Production:** tidak pernah otomatis. Tab **Actions → Deploy production → Run workflow** (cabang `main`), lalu setujui di halaman run (reviewer environment `production`). Deploy ditolak otomatis selama ID database production masih teks penanda atau beranda masih memakai jadwal contoh.

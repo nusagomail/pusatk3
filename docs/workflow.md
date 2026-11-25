@@ -11,12 +11,12 @@ Cara memasang semuanya: `docs/setup-claude-code.md`.
 3. **Brainstorming & rencana (Superpowers).** Claude bertanya bila ada yang belum jelas, lalu menulis rencana berisi tugas kecil, file yang diubah, perubahan skema, endpoint, dan tes. Rencana wajib menyebut gerbang persetujuan yang tersentuh.
 4. **Gerbang 1 — pemilik menyetujui rencana.**
 5. **Implementasi (Superpowers).** Branch/worktree `feat/<nomor-issue>-<slug>`, tes ditulis dulu (TDD), commit kecil. Pakai skill proyek yang relevan: `tambah-endpoint`, `migrasi-db`, `halaman-seo`.
-6. Jalankan `pnpm lint && pnpm typecheck && pnpm test` dan tunjukkan hasilnya (verifikasi sebelum klaim selesai).
+6. Jalankan `pnpm lint && pnpm typecheck && pnpm test` dan tunjukkan hasilnya (verifikasi sebelum klaim selesai). Setelah PR dibuka, GitHub Actions (`ci.yml`) menjalankan pemeriksaan yang sama; PR baru boleh di-merge bila CI hijau.
 7. **Review.** Jalankan subagent `reviewer` (aturan keamanan & bisnis PusatK3) selain review bawaan Superpowers. Perbaiki semua temuan **Kritis**.
 8. Perbarui `docs/` bila skema, API, atau keputusan berubah.
 9. **Selesai:** selalu pilih **buka Pull Request**. Jangan merge ke `main` secara lokal dan jangan menghapus branch sebelum PR di-merge.
-10. **Gerbang 2 — pemilik menyetujui dan me-merge PR.** Merge ke `main` → deploy staging otomatis.
-11. **Gerbang 3 — deploy production** hanya atas perintah pemilik (`/siapkan-rilis`).
+10. **Gerbang 2 — pemilik menyetujui dan me-merge PR.** Merge ke `main` → CI → deploy staging otomatis (`deploy-staging.yml`).
+11. **Gerbang 3 — deploy production** hanya atas perintah pemilik (`/siapkan-rilis`), dijalankan pemilik lewat **Actions → Deploy production** dan disetujui di environment `production` (ADR 0012).
 
 ## Gerbang persetujuan wajib
 
