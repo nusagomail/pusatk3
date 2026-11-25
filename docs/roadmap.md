@@ -4,16 +4,18 @@ Setiap fase dipecah menjadi issue GitHub (label `fase-0` … `fase-5`). Claude C
 
 ## Fase 0 — Fondasi
 
-- [ ] Monorepo pnpm + Turborepo: `apps/web`, `apps/api`, `packages/shared`
-- [ ] TypeScript strict, ESLint, Prettier, Vitest, Playwright
-- [ ] Astro di Cloudflare (`apps/web`), Hono di Workers (`apps/api`), contoh endpoint `/api/v1/health`
-- [ ] D1 + Drizzle: konfigurasi, migrasi pertama (tabel dasar)
-- [ ] Lingkungan `staging` dan `production` di wrangler; resource bernama `pusatk3-*`
-- [ ] GitHub Actions: lint, typecheck, test di setiap PR; deploy staging dari `main`; deploy production manual
-- [ ] Design tokens + komponen dasar (tombol, input, kartu, badge, header, footer) sesuai `docs/design-tokens.md`
-- [ ] Isi bagian "Perintah" di `CLAUDE.md`
+- [x] Monorepo pnpm + Turborepo: `apps/web`, `apps/api`, `packages/shared`
+- [x] TypeScript strict, ESLint, Prettier, Vitest, Playwright
+- [x] Astro di Cloudflare (`apps/web`), Hono di Workers (`apps/api`), contoh endpoint `/api/v1/health`
+- [x] D1 + Drizzle: konfigurasi, migrasi pertama (tabel dasar)
+- [x] Lingkungan `staging` dan `production` di wrangler; resource bernama `pusatk3-*`
+- [x] GitHub Actions: lint, typecheck, test di setiap PR; deploy staging dari `main`; deploy production manual
+- [x] Design tokens + komponen dasar (tombol, input, kartu, badge, header, footer) sesuai `docs/design-tokens.md`
+- [x] Isi bagian "Perintah" di `CLAUDE.md`
 
 **Selesai bila:** PR contoh lolos CI, staging menampilkan halaman beranda statis dan `/api/v1/health` merespons.
+
+Status: PR lolos CI (termasuk e2e) sudah terbukti. Tampilan beranda dan health **di staging** menunggu pemilik mengatur environment GitHub dan token Cloudflare (`docs/setup-cloudflare.md` langkah 4); setelah itu deploy staging pertama otomatis berjalan dan diuji asap.
 
 ## Fase 1 — Direktori publik
 
