@@ -1,6 +1,6 @@
 # ADR 0011: Lingkungan Cloudflare (lokal, staging, production)
 
-Status: diterima · 25 November 2026 · issue #7. Desain: `docs/superpowers/specs/2026-11-25-env-design.md`.
+Status: diterima · 25 November 2026 · issue #7. Desain: `docs/superpowers/specs/2026-11-25-env-design.md`. Akun bersama: ADR 0016 (#32).
 
 ## Konteks
 API dan web perlu dideploy terpisah ke staging (otomatis dari `main`, #8) dan production (manual, persetujuan pemilik). Domain `pusatk3.id` belum ada di Cloudflare. Akun Cloudflare juga berisi resource proyek lain yang tidak boleh tersentuh.
@@ -17,7 +17,7 @@ API dan web perlu dideploy terpisah ke staging (otomatis dari `main`, #8) dan pr
 
 ## Konsekuensi
 - Langkah pemilik (pindah domain, resource production, secret CI, video): `docs/setup-cloudflare.md`.
-- **Akun Cloudflare dipakai bersama proyek lain.** Izin token API *Workers Scripts: Edit* dan *D1: Edit* berlaku untuk seluruh akun, jadi token CI secara teknis bisa mengubah resource proyek lain. Sejak ADR 0015, token build staging (Workers Builds) berjalan selama install dan build di akun bersama ini. **Keputusan pemilik B (25 November 2026): PusatK3 tetap di akun bersama ini.** Data terpisah, tetapi akses tidak; risikonya diterima dengan jaring pengaman: paket npm minimal 3 hari (`minimumReleaseAge`), hanya `main` yang di-build dan `main` dilindungi, token production terpisah dengan persetujuan pemilik, cadangan D1 (Time Travel + ekspor), notifikasi deploy, dan 2FA. Status tiap jaring: `docs/akses.md`.
+- **Akun Cloudflare dipakai bersama proyek lain.** Izin token API *Workers Scripts: Edit* dan *D1: Edit* berlaku untuk seluruh akun, jadi token CI secara teknis bisa mengubah resource proyek lain. Sejak ADR 0015, token build staging (Workers Builds) berjalan selama install dan build di akun bersama ini. Pemilik memutuskan PusatK3 tetap di akun bersama ini; risiko dan jaring pengamannya di **ADR 0016**.
 - `public/_headers` tidak berlaku untuk respons Worker: halaman SSR pertama (Fase 1) wajib memasang `X-Robots-Tag` staging lewat middleware Astro.
 - `robots.txt` `Disallow` membuat crawler tidak membaca `noindex`, sehingga URL staging yang ditautkan di tempat lain masih bisa muncul tanpa isi. Sebelum login (email OTP, Fase 2) tersedia di staging, pertimbangkan Cloudflare Access di depan staging.
 - Web staging dan API staging berbeda origin (dua subdomain `*.workers.dev`) sampai staging pindah ke `staging.pusatk3.id`; bila web perlu memanggil API dari browser sebelum itu, CORS harus diputuskan (Fase 1).

@@ -20,11 +20,11 @@ flowchart LR
   main -.->|manual, persetujuan pemilik<br/>deploy-production.yml| prod["pusatk3-api/web-production<br/>pusatk3.id (belum aktif)"]
   prod -.-> d1P[("D1 pusatk3-production<br/>(belum dibuat)")]
   user["Pengunjung"] -->|halaman| webS
-  webS -.->|data (Fase 1)| apiS
-  apiS -.-> r2[("R2 media")]
+  webS -.->|"data (Fase 1)"| apiS
+  webS -.->|"video (PUBLIC_MEDIA_BASE_URL)"| r2[("R2 pusatk3-media-*")]
 ```
 
-Garis putus-putus = belum aktif. Staging: https://pusatk3-web-staging.nusagomail.workers.dev (web) dan https://pusatk3-api-staging.nusagomail.workers.dev/api/v1/health (API). Semua resource ada di satu akun Cloudflare yang juga dipakai selfgrow (keputusan pemilik B, `docs/akses.md`).
+Garis putus-putus = belum aktif. Staging: https://pusatk3-web-staging.nusagomail.workers.dev (web) dan https://pusatk3-api-staging.nusagomail.workers.dev/api/v1/health (API). Semua resource ada di satu akun Cloudflare yang juga dipakai selfgrow (ADR 0016, `docs/akses.md`).
 
 ## Struktur repo
 

@@ -42,12 +42,13 @@ Sejak ADR 0015, setiap commit di `main` langsung di-deploy ke staging (termasuk 
 1. GitHub → repo → **Settings → Branches → Add branch ruleset** (atau *branch protection rule*) untuk `main`.
 2. Centang **Require a pull request before merging** dan **Require status checks to pass**; pilih cek `Lint, typecheck, test, build` dan `E2E (Playwright)`.
 3. Centang **Block force pushes**, dan jangan izinkan *bypass*.
+4. **Required approvals:** biarkan 0 selama hanya Anda (bersama Claude Code) yang membuat PR; ubah ke **1** saat developer pertama bergabung (`docs/akses.md`).
 
 Bila Anda sempat membuat environment `staging` di GitHub atau token Cloudflare untuk staging sebelum ADR 0015: hapus environment/secret itu dan cabut (*revoke*) tokennya di Cloudflare; keduanya tidak dipakai lagi.
 
 ## 5. Production (nanti: setelah domain dan data asli ada)
 
-**Akun Cloudflare:** pemilik memutuskan tetap memakai akun yang sama dengan selfgrow (keputusan B, ADR 0011). Token build staging dan token API berlaku untuk seluruh akun, jadi sebelum production pasang jaring pengaman yang tercantum di `docs/akses.md` (cadangan D1, notifikasi deploy, 2FA).
+**Akun Cloudflare:** pemilik memutuskan tetap memakai akun yang sama dengan selfgrow (ADR 0016). Token build staging dan token API berlaku untuk seluruh akun, termasuk resource production PusatK3, jadi sebelum production pasang jaring pengaman yang tercantum di `docs/akses.md` (cadangan D1, notifikasi deploy, 2FA).
 
 Langkah production:
 1. GitHub → **Settings → Environments → New environment** `production`:
@@ -55,7 +56,7 @@ Langkah production:
    - **Deployment branches and tags** → *Selected branches and tags* → `main`.
 2. Token Cloudflare production (**My Profile → API Tokens → Create Token → Custom token**): *Account → Workers Scripts: Edit*, *Account → D1: Edit*, *Account → Account Settings: Read*, *Zone → Workers Routes: Edit* dan *Zone → Zone: Read* untuk zona `pusatk3.id`.
 3. Environment secret `production`: `CLOUDFLARE_API_TOKEN` (token tadi), `CLOUDFLARE_ACCOUNT_ID` (ID akun Cloudflare).
-4. Environment variable `production`: `PUBLIC_MEDIA_BASE_URL` = `https://media.pusatk3.id` (setelah langkah 3).
+4. Environment variable `production`: `PUBLIC_MEDIA_BASE_URL` = `https://media.pusatk3.id` (setelah bagian 3, R2 production).
 
 Variabel build staging (mis. `PUBLIC_MEDIA_BASE_URL` untuk video staging) diisi sebagai **build variable** Worker `pusatk3-web-staging` di Cloudflare (Settings → Build), bukan di GitHub.
 
