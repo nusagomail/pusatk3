@@ -90,6 +90,11 @@ describe('parseCategoriesCsv rules', () => {
     expect(data.categories[0]?.regulationRef).toBe('PP 50/2012, UU 1/1970');
   });
 
+  it('ignores a UTF-8 byte order mark', () => {
+    const bom = String.fromCharCode(0xfeff);
+    expect(parseCategoriesCsv(`${bom}${HEADER}\n${row()}`).categories).toHaveLength(1);
+  });
+
   it('rejects an unknown issuer', () => {
     expect(() => parse(row({ penerbit: 'KEMENKES' }))).toThrow(/issuer/i);
   });
