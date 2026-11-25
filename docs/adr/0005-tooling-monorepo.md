@@ -10,7 +10,7 @@ Semua app dan paket harus memakai standar kode dan perintah yang sama. Saat ini 
 - **ESLint + Prettier**, bukan Biome (diminta issue #1; ekosistem plugin Astro lebih matang).
 - **`pnpm lint` dan `pnpm test` dijalankan sekali dari root** dan mencakup semua paket. Vitest menemukan paket lewat `apps/*/vitest.config.ts` dan `packages/*/vitest.config.ts`; tes penjaga `tests/workspace.test.ts` mewajibkan file itu agar tes paket tidak terlewat diam-diam. `build`, `dev`, `typecheck` lewat Turborepo.
 - **TypeScript dikunci ke 6.0.x.** TypeScript 7 belum didukung `typescript-eslint` (<6.1) dan `@astrojs/check` (^5 || ^6).
-- **Vitest dikunci ke 4.1.x.** `@cloudflare/vitest-pool-workers` (cara standar menguji Hono + D1/KV/Queues di runtime Workers) baru mendukung Vitest ^4.1.
+- **Vitest dikunci ke 4.1.x.** `@cloudflare/vitest-pool-workers` (cara standar menguji Hono + D1/KV/Queues di runtime Workers) baru mendukung Vitest ^4.1. *Pembaruan 25 Nov 2026 (#3):* paket itu berganti nama menjadi `@cloudflare/vitest-plugin`, yang sudah mendukung Vitest ^4.1 || ^5; naik ke Vitest 5 bisa dilakukan di issue tersendiri.
 - **Node `>=22.23.4 <23` dengan `engine-strict`.** Batas bawah mengikuti syarat Astro 7.
 
 ## Konsekuensi

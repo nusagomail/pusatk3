@@ -1,0 +1,15 @@
+// Local development only. Staging/production environments and bindings: issue #7.
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "pusatk3-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  // Node.js APIs are on by default from 2026-08-04; we opt out so process.env/Buffer are
+  // unavailable and config comes only from bindings (c.env). See ADR 0007.
+  "compatibility_flags": ["no_nodejs_compat", "no_nodejs_compat_v2"],
+  // No public *.workers.dev URL until environments are set up (#7).
+  "workers_dev": false,
+  "vars": {
+    "APP_VERSION": "dev",
+  },
+}

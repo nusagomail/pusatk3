@@ -14,5 +14,5 @@ Setiap app wajib `"private": true`, punya skrip `typecheck` dan `test`, dan puny
 
 - **Semua app:** tambahkan `vitest.config.ts` (tanpa itu `pnpm test` di root tidak menjalankan tes app ini).
 - **`apps/web` (#5):** tambahkan `eslint-plugin-astro` dan `prettier-plugin-astro` (tanpa itu file `.astro` tidak di-lint/di-format); `lib` perlu `["ES2023", "DOM", "DOM.Iterable"]`; blok ESLint dengan `globals.browser` untuk `apps/web/src/**`.
-- **`apps/api` (#3):** tipe Workers eksplisit (`wrangler types` atau `@cloudflare/workers-types`) karena `types` default TS 6 kosong; blok ESLint dengan globals worker, bukan Node; tes memakai `@cloudflare/vitest-pool-workers`.
+- **`apps/api` (#3, sudah ada):** tipe dari `@cloudflare/workers-types`; ESLint melarang global Node (`process`, `Buffer`, …) di `apps/api/src`; tes berjalan di runtime Workers lewat `@cloudflare/vitest-plugin` (pengganti `@cloudflare/vitest-pool-workers`). `nodejs_compat` dimatikan di `wrangler.jsonc`; ESLint juga melarang `node:*` dan `cloudflare:test` di `src`. Typecheck memakai `tsconfig.json` (src, tipe Workers saja) dan `tsconfig.test.json` (tes). Lokal: `pnpm dev` → http://127.0.0.1:8787/api/v1/health.
 - **pnpm 10** tidak menjalankan script install dependensi secara default: bila wrangler/workerd, esbuild, atau sharp butuh, daftarkan di `onlyBuiltDependencies` pada `pnpm-workspace.yaml`.

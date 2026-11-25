@@ -41,5 +41,28 @@ export default defineConfig(
     files: ['*.{js,ts}', 'tests/**/*.ts', '{apps,packages}/*/*.config.{js,ts}'],
     languageOptions: { globals: { ...globals.node } },
   },
+  {
+    // Project rule (ADR 0007): no Node.js APIs in the API, nodejs_compat is switched off in
+    // wrangler.jsonc. Configuration and secrets come only from bindings (`c.env`).
+    files: ['apps/api/src/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            { group: ['node:*'], message: 'Node.js APIs are disabled in apps/api (ADR 0007).' },
+            { group: ['cloudflare:test'], message: 'Test-only module; use it under test/.' },
+          ],
+        },
+      ],
+      'no-restricted-globals': [
+        'error',
+        ...['process', 'Buffer', 'require', '__dirname', '__filename', 'global'].map((name) => ({
+          name,
+          message: 'Node.js APIs are disabled in apps/api (ADR 0007); use bindings from c.env.',
+        })),
+      ],
+    },
+  },
   prettier,
 );
