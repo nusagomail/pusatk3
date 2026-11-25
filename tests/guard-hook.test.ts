@@ -86,6 +86,11 @@ describe('guard hook: production deploys stay with the owner', () => {
     'gh workflow run deploy-production.yml',
     'gh workflow run "Deploy production" --ref main',
     'gh api -X POST repos/nusagomail/pusatk3/actions/workflows/deploy-production.yml/dispatches -f ref=main',
+    // By numeric workflow ID, or by re-running a run (could be a production run).
+    'gh workflow run 123456 --ref main',
+    'gh api -X POST repos/nusagomail/pusatk3/actions/workflows/123456/dispatches -f ref=main',
+    'gh run rerun 987654',
+    'gh api -X POST repos/nusagomail/pusatk3/actions/runs/987654/rerun',
   ])('blocks %j', (command) => {
     expect(bash(command)).toBe(2);
   });

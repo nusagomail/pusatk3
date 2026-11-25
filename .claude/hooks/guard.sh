@@ -45,6 +45,10 @@ if [[ "$tool" == "Bash" ]]; then
     && has '(deploy-production|Deploy production)'; then
     block "workflow deploy production hanya dijalankan pemilik (docs/workflow.md gerbang 3)."
   fi
+  # A numeric workflow ID or a re-run hides which workflow it is; fail safe.
+  if has '(^|[[:space:]])gh[[:space:]]' && has '(workflow[[:space:]]+run[[:space:]]+[0-9]+|workflows/[0-9]+/dispatches|run[[:space:]]+rerun|runs/[0-9]+/rerun)'; then
+    block "memicu workflow lewat ID angka atau rerun bisa mengenai production; minta pemilik melakukannya."
+  fi
   # A web build for production makes a plain `wrangler deploy` target production.
   web_build="${CLAUDE_PROJECT_DIR:-.}/apps/web/dist/client/wrangler.json"
   if [[ -f "$web_build" ]] && grep -Eq '"targetEnvironment"[[:space:]]*:[[:space:]]*"production"' "$web_build" \

@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -74,6 +74,16 @@ describe('production preflight', () => {
     });
     expect(output).toMatch(/jadwal contoh/);
     expect(output).toContain(path.replace('apps/web/src/', ''));
+  });
+
+  it('parses the real apps/api/wrangler.jsonc once the owner fills in the ID', () => {
+    const real = readFileSync(resolve(repo, 'apps/api/wrangler.jsonc'), 'utf8');
+    expect(real).toContain('ISI-ID-D1-PRODUCTION-OLEH-PEMILIK');
+    const filled = real.replace(
+      'ISI-ID-D1-PRODUCTION-OLEH-PEMILIK',
+      '0b8f6c2e-1111-4222-8333-944455556666',
+    );
+    expect(problems({ ...READY, 'apps/api/wrangler.jsonc': filled })).toBe('');
   });
 
   it('exits non-zero with readable reasons when run as a script', () => {
