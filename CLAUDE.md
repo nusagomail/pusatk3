@@ -44,11 +44,12 @@ Prasyarat: Node 22.23.4+ (`.nvmrc`) dan pnpm 10.28 (terkunci di `packageManager`
 | `pnpm format` | Rapikan format dengan Prettier |
 | `pnpm typecheck` | `tsc` untuk file root + `turbo run typecheck` per paket |
 | `pnpm test` | Vitest: tes root (`tests/`) + setiap `apps/*`/`packages/*` yang punya `vitest.config.ts` |
+| `pnpm test:e2e` | Playwright (Chromium): build web, lalu jalankan web hasil build (port 4322) dan API lokal (8787); tes di `e2e/` |
 | `pnpm db:generate` | Buat file migrasi SQL dari skema Drizzle (`packages/db/migrations`); periksa hasilnya baris demi baris |
 | `pnpm db:migrate:local` | Terapkan migrasi ke D1 **lokal** (`apps/api/.wrangler/state`) |
 | `pnpm db:seed:local` | Isi D1 lokal: 14 bidang + 59 kategori (CSV) + 8 kota contoh; aman diulang |
 
-Migrasi ke D1 staging/production hanya lewat CI, tidak pernah dari sesi ini. Belum ada (jangan dipakai sampai issue-nya selesai): `pnpm test:e2e` (#9).
+Migrasi ke D1 staging/production hanya lewat CI, tidak pernah dari sesi ini. Di sesi cloud, Chromium untuk Playwright sudah terpasang: jangan jalankan `playwright install` (CI memasangnya sendiri). Hentikan `pnpm dev` sebelum `pnpm test:e2e`: tes selalu menyalakan server sendiri dan gagal bila port 4322/8787 terpakai.
 
 Setiap app/paket baru wajib `"private": true`, punya skrip `typecheck` dan `test`, dan punya `vitest.config.ts` agar tesnya ikut dijalankan `pnpm test` (dijaga `tests/workspace.test.ts`). Syarat lain per app: `apps/README.md`.
 

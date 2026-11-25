@@ -17,4 +17,4 @@ Status: diterima · 25 November 2026 · issue #6. Desain: `docs/superpowers/spec
 - **Label sponsor** hanya lewat `SponsorLabel` (teks tetap, tanpa props), bukan `Pill`, agar slot berbayar selalu berlabel (prinsip PRD 3).
 - Garis tepi kontrol form memakai `--color-border-strong` (≥ 3:1); `--color-border` hanya untuk garis pemisah dekoratif.
 - `packages/ui` belum dibuat; token dipindah ke paket bersama bila aplikasi mobile dimulai.
-- Tes komponen merender HTML (Astro Container API); tampilan nyata dicek dengan tangkapan layar Chromium. E2E Playwright otomatis di #9.
+- Tes komponen merender HTML (Astro Container API); tampilan nyata dicek dengan tangkapan layar Chromium. E2E Playwright otomatis sejak #9 (ADR 0013).

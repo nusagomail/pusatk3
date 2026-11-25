@@ -5,6 +5,6 @@
     "allowJs": true,
     "checkJs": true
   },
-  "include": ["tests/**/*.ts", "*.ts", "*.js"],
+  "include": ["tests/**/*.ts", "e2e/**/*.ts", "*.ts", "*.js"],
   "exclude": ["node_modules", "apps", "packages"]
 }

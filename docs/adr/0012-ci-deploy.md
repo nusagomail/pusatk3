@@ -14,7 +14,7 @@ Status: diterima · 25 November 2026 · issue #8. Desain: `docs/superpowers/spec
 - Memperbarui versi action: cari tag baru, pilih yang berumur ≥ 2 minggu, ganti SHA di workflow **dan** di `tests/workflows.test.ts`.
 - Workflow `workflow_run` selalu memakai file workflow dari `main`; perubahan pada `deploy-staging.yml` baru berlaku setelah di-merge.
 - Uji asap staging bergantung pada URL `*.workers.dev` yang dicetak wrangler; bila formatnya berubah, langkah uji asap gagal dengan pesan jelas.
-- E2E Playwright ditambahkan ke CI di #9.
+- E2E Playwright berjalan sebagai job `e2e` di `ci.yml` (ADR 0013).
 - Konkurensi CI di `main`: run yang masih menunggu diganti run yang lebih baru, sehingga commit di tengah bisa berstatus *cancelled*; deploy staging hanya untuk commit yang CI-nya sukses.
 - Job staging yang dilewati (tanpa secret) tetap tercatat sebagai deployment di halaman Environments; tidak ada yang benar-benar dikirim.
 - Hook pengaman juga memblokir pemicuan workflow production lewat `gh` dari sesi Claude Code.
