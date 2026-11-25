@@ -14,7 +14,7 @@ apps/
   api/        Hono di Cloudflare Workers — REST /api/v1
   mobile/     Expo (Fase 5)
 packages/
-  shared/     tipe, skema Zod, konstanta (kategori, peran, status)
+  shared/     tipe, skema Zod, konstanta (peran, status, penerbit); kategori K3 ada di DB (seed)
   db/         skema Drizzle + migrasi D1
   ui/         design tokens + komponen (opsional, bila dipakai web & mobile)
 docs/
