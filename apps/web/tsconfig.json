@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node"],
+    "jsx": "preserve"
+  },
+  "include": [".astro/types.d.ts", "src/**/*", "test/**/*", "*.config.ts"],
+  "exclude": ["dist"]
+}
