@@ -1,6 +1,6 @@
 # Skema database (draf)
 
-Sumber kebenaran skema. Setiap perubahan skema di kode wajib memperbarui file ini di PR yang sama. Semua tabel punya `id` (ULID teks), `created_at`, `updated_at`. Waktu disimpan UTC.
+Sumber kebenaran skema. Setiap perubahan skema di kode wajib memperbarui file ini di PR yang sama. Semua tabel punya `id` (ULID teks), `created_at`, `updated_at`. Waktu disimpan UTC sebagai integer milidetik (epoch). Array disimpan sebagai teks JSON. Status per tabel: **[dibuat]** = sudah ada di `packages/db/src/schema/` dan migrasi; lainnya masih rencana.
 
 ## Identitas & akses
 
@@ -27,9 +27,9 @@ Sumber kebenaran skema. Setiap perubahan skema di kode wajib memperbarui file in
 
 | Tabel | Kolom utama | Catatan |
 | --- | --- | --- |
-| `cities` | slug, name, province | |
-| `course_fields` | slug, name, sort_order | Bidang (14), lihat `docs/kategori-k3.md` |
-| `course_categories` | field_id, slug, name, issuers (kemnaker/bnsp/pupr/esdm/intl, array), document_type, typical_validity_years (nullable), regulation_ref, synonyms | Seed dari `docs/data/kategori-k3.csv`; sinonim untuk pencarian |
+| `cities` **[dibuat]** | slug (unik), name, province | Seed lokal: 8 kota contoh (`SAMPLE_CITIES`), bukan daftar kurasi |
+| `course_fields` **[dibuat]** | slug (unik), name, sort_order | Bidang (14), lihat `docs/kategori-k3.md`; `sort_order` = urutan di CSV |
+| `course_categories` **[dibuat]** | field_id → course_fields, slug (unik), name, issuers (kemnaker/bnsp/pupr/esdm/intl, array JSON), document_type, typical_validity_years (nullable), regulation_ref, synonyms (array JSON, bawaan `[]`) | Seed dari `docs/data/kategori-k3.csv` (`pnpm db:seed:local`, upsert per slug); sinonim diisi Fase 1 |
 | `schedules` | provider_id, branch_id, category_id, title, issuer (kemnaker/bnsp/pupr/esdm/intl), mode (offline/online), start_date, end_date, price_idr (nullable), quota, description, requirements, level (nullable, mis. Kelas I / Madya), certificate_kind (official/training_only), status (draft/published/expired) | Expired otomatis lewat Cron |
 | `saved_schedules` | user_id, schedule_id | |
 

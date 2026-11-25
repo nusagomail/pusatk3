@@ -25,6 +25,7 @@ pnpm lint        # cek kualitas kode dan format
 pnpm typecheck   # cek tipe TypeScript
 pnpm test        # jalankan tes
 pnpm build       # build semua app
+pnpm db:migrate:local && pnpm db:seed:local   # siapkan database lokal
 ```
 
 Struktur: `apps/` (aplikasi: web, api) dan `packages/` (kode bersama). Detail di [`docs/arsitektur.md`](docs/arsitektur.md).
