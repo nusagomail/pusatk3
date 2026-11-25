@@ -53,7 +53,7 @@ describe('ci.yml e2e job', () => {
   const job = block(block(ci, 'jobs', 0), 'e2e');
 
   it('exists as its own job', () => {
-    expect(job).toMatch(/^  e2e:\n/);
+    expect(job.startsWith('  e2e:\n')).toBe(true);
     expect(job).toMatch(/timeout-minutes: \d+/);
   });
 
