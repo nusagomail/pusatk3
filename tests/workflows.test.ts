@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -8,7 +8,8 @@ import { describe, expect, it } from 'vitest';
 const read = (name: string) =>
   readFileSync(resolve(import.meta.dirname, '../.github/workflows', name), 'utf8');
 
-const WORKFLOWS = ['ci.yml', 'deploy-staging.yml', 'deploy-production.yml'] as const;
+// Staging deploys run on Cloudflare Workers Builds, not GitHub Actions (ADR 0015).
+const WORKFLOWS = ['ci.yml', 'deploy-production.yml'] as const;
 const PINNED = {
   'actions/checkout': '3d3c42e5aac5ba805825da76410c181273ba90b1', // v7.0.1
   'actions/setup-node': '949feb2413d6458794dcd2491c4babbbce0c15c1', // v7.1.0
@@ -102,52 +103,12 @@ describe('ci.yml', () => {
   });
 });
 
-describe('deploy-staging.yml', () => {
-  const text = read('deploy-staging.yml');
-
-  it('runs only after CI succeeded for a push to main of this repository, on the tested commit', () => {
-    expect(block(text, 'on', 0)).toMatch(
-      /workflow_run:\n\s+workflows: \[CI\]\n\s+types: \[completed\]/,
-    );
-    expect(text).toContain("github.event.workflow_run.conclusion == 'success'");
-    expect(text).toContain("github.event.workflow_run.head_branch == 'main'");
-    expect(text).toContain("github.event.workflow_run.event == 'push'");
-    expect(text).toContain(
-      'github.event.workflow_run.head_repository.full_name == github.repository',
-    );
-    expect(text).toContain('ref: ${{ github.event.workflow_run.head_sha }}');
-  });
-
-  it('uses the staging environment and never the production one', () => {
-    expect(text).toMatch(/environment: staging/);
-    expect(text).not.toMatch(/production/);
-  });
-
-  it('skips with a notice (not a failure) until the token exists (owner decision A)', () => {
-    expect(text).toMatch(/::notice::Deploy staging dilewati/);
-    expect(text).toMatch(/if: steps\.token\.outputs\.ready == 'true'/);
-  });
-
-  it('migrates, deploys API, checks the built worker, deploys web, then smoke-tests', () => {
-    const order = [
-      'd1 migrations apply DB --env staging --remote',
-      'wrangler deploy --env staging --var APP_VERSION:',
-      'CLOUDFLARE_ENV: staging',
-      '"pusatk3-web-staging"',
-      'pnpm --filter @pusatk3/web exec wrangler deploy',
-      '/api/v1/health',
-      'robots.txt',
-    ].map((needle) => indexOf(text, needle));
-    expect([...order].sort((a, b) => a - b)).toEqual(order);
-  });
-
-  it('waits for the new version instead of failing on a stale edge', () => {
-    expect(text).toMatch(/for attempt in/);
-    expect(text).toContain('--retry-max-time');
-  });
-
-  it('serializes deploys instead of cancelling one midway', () => {
-    expect(text).toMatch(/group: deploy-staging\n\s+cancel-in-progress: false/);
+describe('staging deploys', () => {
+  it('are not done by GitHub Actions (Workers Builds, ADR 0015)', () => {
+    // Every workflow file is listed (and so checked by the rules above); none mentions staging.
+    const files = readdirSync(resolve(import.meta.dirname, '../.github/workflows')).sort();
+    expect(files).toEqual([...WORKFLOWS].sort());
+    for (const name of WORKFLOWS) expect(read(name)).not.toMatch(/staging/i);
   });
 });
 

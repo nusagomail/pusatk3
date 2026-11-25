@@ -1,4 +1,4 @@
-// Web Worker (Astro static assets). Top level = local build/preview. Deploys only from CI (#8):
+// Web Worker (Astro static assets). Top level = local build/preview. Deploys: staging by Cloudflare Workers Builds (ADR 0015), production by GitHub Actions (ADR 0012):
 // build with CLOUDFLARE_ENV=<env> (only the production build is indexable).
 // Wrangler does NOT inherit routes or vars into environments: declare them per env.
 // See docs/adr/0011-lingkungan-cloudflare.md.

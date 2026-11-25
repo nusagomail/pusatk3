@@ -1,6 +1,6 @@
 # ADR 0012: CI dan deploy lewat GitHub Actions
 
-Status: diterima · 25 November 2026 · issue #8. Desain: `docs/superpowers/specs/2026-11-25-ci-design.md`. Melanjutkan ADR 0011.
+Status: diterima · 25 November 2026 · issue #8. **Bagian staging digantikan ADR 0015** (staging lewat Cloudflare Workers Builds); bagian CI dan production tetap berlaku. Desain: `docs/superpowers/specs/2026-11-25-ci-design.md`. Melanjutkan ADR 0011.
 
 ## Keputusan
 - **`ci.yml`** (PR dan push ke `main`): `pnpm install --frozen-lockfile`, lint, typecheck, test, build. Izin hanya baca, tanpa secret. Run PR lama dibatalkan bila ada commit baru. Cache hanya store pnpm (bukan `node_modules`, lihat catatan `@emnapi` di `apps/README.md`).

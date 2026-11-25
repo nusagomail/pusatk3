@@ -120,8 +120,20 @@ describe('guard hook: secrets stay with the owner', () => {
     'wrangler secret put RESEND_API_KEY',
     'wrangler secret delete X',
     'git push --force origin main',
+    // Every commit on main deploys staging (ADR 0015): main only changes through PRs.
+    'git push origin main',
+    'git push origin HEAD:main',
+    'git push -u origin feat/x:main',
+    'git push origin refs/heads/main',
   ])('blocks %j', (command) => {
     expect(bash(command)).toBe(2);
+  });
+
+  it('blocks a bare git push while the checkout is on main', () => {
+    const project = mkdtempSync(join(tmpdir(), 'guard-main-'));
+    spawnSync('git', ['init', '-q', '-b', 'main', project]);
+    expect(bash('git push', project)).toBe(2);
+    expect(bash('git push -u origin feat/21-skema', project)).toBe(0);
   });
 
   it.each(['/repo/.env', '/repo/apps/api/.dev.vars', '/repo/.env.production'])(
