@@ -9,6 +9,8 @@ describe('error codes', () => {
       FORBIDDEN: 403,
       NOT_FOUND: 404,
       CONFLICT: 409,
+      PAYLOAD_TOO_LARGE: 413,
+      UNSUPPORTED_MEDIA_TYPE: 415,
       VALIDATION_ERROR: 422,
       RATE_LIMITED: 429,
       INTERNAL_ERROR: 500,

@@ -10,6 +10,8 @@ const CODE_BY_STATUS: Partial<Record<number, ErrorCode>> = {
   403: 'FORBIDDEN',
   404: 'NOT_FOUND',
   409: 'CONFLICT',
+  413: 'PAYLOAD_TOO_LARGE',
+  415: 'UNSUPPORTED_MEDIA_TYPE',
   422: 'VALIDATION_ERROR',
   429: 'RATE_LIMITED',
 };
@@ -20,8 +22,8 @@ export const onError: ErrorHandler<AppEnv> = (err, c) => {
   if (err instanceof AppError) return errorResponse(c, err.code, err.message, err.fields);
 
   if (err instanceof HTTPException) {
-    const code = CODE_BY_STATUS[err.status];
-    // Hono's own messages are safe (e.g. "Malformed JSON in request body") but not ours to show.
+    // Hono's own messages are not shown. Any other client error (4xx) is a 400, never a 500.
+    const code = CODE_BY_STATUS[err.status] ?? (err.status < 500 ? 'BAD_REQUEST' : undefined);
     if (code) return errorResponse(c, code);
   }
 

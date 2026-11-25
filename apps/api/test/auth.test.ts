@@ -12,6 +12,9 @@ const app = createApp({
     v1.get('/test/user', requireUser(), handler);
     v1.get('/test/provider', requireProviderRole(['owner', 'admin'], resolveProviderId), handler);
     v1.get('/test/admin', requireAdmin(['super_admin']), handler);
+    v1.use('/test/prefix/*', requireUser());
+    v1.all('/test/prefix/*', handler);
+    v1.all('/test/any', requireUser(), handler);
   },
 });
 
@@ -40,6 +43,32 @@ describe.each(['/api/v1/test/user', '/api/v1/test/provider', '/api/v1/test/admin
       await expectApiError(res, 401, 'UNAUTHORIZED');
       expect(handler).not.toHaveBeenCalled();
     });
+  },
+);
+
+describe.each([
+  ['HEAD', '/api/v1/test/any'],
+  ['POST', '/api/v1/test/any'],
+  ['PATCH', '/api/v1/test/any'],
+  ['DELETE', '/api/v1/test/any'],
+  ['GET', '/api/v1/test/prefix/deep/path'],
+  ['POST', '/api/v1/test/prefix/x'],
+])('%s %s', (method, path) => {
+  it('is rejected and never reaches the handler', async () => {
+    handler.mockClear();
+    const res = await call(app, path, { method });
+    expect(res.status).toBe(401);
+    expect(handler).not.toHaveBeenCalled();
+  });
+});
+
+it.each(['/api/v1/test/user/', '//api/v1/test/user', '/api/v1/test/%75ser'])(
+  '%s never reaches the handler',
+  async (path) => {
+    handler.mockClear();
+    const res = await call(app, path);
+    expect([401, 404]).toContain(res.status);
+    expect(handler).not.toHaveBeenCalled();
   },
 );
 

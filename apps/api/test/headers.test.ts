@@ -7,6 +7,8 @@ const app = createApp({
     v1.get('/test/boom', () => {
       throw new Error('boom');
     });
+    v1.get('/test/raw', () => new Response('raw'));
+    v1.get('/test/redirect', () => Response.redirect('https://wa.me/620000', 302));
   },
 });
 
@@ -14,6 +16,8 @@ const paths = {
   'success (health)': '/api/v1/health',
   'not found': '/api/v1/nope',
   'internal error': '/api/v1/test/boom',
+  'raw Response from a handler': '/api/v1/test/raw',
+  'immutable Response (redirect)': '/api/v1/test/redirect',
 };
 
 describe.each(Object.entries(paths))('security headers on %s', (_name, path) => {
@@ -48,15 +52,17 @@ describe('request id', () => {
     expect(a).not.toBe(b);
   });
 
-  it('reuses a safe incoming id', async () => {
-    const res = await call(app, '/api/v1/health', { headers: { 'x-request-id': 'abc-123' } });
-    expect(res.headers.get('x-request-id')).toBe('abc-123');
+  it('ignores any incoming id (no spoofed log correlation or injection)', async () => {
+    for (const incoming of ['abc-123', 'evil"},{"level":"admin']) {
+      const res = await call(app, '/api/v1/health', { headers: { 'x-request-id': incoming } });
+      expect(res.headers.get('x-request-id')).not.toBe(incoming);
+      expect(res.headers.get('x-request-id')).toMatch(/^[0-9a-f-]{36}$/);
+    }
   });
 
-  it('replaces an unsafe incoming id (log injection)', async () => {
-    const res = await call(app, '/api/v1/health', {
-      headers: { 'x-request-id': 'evil"},{"level":"admin' },
-    });
-    expect(res.headers.get('x-request-id')).not.toContain('"');
+  it('keeps redirects working', async () => {
+    const res = await call(app, '/api/v1/test/redirect');
+    expect(res.status).toBe(302);
+    expect(res.headers.get('location')).toBe('https://wa.me/620000');
   });
 });

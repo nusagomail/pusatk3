@@ -10,6 +10,8 @@ export const DEFAULT_ERROR_MESSAGES: Record<ErrorCode, string> = {
   FORBIDDEN: 'Anda tidak memiliki akses.',
   NOT_FOUND: 'Data tidak ditemukan.',
   CONFLICT: 'Data bentrok dengan data yang sudah ada.',
+  PAYLOAD_TOO_LARGE: 'Data yang dikirim terlalu besar.',
+  UNSUPPORTED_MEDIA_TYPE: 'Format data harus JSON.',
   VALIDATION_ERROR: 'Periksa kembali isian Anda.',
   RATE_LIMITED: 'Terlalu banyak permintaan. Coba lagi nanti.',
   INTERNAL_ERROR: 'Terjadi kesalahan. Coba lagi nanti.',
@@ -27,13 +29,18 @@ export class AppError extends Error {
   }
 }
 
-/** Writes `{ error: { code, message, fields? } }` with the status mapped from `code`. */
+/**
+ * Writes `{ error: { code, message, fields? } }` with the status mapped from `code`.
+ * `fields` is only sent with VALIDATION_ERROR. Errors are never cached.
+ */
 export function errorResponse(
   c: Context,
   code: ErrorCode,
   message: string = DEFAULT_ERROR_MESSAGES[code],
   fields?: FieldError[],
 ) {
-  const body: ApiError = { error: { code, message, ...(fields?.length ? { fields } : {}) } };
+  const withFields = code === 'VALIDATION_ERROR' && fields && fields.length > 0;
+  const body: ApiError = { error: { code, message, ...(withFields ? { fields } : {}) } };
+  c.header('Cache-Control', 'no-store');
   return c.json(body, ERROR_HTTP_STATUS[code] as ContentfulStatusCode);
 }

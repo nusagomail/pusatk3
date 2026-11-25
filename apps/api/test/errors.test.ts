@@ -1,4 +1,5 @@
 import { paginationQuerySchema } from '@pusatk3/shared';
+import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/app';
@@ -25,6 +26,26 @@ const app = createApp({
     v1.get('/test/items', validateQuery(paginationQuerySchema), (c) =>
       c.json(c.req.valid('query')),
     );
+    v1.patch('/test/optional', validateJson(z.strictObject({ name: z.string().optional() })), (c) =>
+      c.json(c.req.valid('json')),
+    );
+    v1.post(
+      '/test/record',
+      validateJson(z.strictObject({ tags: z.record(z.string(), z.number()) })),
+      (c) => c.json(c.req.valid('json')),
+    );
+    v1.post('/test/many', validateJson(z.strictObject({ items: z.array(z.number()) })), (c) =>
+      c.json(c.req.valid('json')),
+    );
+    v1.get('/test/tags', validateQuery(z.strictObject({ tag: z.string().optional() })), (c) =>
+      c.json(c.req.valid('query')),
+    );
+    v1.get('/test/http/:status', (c) => {
+      throw new HTTPException(Number(c.req.param('status')) as 400, { message: 'internal detail' });
+    });
+    v1.get('/test/app-error-fields', () => {
+      throw new AppError('FORBIDDEN', 'x', [{ path: 'a', message: 'b' }]);
+    });
   },
 });
 
@@ -109,9 +130,42 @@ describe('validateJson', () => {
     expect(body.error.fields).toBeUndefined();
   });
 
-  it('missing JSON content-type → 422 or 400, never 200', async () => {
-    const res = await call(app, '/api/v1/test/echo', { method: 'POST', body: '{"name":"Ani"}' });
-    expect([400, 422]).toContain(res.status);
+  it.each([
+    ['no content-type', undefined],
+    ['text/plain (CORS simple request)', 'text/plain'],
+    ['form', 'application/x-www-form-urlencoded'],
+  ])('%s → 415 even when every field is optional', async (_name, type) => {
+    const res = await call(app, '/api/v1/test/optional', {
+      method: 'PATCH',
+      headers: type ? { 'content-type': type } : {},
+      body: '{"name":"Ani"}',
+    });
+    await expectApiError(res, 415, 'UNSUPPORTED_MEDIA_TYPE');
+  });
+
+  it('accepts application/json with charset', async () => {
+    const res = await call(app, '/api/v1/test/optional', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json; charset=utf-8' },
+      body: '{"name":"Ani"}',
+    });
+    expect(res.status).toBe(200);
+  });
+
+  it('never emits fields with an empty path', async () => {
+    const res = await call(app, '/api/v1/test/record', json('{"tags":{"":"x"}}'));
+    const body = await expectApiError(res, 422, 'VALIDATION_ERROR');
+    for (const field of body.error.fields ?? []) expect(field.path).not.toBe('');
+  });
+
+  it('caps the number of field errors at 50', async () => {
+    const items = JSON.stringify({ items: Array.from({ length: 500 }, () => 'x') });
+    const body = await expectApiError(
+      await call(app, '/api/v1/test/many', json(items)),
+      422,
+      'VALIDATION_ERROR',
+    );
+    expect(body.error.fields?.length).toBe(50);
   });
 });
 
@@ -121,6 +175,10 @@ describe('validateQuery', () => {
     expect(await res.json()).toEqual({ limit: 20 });
   });
 
+  it('rejects repeated query keys (arrive as arrays) with 422', async () => {
+    await expectApiError(await call(app, '/api/v1/test/tags?tag=a&tag=b'), 422, 'VALIDATION_ERROR');
+  });
+
   it('rejects bad and unknown query parameters with 422', async () => {
     await expectApiError(await call(app, '/api/v1/test/items?limit=020'), 422, 'VALIDATION_ERROR');
     await expectApiError(
@@ -128,5 +186,41 @@ describe('validateQuery', () => {
       422,
       'VALIDATION_ERROR',
     );
+  });
+});
+
+describe('HTTPException mapping', () => {
+  it.each([
+    [400, 'BAD_REQUEST'],
+    [401, 'UNAUTHORIZED'],
+    [405, 'BAD_REQUEST'],
+    [413, 'PAYLOAD_TOO_LARGE'],
+    [415, 'UNSUPPORTED_MEDIA_TYPE'],
+    [418, 'BAD_REQUEST'],
+  ] as const)('%i → %s (4xx is never a 500)', async (status, code) => {
+    const res = await call(app, `/api/v1/test/http/${status}`);
+    const expected = code === 'BAD_REQUEST' ? 400 : status;
+    const body = await expectApiError(res, expected, code);
+    expect(body.error.message).not.toContain('internal detail');
+  });
+
+  it('5xx → 500 INTERNAL_ERROR', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    await expectApiError(await call(app, '/api/v1/test/http/503'), 500, 'INTERNAL_ERROR');
+  });
+});
+
+describe('error responses', () => {
+  it('are never cached', async () => {
+    expect((await call(app, '/api/v1/nope')).headers.get('cache-control')).toBe('no-store');
+  });
+
+  it('drop fields unless the code is VALIDATION_ERROR', async () => {
+    const body = await expectApiError(
+      await call(app, '/api/v1/test/app-error-fields'),
+      403,
+      'FORBIDDEN',
+    );
+    expect(body.error.fields).toBeUndefined();
   });
 });

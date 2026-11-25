@@ -5,6 +5,10 @@ export interface Env {
 
 export interface AppEnv {
   Bindings: Env;
+  Variables: {
+    /** Set by the request-id middleware for every request. */
+    requestId: string;
+  };
 }
 
 type AppBindings = Env;
