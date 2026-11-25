@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import Page from '../src/pages/internal/komponen.astro';
+import Page from '../src/dev/komponen.astro';
 import { render } from './render';
 
 describe('/internal/komponen', () => {
