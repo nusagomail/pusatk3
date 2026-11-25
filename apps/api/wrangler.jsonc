@@ -1,4 +1,7 @@
-// Local development only. Staging/production environments and bindings: issue #7.
+// API Worker. Top level = local development (`pnpm dev`, tests). Deploys only from CI (#8):
+// staging = `--env staging`, production = `--env production` (owner approval).
+// Wrangler does NOT inherit vars, d1_databases or routes into environments: declare them per env.
+// See docs/adr/0011-lingkungan-cloudflare.md.
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "pusatk3-api",
@@ -7,9 +10,8 @@
   // Node.js APIs are on by default from 2026-08-04; we opt out so process.env/Buffer are
   // unavailable and config comes only from bindings (c.env). See ADR 0007.
   "compatibility_flags": ["no_nodejs_compat", "no_nodejs_compat_v2"],
-  // No public *.workers.dev URL until environments are set up (#7).
   "workers_dev": false,
-  // Local D1 only (state in .wrangler/). staging/production databases: #7; remote migrations: CI only.
+  // Local D1 only (state in .wrangler/). Remote migrations: CI only.
   "d1_databases": [
     {
       "binding": "DB",
@@ -20,5 +22,48 @@
   ],
   "vars": {
     "APP_VERSION": "dev",
+  },
+  "env": {
+    "staging": {
+      "name": "pusatk3-api-staging",
+      // Owner decision 1A: staging on *.workers.dev until pusatk3.id is on Cloudflare.
+      "workers_dev": true,
+      "preview_urls": false,
+      // Staging holds sample data only; logs help debugging. Production: off until Fase 3.
+      "observability": { "enabled": true },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "pusatk3-staging",
+          "database_id": "b8fcd041-9853-4ed2-81db-0901dba670b8",
+          "migrations_dir": "../../packages/db/migrations",
+        },
+      ],
+      // CI overrides APP_VERSION with the commit SHA (--var APP_VERSION:<sha>).
+      "vars": {
+        "APP_VERSION": "staging",
+      },
+    },
+    "production": {
+      "name": "pusatk3-api-production",
+      "workers_dev": false,
+      "preview_urls": false,
+      // Invocation logs contain full URLs (possible personal data): off until Fase 3.
+      "observability": { "enabled": false },
+      // Same origin as the web app: pusatk3.id/api/* (needs the pusatk3.id zone on Cloudflare).
+      "routes": [{ "pattern": "pusatk3.id/api/*", "zone_name": "pusatk3.id" }],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "pusatk3-production",
+          // Created by the owner (docs/setup-cloudflare.md); CI refuses to deploy the placeholder.
+          "database_id": "ISI-ID-D1-PRODUCTION-OLEH-PEMILIK",
+          "migrations_dir": "../../packages/db/migrations",
+        },
+      ],
+      "vars": {
+        "APP_VERSION": "production",
+      },
+    },
   },
 }
