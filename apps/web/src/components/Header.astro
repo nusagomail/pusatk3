@@ -1,0 +1,167 @@
+---
+import Logo from './Logo.astro';
+import ThemeToggle from './ThemeToggle.astro';
+
+interface Props {
+  /** Path of the current page, to mark the active link. */
+  current?: string;
+}
+
+const { current } = Astro.props;
+const links = [
+  { href: '/cari', label: 'Cari Pelatihan' },
+  { href: '/belajar', label: 'E-course' },
+  { href: '/untuk-penyedia', label: 'Untuk Penyedia' },
+  { href: '/bantuan', label: 'Bantuan' },
+];
+---
+
+<header class="header">
+  <div class="header__inner">
+    <a class="header__brand" href="/" aria-label="PusatK3 — Beranda">
+      <Logo height={32} />
+    </a>
+
+    <nav class="header__nav" aria-label="Navigasi utama">
+      <ul class="header__links header__links--desktop">
+        {links.map((link) => (
+          <li>
+            <a href={link.href} aria-current={current === link.href ? 'page' : undefined}>
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+      <details class="header__menu">
+        <summary class="header__menu-button">Menu</summary>
+        <ul class="header__links header__links--mobile">
+          {links.map((link) => (
+            <li>
+              <a href={link.href} aria-current={current === link.href ? 'page' : undefined}>
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </details>
+    </nav>
+
+    <div class="header__actions">
+      <ThemeToggle />
+      <span class="header__lang" title="Versi bahasa Inggris segera hadir">
+        <span aria-hidden="true">ID · EN</span>
+        <span class="visually-hidden">Bahasa: Indonesia</span>
+      </span>
+      <a class="header__login" href="/masuk">
+        Masuk
+      </a>
+    </div>
+  </div>
+</header>
+
+<style>
+  .header {
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .header__inner {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    max-width: var(--content-width);
+    margin: 0 auto;
+    padding: 0.75rem 1rem;
+  }
+  .header__brand {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-target);
+  }
+  .header__nav {
+    margin-left: auto;
+  }
+  .header__menu-button {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-target);
+    padding: 0 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-button);
+    font-weight: var(--font-weight-nav);
+    cursor: pointer;
+    list-style: none;
+  }
+  .header__menu-button::-webkit-details-marker {
+    display: none;
+  }
+  .header__links {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  /* Mobile: links inside the <details> menu; desktop list hidden. */
+  .header__links--desktop {
+    display: none;
+  }
+  .header__links--mobile {
+    position: absolute;
+    right: 1rem;
+    z-index: 10;
+    display: grid;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+  }
+  .header__links a {
+    display: flex;
+    align-items: center;
+    min-height: var(--touch-target);
+    padding: 0 0.75rem;
+    color: var(--color-ink);
+    font-weight: var(--font-weight-nav);
+    text-decoration: none;
+  }
+  .header__links a[aria-current='page'] {
+    color: var(--color-accent-text);
+  }
+  .header__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .header__lang {
+    display: none;
+    color: var(--color-ink-subtle);
+    font-size: var(--font-size-label);
+    font-weight: var(--font-weight-nav);
+  }
+  .header__login {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-target);
+    padding: 0 1rem;
+    border-radius: var(--radius-button);
+    background: var(--color-hero);
+    color: var(--color-on-hero);
+    /* Keeps the button shape visible where the hero color is close to the page (dark theme). */
+    border: 1px solid var(--color-border-strong);
+    font-weight: var(--font-weight-strong);
+    text-decoration: none;
+  }
+
+  /* Desktop: inline list, no menu button. */
+  @media (min-width: 900px) {
+    .header__links--desktop {
+      display: flex;
+      gap: 0.25rem;
+    }
+    .header__menu {
+      display: none;
+    }
+    .header__lang {
+      display: inline;
+    }
+  }
+</style>

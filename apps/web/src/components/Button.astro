@@ -1,0 +1,78 @@
+---
+/**
+ * Primary (orange, navy text), secondary (outlined). Renders <a> when `href` is set,
+ * otherwise <button>. WhatsApp contact uses WhatsAppButton.
+ */
+import type { HTMLAttributes } from 'astro/types';
+
+interface Props {
+  variant?: 'primary' | 'secondary';
+  href?: string;
+  type?: 'button' | 'submit';
+  block?: boolean;
+  class?: string;
+  'aria-label'?: string;
+}
+
+const {
+  variant = 'primary',
+  href,
+  type = 'button',
+  block = false,
+  class: extra,
+  ...rest
+} = Astro.props;
+const classes = ['btn', `btn--${variant}`, block && 'btn--block', extra];
+const linkAttrs: HTMLAttributes<'a'> = { href, ...rest };
+---
+
+{href ? (
+  <a class:list={classes} {...linkAttrs}>
+    <slot />
+  </a>
+) : (
+  <button class:list={classes} type={type} {...rest}>
+    <slot />
+  </button>
+)}
+
+<style>
+  .btn {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: var(--touch-target);
+    padding: 0 1.125rem;
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-button);
+    font: inherit;
+    font-weight: var(--font-weight-strong);
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      filter 0.15s ease,
+      background-color 0.15s ease;
+  }
+  .btn--block {
+    display: flex;
+    width: 100%;
+  }
+  .btn--primary {
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+  .btn--primary:hover {
+    filter: brightness(1.06);
+  }
+  .btn--secondary {
+    background: var(--color-bg);
+    color: var(--color-ink);
+    border-color: var(--color-border);
+  }
+  .btn--secondary:hover {
+    background: var(--color-surface);
+  }
+</style>

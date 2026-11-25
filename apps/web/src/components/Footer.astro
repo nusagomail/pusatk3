@@ -1,0 +1,109 @@
+---
+import Logo from './Logo.astro';
+
+const year = new Date().getFullYear();
+const columns = [
+  {
+    title: 'Platform',
+    links: [
+      { href: '/cari', label: 'Cari Pelatihan' },
+      { href: '/belajar', label: 'E-course' },
+      { href: '/untuk-penyedia', label: 'Untuk Penyedia' },
+    ],
+  },
+  {
+    title: 'Bantuan',
+    links: [
+      { href: '/bantuan', label: 'FAQ' },
+      { href: '/cara-mengurutkan-hasil', label: 'Cara Kami Mengurutkan Hasil' },
+      { href: '/kontak', label: 'Kontak' },
+    ],
+  },
+  {
+    title: 'Legal',
+    links: [
+      { href: '/privasi', label: 'Kebijakan Privasi' },
+      { href: '/syarat', label: 'Syarat & Ketentuan' },
+      { href: '/disclaimer', label: 'Disclaimer' },
+    ],
+  },
+];
+---
+
+<footer class="footer">
+  <div class="footer__inner">
+    <div class="footer__about">
+      <Logo onDark height={32} />
+      <p>
+        <strong>Direktori independen, bukan situs pemerintah.</strong> PusatK3 tidak
+        menyelenggarakan pelatihan, tidak menerbitkan sertifikat, dan tidak memproses pembayaran
+        pelatihan.
+      </p>
+    </div>
+    {columns.map((column, index) => (
+      <nav class="footer__column" aria-labelledby={`footer-col-${index}`}>
+        <h2 class="footer__title" id={`footer-col-${index}`}>
+          {column.title}
+        </h2>
+        <ul>
+          {column.links.map((link) => (
+            <li>
+              <a href={link.href}>{link.label}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    ))}
+  </div>
+  <p class="footer__copy">© {year} PusatK3</p>
+</footer>
+
+<style>
+  .footer {
+    background: var(--color-hero);
+    color: var(--color-on-hero-muted);
+    font-size: 0.9375rem;
+  }
+  .footer__inner {
+    display: grid;
+    gap: 2rem;
+    max-width: var(--content-width);
+    margin: 0 auto;
+    padding: 2.5rem 1rem 1.5rem;
+  }
+  .footer__about strong {
+    color: var(--color-on-hero);
+  }
+  .footer__title {
+    margin: 0 0 0.5rem;
+    color: var(--color-on-hero);
+    font-size: 1rem;
+  }
+  .footer ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .footer a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-target);
+    min-width: var(--touch-target);
+    color: var(--color-on-hero-muted);
+    text-decoration: none;
+  }
+  .footer a:hover {
+    color: var(--color-on-hero);
+    text-decoration: underline;
+  }
+  .footer__copy {
+    max-width: var(--content-width);
+    margin: 0 auto;
+    padding: 0 1rem 1.5rem;
+  }
+  @media (min-width: 900px) {
+    .footer__inner {
+      grid-template-columns: 2fr repeat(3, 1fr);
+    }
+  }
+</style>

@@ -1,0 +1,34 @@
+---
+/**
+ * "Terverifikasi" badge: legality checked by PusatK3 curators. Never depends on a paid plan
+ * (CLAUDE.md rule 5), so this component takes no plan/payment input.
+ */
+interface Props {
+  /** Short label for tight spaces (icon + "Terverifikasi" either way for screen readers). */
+  compact?: boolean;
+}
+
+const { compact = false } = Astro.props;
+---
+
+<span
+  class:list={['badge', compact && 'badge--compact']}
+  title="Legalitas penyedia diverifikasi PusatK3"
+>
+  <svg aria-hidden="true" viewBox="0 0 20 20" width="16" height="16" fill="currentColor">
+    <path d="M10 1.5 12.4 3l2.8-.1.9 2.7 2.3 1.6-.8 2.8.8 2.8-2.3 1.6-.9 2.7-2.8-.1L10 18.5 7.6 17l-2.8.1-.9-2.7-2.3-1.6.8-2.8-.8-2.8 2.3-1.6.9-2.7 2.8.1L10 1.5Zm3.3 6-4.1 4.1-2-2-1.1 1.1 3.1 3.1 5.2-5.2-1.1-1.1Z"></path>
+  </svg>
+  <span class:list={[compact && 'visually-hidden']}>Terverifikasi</span>
+</span>
+
+<style>
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--color-success);
+    font-size: var(--font-size-label);
+    font-weight: var(--font-weight-strong);
+    white-space: nowrap;
+  }
+</style>
