@@ -64,3 +64,8 @@ export type ReviewStatus = z.infer<typeof reviewStatusSchema>;
 export const LOCALE_VALUES = ['id', 'en'] as const;
 export const localeSchema = z.enum(LOCALE_VALUES);
 export type Locale = z.infer<typeof localeSchema>;
+
+/** Subscription plan codes (plans.code, Fase 4). Never affects verification or ranking. */
+export const PLAN_CODE_VALUES = ['free', 'pro', 'business'] as const;
+export const planCodeSchema = z.enum(PLAN_CODE_VALUES);
+export type PlanCode = z.infer<typeof planCodeSchema>;

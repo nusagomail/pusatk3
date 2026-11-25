@@ -17,11 +17,11 @@ Sumber kebenaran skema. Setiap perubahan skema di kode wajib memperbarui file in
 
 | Tabel | Kolom utama | Catatan |
 | --- | --- | --- |
-| `providers` | slug, name, type (pjk3/lsp/tuk), description, logo_key, whatsapp, email, phone, website, status (unclaimed/claimed/closed), verification_status (none/pending/verified/suspended), verified_at, plan | Dibuat dari data publik bila belum diklaim |
+| `providers` **[dibuat]** | slug (unik), name, type (pjk3/lsp/tuk), description, logo_key, whatsapp (format `62…`), email, phone, website (https), status (unclaimed/claimed/closed, bawaan unclaimed), verification_status (none/pending/verified/suspended, bawaan none), verified_at, plan (free/pro/business, bawaan free) | Dibuat dari data publik bila belum diklaim. `plan` tidak pernah memengaruhi badge atau urutan organik |
 | `provider_members` | provider_id, user_id, role (owner/admin/staff) | Tepat satu owner per penyedia |
 | `provider_claims` | provider_id, user_id, status (pending/approved/rejected), evidence_keys, reviewed_by, reviewed_at, note | |
-| `provider_licenses` | provider_id, kind (izin_pjk3/lisensi_lsp/tuk), number, issuer, document_key, valid_until | Perubahan → verification_status = pending |
-| `branches` | provider_id, name, city_id, address, lat, lng, is_main | |
+| `provider_licenses` **[dibuat]** | provider_id, kind (izin_pjk3/lisensi_lsp/tuk), number, issuer (teks bebas), document_key, valid_until (tanggal, nullable) | Perubahan → verification_status = pending (ditegakkan di API, Fase 2). Unik per (penyedia, kind, number) |
+| `branches` **[dibuat]** | provider_id, name, city_id → cities, address, lat, lng (nullable, diisi bersamaan, dalam rentang peta), is_main (bawaan false) | Nama cabang unik per penyedia (kunci impor) |
 
 ## Katalog & jadwal
 
@@ -30,7 +30,7 @@ Sumber kebenaran skema. Setiap perubahan skema di kode wajib memperbarui file in
 | `cities` **[dibuat]** | slug (unik), name, province | Seed lokal: 8 kota contoh (`SAMPLE_CITIES`), bukan daftar kurasi |
 | `course_fields` **[dibuat]** | slug (unik), name, sort_order | Bidang (14), lihat `docs/kategori-k3.md`; `sort_order` = urutan di CSV |
 | `course_categories` **[dibuat]** | field_id → course_fields, slug (unik), name, issuers (kemnaker/bnsp/pupr/esdm/intl, array JSON), document_type, typical_validity_years (nullable), regulation_ref, synonyms (array JSON, bawaan `[]`) | Seed dari `docs/data/kategori-k3.csv` (`pnpm db:seed:local`, upsert per slug); sinonim diisi Fase 1 |
-| `schedules` | provider_id, branch_id, category_id, title, issuer (kemnaker/bnsp/pupr/esdm/intl), mode (offline/online), start_date, end_date, price_idr (nullable), quota, description, requirements, level (nullable, mis. Kelas I / Madya), certificate_kind (official/training_only), status (draft/published/expired) | Expired otomatis lewat Cron |
+| `schedules` **[dibuat]** | provider_id, branch_id (wajib untuk offline, kosong untuk online; harus cabang milik penyedia yang sama), category_id → course_categories, title, issuer (kemnaker/bnsp/pupr/esdm/intl), mode (offline/online), start_date, end_date (tanggal, end ≥ start), price_idr (nullable, ≥ 0), quota (nullable, ≥ 1), description, requirements, level (nullable, mis. Kelas I / Madya), certificate_kind (official/training_only), status (draft/published/expired, bawaan draft) | Expired otomatis lewat Cron. Indeks: (status, start_date), provider_id, category_id, branch_id |
 | `saved_schedules` | user_id, schedule_id | |
 
 ## Lead & ulasan
@@ -58,6 +58,9 @@ Sumber kebenaran skema. Setiap perubahan skema di kode wajib memperbarui file in
 | `courses`, `lessons`, `lesson_progress` | konten e-course + progres |
 
 ## Aturan
-- Nilai enum di tabel ini juga ada sebagai konstanta di `packages/shared/src/constants.ts`; ubah keduanya bersama. Kolom `issuer` di `provider_licenses` dan `cert_reminders` belum ditetapkan apakah enum atau teks bebas (mis. nama LSP untuk TUK); putuskan saat tabelnya dibuat.
+- Nilai enum di tabel ini juga ada sebagai konstanta di `packages/shared/src/constants.ts`; ubah keduanya bersama. Kolom `issuer` di `provider_licenses` adalah **teks bebas** (mis. "Kemnaker RI", atau nama LSP untuk TUK); `cert_reminders.issuer` diputuskan saat tabelnya dibuat.
+- Kolom enum dijaga `CHECK` di database (dibangun dari konstanta yang sama), selain validasi Zod.
+- Tanggal kalender (jadwal, masa berlaku izin) disimpan sebagai teks `YYYY-MM-DD` (hari menurut Asia/Jakarta, tanpa zona waktu); waktu kejadian tetap integer milidetik UTC (ADR 0014).
+- Skema input data direktori (`providerInputSchema`, `branchInputSchema`, `licenseInputSchema`, `scheduleInputSchema` di `packages/shared`) tidak pernah menerima status, verifikasi, atau paket.
 - Hapus akun user: soft delete + anonimisasi data pribadi di `leads` sesuai kebijakan retensi.
 - Tidak ada kolom untuk menyimpan scan sertifikat user.
