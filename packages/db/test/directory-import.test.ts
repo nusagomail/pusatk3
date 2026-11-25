@@ -155,6 +155,18 @@ describe('parseDirectoryCsv', () => {
       /jadwal:2 priceIdr/,
     ],
     [
+      'price with decimals',
+      { jadwal: minimal.jadwal.replace('5.500.000', '4500000.00') },
+      /jadwal:2 priceIdr/,
+    ],
+    [
+      'two main offices',
+      {
+        cabang: `${header('cabang')}\npt-a,Kantor Pusat,jakarta,Jl. A,,,ya\npt-a,Kantor Dua,bekasi,Jl. B,,,ya\n`,
+      },
+      /cabang:3 "pt-a" sudah punya kantor pusat \(baris 2\)/,
+    ],
+    [
       'wrong column count',
       { jadwal: `${header('jadwal')}\npt-a,ahli-k3-umum\n` },
       /jadwal:2 harus 15 kolom, ada 2/,
@@ -193,6 +205,10 @@ describe('SQL literals', () => {
 
   it.each([Number.NaN, Number.POSITIVE_INFINITY, 'a\u0000b', {}])('refuses %j', (value) => {
     expect(() => sqlLiteral(value)).toThrow(/Import SQL/);
+  });
+
+  it('keeps question marks and negative numbers inside literals', () => {
+    expect(inlineQuery({ sql: 'select ?, ?', params: ['a?b', -6] })).toBe("select 'a?b', -6");
   });
 
   it('inlines parameters in order and checks their count', () => {

@@ -98,12 +98,19 @@ const opt = (value: string | undefined) => {
   const trimmed = value?.trim() ?? '';
   return trimmed === '' ? undefined : trimmed;
 };
-/** Number cell; "4.500.000" and "4500000" both read as 4500000 for prices. */
+/**
+ * Number cell. Prices (`thousands`) accept whole rupiah only: "4500000" or "4.500.000";
+ * anything else ("4500000.00", "1.5") is invalid instead of silently misread.
+ */
 const num = (value: string | undefined, { thousands = false } = {}) => {
   const text = opt(value);
   if (text === undefined) return undefined;
-  const normalized = thousands ? text.replace(/\./g, '') : text;
-  return /^-?\d+(\.\d+)?$/.test(normalized) ? Number(normalized) : Number.NaN;
+  if (thousands) {
+    return /^\d+$/.test(text) || /^\d{1,3}(\.\d{3})+$/.test(text)
+      ? Number(text.replace(/\./g, ''))
+      : Number.NaN;
+  }
+  return /^-?\d+(\.\d+)?$/.test(text) ? Number(text) : Number.NaN;
 };
 
 function zodMessage(error: { issues: { path: PropertyKey[]; message: string }[] }): string {
@@ -176,6 +183,7 @@ export function parseDirectoryCsv(
 
   // Branches: unique name per provider, known city.
   const branchKeys = new Map<string, { line: number; name: string }>();
+  const mainOffice = new Map<string, number>();
   for (const { line, row } of readRows('cabang', files.cabang, problems)) {
     const providerSlug = opt(row.penyedia_slug);
     if (!knownProvider(providerSlug, 'cabang', line)) continue;
@@ -214,6 +222,15 @@ export function parseDirectoryCsv(
       });
       continue;
     }
+    if (branch.isMain && mainOffice.has(providerSlug as string)) {
+      problems.push({
+        file: 'cabang',
+        line,
+        message: `"${providerSlug}" sudah punya kantor pusat (baris ${mainOffice.get(providerSlug as string)})`,
+      });
+      continue;
+    }
+    if (branch.isMain) mainOffice.set(providerSlug as string, line);
     branchKeys.set(key, { line, name: branch.name });
     data.branches.push({ ...branch, providerSlug: providerSlug as string });
   }

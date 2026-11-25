@@ -32,7 +32,7 @@ Empat file CSV (UTF-8, dipisah koma, teks berkoma ditulis dalam tanda kutip). Ba
 | `kota_slug` | ya | Kota yang dikenal (saat ini kota contoh: `jakarta`, `bekasi`, `tangerang`, …) |
 | `alamat` | ya | |
 | `lat`, `lng` | | Diisi berdua atau dikosongkan berdua |
-| `kantor_pusat` | | `ya` atau `tidak` (kosong = `tidak`) |
+| `kantor_pusat` | | `ya` atau `tidak` (kosong = `tidak`); paling banyak satu `ya` per penyedia |
 
 ### `legalitas.csv`
 
@@ -55,7 +55,7 @@ Empat file CSV (UTF-8, dipisah koma, teks berkoma ditulis dalam tanda kutip). Ba
 | `penerbit` | ya | Harus salah satu penerbit kategori itu: `kemnaker`, `bnsp`, `pupr`, `esdm`, `intl` |
 | `metode` | ya | `offline` atau `online` |
 | `mulai`, `selesai` | ya | `YYYY-MM-DD`, selesai ≥ mulai |
-| `harga` | | Rupiah, `4500000` atau `4.500.000` |
+| `harga` | | Rupiah bulat, `4500000` atau `4.500.000` (tanpa desimal) |
 | `kuota` | | Bilangan ≥ 1 |
 | `deskripsi`, `syarat`, `level` | | |
 | `sertifikat` | ya | `official` (sertifikat/lisensi resmi) atau `training_only` (sertifikat pelatihan) |
@@ -68,5 +68,7 @@ Satu jadwal dikenali dari (penyedia, kategori, tanggal mulai, judul): impor ulan
 - **Semua atau tidak sama sekali:** satu baris salah atau duplikat → impor dibatalkan dan laporannya menyebut file serta nomor baris.
 - **Idempoten:** aman diulang; baris yang sudah ada diperbarui, ID tetap.
 - **Tidak pernah menghapus:** baris yang tidak ada di CSV dibiarkan.
-- **Tidak pernah mengubah** status, verifikasi, atau paket penyedia.
+- **Tidak pernah mengubah** status, verifikasi, atau paket penyedia, dan hanya memperbarui penyedia yang **belum diklaim**. Data contoh tidak pernah menimpa data asli, dan sebaliknya.
+- **Jadwal `expired` tidak disentuh** (status itu diatur otomatis).
+- **Huruf besar-kecil:** duplikat di CSV dicek tanpa membedakan huruf besar-kecil, tetapi impor berikutnya mencocokkan persis. Jangan mengganti kapitalisasi nama cabang, nomor izin, atau judul jadwal yang sudah diimpor, karena itu membuat baris baru.
 - **Aturan 6:** bila penyedia yang sudah terverifikasi berubah nomor WhatsApp atau data legalitasnya, statusnya kembali `pending` (verifikasi ulang).

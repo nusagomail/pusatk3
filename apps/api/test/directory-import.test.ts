@@ -4,6 +4,7 @@ import {
   parseDirectoryCsv,
   referenceStatements,
   SAMPLE_CITIES,
+  toSqlScript,
   type DirectoryCsvFiles,
 } from '@pusatk3/db';
 import { env } from 'cloudflare:test';
@@ -31,6 +32,23 @@ async function runImport(files: DirectoryCsvFiles = sample) {
     ...directoryStatements(data, { isSample: true }),
   ];
   await env.DB.batch(statements.map((s) => env.DB.prepare(s)));
+}
+/** Splits a SQL script on `;` outside single-quoted literals ('' is an escaped quote). */
+function splitSqlScript(script: string): string[] {
+  const out: string[] = [];
+  let current = '';
+  let quoted = false;
+  for (const ch of script) {
+    if (ch === "'") quoted = !quoted;
+    if (ch === ';' && !quoted) {
+      if (current.trim()) out.push(current.trim());
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  if (current.trim()) out.push(current.trim());
+  return out;
 }
 const all = async <T>(query: string) => (await env.DB.prepare(query).all<T>()).results;
 const one = async <T>(query: string) => env.DB.prepare(query).first<T>();
@@ -98,13 +116,72 @@ describe('directory import into D1', () => {
     expect(await count('schedules')).toBe(12);
   });
 
-  it('keeps plan and status set outside the import', async () => {
+  it('keeps the plan set outside the import', async () => {
     await runImport();
-    await env.DB.prepare(`UPDATE providers SET plan = 'pro', status = 'claimed'`).run();
+    await env.DB.prepare(`UPDATE providers SET plan = 'pro'`).run();
     await runImport();
-    expect(await all('SELECT DISTINCT plan, status FROM providers')).toEqual([
-      { plan: 'pro', status: 'claimed' },
+    expect(await all('SELECT DISTINCT plan FROM providers')).toEqual([{ plan: 'pro' }]);
+  });
+
+  it('never touches a claimed provider and fails loudly for its rows', async () => {
+    await runImport();
+    await env.DB.prepare(
+      `UPDATE providers SET status = 'claimed', description = 'Diisi penyedia' WHERE slug = 'contoh-mitra-k3-jakarta'`,
+    ).run();
+    await expect(runImport()).rejects.toThrow(/NOT NULL/);
+    expect(
+      await one(`SELECT description FROM providers WHERE slug = 'contoh-mitra-k3-jakarta'`),
+    ).toEqual({ description: 'Diisi penyedia' });
+  });
+
+  it('never overwrites a real provider with sample data', async () => {
+    await env.DB.prepare(
+      `INSERT INTO providers (id, slug, name, type, is_sample, created_at, updated_at)
+       VALUES ('real', 'contoh-mitra-k3-jakarta', 'Penyedia Asli', 'pjk3', 0, 0, 0)`,
+    ).run();
+    await expect(runImport()).rejects.toThrow(/NOT NULL/);
+    expect(await one(`SELECT name, is_sample FROM providers WHERE id = 'real'`)).toEqual({
+      name: 'Penyedia Asli',
+      is_sample: 0,
+    });
+  });
+
+  it('leaves expired schedules expired', async () => {
+    await runImport();
+    await env.DB.prepare(`UPDATE schedules SET status = 'expired'`).run();
+    await runImport();
+    expect(await all('SELECT DISTINCT status FROM schedules')).toEqual([{ status: 'expired' }]);
+  });
+
+  it('stores tricky text exactly, through the same SQL file the pipeline runs', async () => {
+    const tricky = `Baris 1; DROP TABLE providers; --\nBaris 2 'kutip' "ganda" ? tanda tanya`;
+    const files = {
+      ...sample,
+      penyedia: penyedia.replace(
+        '"Data contoh untuk staging. Penyedia fiktif yang menyelenggarakan pembinaan K3 umum, listrik, dan ketinggian."',
+        `"${tricky.replace(/"/g, '""')}"`,
+      ),
+      cabang: cabang.replace(
+        ',jakarta,"Jl. Contoh Raya No. 1, Jakarta Selatan (alamat fiktif)",,,ya',
+        ',jakarta,"Jl. Contoh Raya No. 1, Jakarta Selatan (alamat fiktif)",-6.2,106.8,ya',
+      ),
+    };
+    const { data, problems } = parseDirectoryCsv(files, reference);
+    expect(problems).toEqual([]);
+    const script = toSqlScript([
+      ...referenceStatements({ ...categories, cities: SAMPLE_CITIES }),
+      ...directoryStatements(data, { isSample: true }),
     ]);
+    // Split like `wrangler d1 execute --file`: on `;` outside quoted literals.
+    await env.DB.batch(splitSqlScript(script).map((q) => env.DB.prepare(q)));
+    expect(
+      await one(`SELECT description FROM providers WHERE slug = 'contoh-mitra-k3-jakarta'`),
+    ).toEqual({ description: tricky });
+    expect(await one(`SELECT lat, lng FROM branches WHERE name = 'Kantor Pusat Jakarta'`)).toEqual({
+      lat: -6.2,
+      lng: 106.8,
+    });
+    expect(await count('providers')).toBe(4);
   });
 
   describe('rule 6: verified providers go back to pending', () => {
@@ -140,6 +217,33 @@ describe('directory import into D1', () => {
       await verify();
       await runImport({ ...sample, legalitas: legalitas.replace('2029-12-31', '2030-12-31') });
       expect(await status()).toBe('pending');
+    });
+
+    it('when the WhatsApp number is removed', async () => {
+      const withWa = penyedia.replace('ketinggian.",,,,', 'ketinggian.",0812-3456-7890,,,');
+      await runImport({ ...sample, penyedia: withWa });
+      await verify();
+      await runImport();
+      expect(await status()).toBe('pending');
+    });
+
+    it('when the license issuer changes', async () => {
+      await runImport();
+      await verify();
+      await runImport({
+        ...sample,
+        legalitas: legalitas.replace(
+          'CONTOH/PJK3/001,Kemnaker RI (contoh)',
+          'CONTOH/PJK3/001,Disnaker DKI (contoh)',
+        ),
+      });
+      expect(await status()).toBe('pending');
+    });
+
+    it('never for providers that are not verified', async () => {
+      await runImport();
+      await runImport({ ...sample, legalitas: legalitas.replace('2029-12-31', '2030-12-31') });
+      expect(await status()).toBe('none');
     });
 
     it('only for the provider whose data changed', async () => {

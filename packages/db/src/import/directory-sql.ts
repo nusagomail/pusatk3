@@ -1,4 +1,4 @@
-import { and, eq, sql, type SQL } from 'drizzle-orm';
+import { and, eq, ne, sql, type SQL } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/sqlite-proxy';
 import {
   branches,
@@ -50,8 +50,6 @@ export function inlineQuery({ sql: text, params }: { sql: string; params: unknow
 
 const stmt = (query: { toSQL(): { sql: string; params: unknown[] } }) => inlineQuery(query.toSQL());
 
-const providerId = (slug: string): SQL =>
-  sql`(SELECT ${providers.id} FROM ${providers} WHERE ${providers.slug} = ${slug})`;
 const now = () => new Date();
 
 /** Reference data: 14 fields, 59 categories, cities (same values as `seedReferenceData`). */
@@ -94,8 +92,13 @@ export function referenceStatements(data: ReferenceData): string[] {
 
 /**
  * Directory data (providers, branches, licenses, schedules) from a parsed import.
- * Rule 6: when a verified provider's WhatsApp number or license data changes, the provider goes
- * back to `pending` verification. Status, verification and plan are never set by an import.
+ * - Only providers that are still `unclaimed` and have the same sample flag are updated: a claimed
+ *   provider manages its own data (WhatsApp changes go through OTP, docs/keamanan.md), and a
+ *   sample import never touches real data or the other way round. Their branches, licenses and
+ *   schedules then fail the import loudly (the provider id resolves to NULL).
+ * - Rule 6: when a verified provider's WhatsApp number or license data changes, the provider goes
+ *   back to `pending` verification. Status, verification and plan are never set by an import.
+ * - Expired schedules are left alone (only the scheduled job sets and keeps `expired`).
  */
 export function directoryStatements(
   data: DirectoryImport,
@@ -103,8 +106,16 @@ export function directoryStatements(
 ): string[] {
   const at = now();
   const out: string[] = [];
-  const verified = eq(providers.verificationStatus, 'verified');
   const reverify = { verificationStatus: 'pending' as const, updatedAt: at };
+  /** Providers this import may change. */
+  const importable = and(
+    eq(providers.status, 'unclaimed'),
+    eq(providers.isSample, options.isSample),
+  );
+  const verifiedImportable = and(eq(providers.verificationStatus, 'verified'), importable);
+  /** Id of an importable provider, or NULL (→ NOT NULL error) for any other. */
+  const ownerId = (slug: string): SQL =>
+    sql`(SELECT ${providers.id} FROM ${providers} WHERE ${providers.slug} = ${slug} AND ${importable})`;
 
   for (const p of data.providers) {
     const fields = {
@@ -125,7 +136,7 @@ export function directoryStatements(
           .where(
             and(
               eq(providers.slug, p.slug),
-              verified,
+              verifiedImportable,
               sql`IFNULL(${providers.whatsapp}, '') <> ${p.whatsapp ?? ''}`,
             ),
           ),
@@ -134,13 +145,17 @@ export function directoryStatements(
         db
           .insert(providers)
           .values({ slug: p.slug, ...fields })
-          .onConflictDoUpdate({ target: providers.slug, set: { ...fields, updatedAt: at } }),
+          .onConflictDoUpdate({
+            target: providers.slug,
+            set: { ...fields, updatedAt: at },
+            setWhere: importable,
+          }),
       ),
     );
   }
 
   for (const l of data.licenses) {
-    const owner = providerId(l.providerSlug);
+    const owner = ownerId(l.providerSlug);
     const validUntil = l.validUntil ?? null;
     out.push(
       stmt(
@@ -150,7 +165,7 @@ export function directoryStatements(
           .where(
             and(
               eq(providers.slug, l.providerSlug),
-              verified,
+              verifiedImportable,
               sql`NOT EXISTS (SELECT 1 FROM ${providerLicenses} WHERE ${providerLicenses.providerId} = ${providers.id} AND ${providerLicenses.kind} = ${l.kind} AND ${providerLicenses.number} = ${l.number} AND ${providerLicenses.issuer} = ${l.issuer} AND IFNULL(${providerLicenses.validUntil}, '') = ${validUntil ?? ''})`,
             ),
           ),
@@ -185,7 +200,7 @@ export function directoryStatements(
       stmt(
         db
           .insert(branches)
-          .values({ providerId: providerId(b.providerSlug), name: b.name, ...fields })
+          .values({ providerId: ownerId(b.providerSlug), name: b.name, ...fields })
           .onConflictDoUpdate({
             target: [branches.providerId, branches.name],
             set: { ...fields, updatedAt: at },
@@ -195,7 +210,7 @@ export function directoryStatements(
   }
 
   for (const s of data.schedules) {
-    const owner = providerId(s.providerSlug);
+    const owner = ownerId(s.providerSlug);
     const branchId =
       s.branchName === undefined
         ? null
@@ -233,6 +248,7 @@ export function directoryStatements(
               schedules.title,
             ],
             set: { ...fields, updatedAt: at },
+            setWhere: ne(schedules.status, 'expired'),
           }),
       ),
     );
