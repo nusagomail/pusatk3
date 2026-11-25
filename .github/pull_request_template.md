@@ -6,6 +6,7 @@
 
 ## Cek
 - [ ] `pnpm lint && pnpm typecheck && pnpm test` lulus
+- [ ] `pnpm test:e2e` lulus (bila `apps/web` atau `apps/api` berubah)
 - [ ] Tes hak akses untuk endpoint baru/berubah (anonim, user, penyedia lain ditolak)
 - [ ] Subagent `reviewer` dijalankan; temuan kritis sudah diperbaiki
 - [ ] `docs/` diperbarui (skema, API, ADR) bila perlu

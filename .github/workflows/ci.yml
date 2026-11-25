@@ -54,6 +54,6 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # Browser version follows the pinned @playwright/test in package.json.
-      - run: pnpm exec playwright install --with-deps chromium
+      # Browser version follows the pinned @playwright/test; headless shell only (all tests are headless).
+      - run: pnpm exec playwright install --with-deps --only-shell chromium
       - run: pnpm test:e2e

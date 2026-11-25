@@ -15,7 +15,7 @@ Setiap fase dipecah menjadi issue GitHub (label `fase-0` … `fase-5`). Claude C
 
 **Selesai bila:** PR contoh lolos CI, staging menampilkan halaman beranda statis dan `/api/v1/health` merespons.
 
-Status: PR lolos CI (termasuk e2e) sudah terbukti. Tampilan beranda dan health **di staging** menunggu pemilik mengatur environment GitHub dan token Cloudflare (`docs/setup-cloudflare.md` langkah 4); setelah itu deploy staging pertama otomatis berjalan dan diuji asap.
+Status: Fase 0 **belum selesai**. Semua butir sudah dikerjakan; e2e lulus lokal dan dijalankan CI di PR issue #9. Tampilan beranda dan health **di staging** menunggu pemilik mengatur environment GitHub dan token Cloudflare (`docs/setup-cloudflare.md` langkah 4); setelah itu deploy staging pertama otomatis berjalan dan diuji asap.
 
 ## Fase 1 — Direktori publik
 
