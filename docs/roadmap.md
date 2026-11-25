@@ -9,7 +9,7 @@ Setiap fase dipecah menjadi issue GitHub (label `fase-0` … `fase-5`). Claude C
 - [x] Astro di Cloudflare (`apps/web`), Hono di Workers (`apps/api`), contoh endpoint `/api/v1/health`
 - [x] D1 + Drizzle: konfigurasi, migrasi pertama (tabel dasar)
 - [x] Lingkungan `staging` dan `production` di wrangler; resource bernama `pusatk3-*`
-- [x] GitHub Actions: lint, typecheck, test di setiap PR; deploy staging dari `main`; deploy production manual
+- [x] GitHub Actions: lint, typecheck, test di setiap PR; deploy staging dari `main` (Cloudflare Workers Builds, ADR 0015); deploy production manual
 - [x] Design tokens + komponen dasar (tombol, input, kartu, badge, header, footer) sesuai `docs/design-tokens.md`
 - [x] Isi bagian "Perintah" di `CLAUDE.md`
 

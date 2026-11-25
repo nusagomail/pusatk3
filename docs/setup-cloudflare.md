@@ -35,43 +35,29 @@ Status 25 November 2026:
 
 Untuk staging: bucket `pusatk3-media-staging` sudah ada tetapi belum bisa diakses publik. Untuk menampilkan video di staging, aktifkan **Public Development URL (r2.dev)** di bucket itu dan unggah video yang sama, atau minta Claude Code melakukannya (perlu persetujuan Anda). URL r2.dev dibatasi lajunya dan hanya untuk staging, bukan production.
 
-## 4. Environment dan secret GitHub Actions (production saja)
+## 4. Lindungi cabang `main` (sekarang)
 
-Staging **tidak** memakai GitHub Actions lagi: staging di-deploy oleh Cloudflare Workers Builds (ADR 0015), sudah aktif, tanpa secret di GitHub. Bagian ini hanya untuk rilis production nanti; baris `staging` di bawah tidak diperlukan.
+Sejak ADR 0015, setiap commit di `main` langsung di-deploy ke staging (termasuk migrasi database staging) tanpa menunggu CI. Karena itu `main` hanya boleh menerima PR yang CI-nya hijau:
 
+1. GitHub → repo → **Settings → Branches → Add branch ruleset** (atau *branch protection rule*) untuk `main`.
+2. Centang **Require a pull request before merging** dan **Require status checks to pass**; pilih cek `Lint, typecheck, test, build` dan `E2E (Playwright)`.
+3. Centang **Block force pushes**, dan jangan izinkan *bypass*.
 
-**Urutan penting: lindungi environment dulu, baru isi secret.** Secret environment tersedia untuk workflow dari branch mana pun yang menyebut environment itu, kecuali environment dibatasi ke `main`. Yang benar-benar menjaga deploy adalah pengaturan environment ini, bukan isi file workflow.
+Bila Anda sempat membuat environment `staging` di GitHub atau token Cloudflare untuk staging sebelum ADR 0015: hapus environment/secret itu dan cabut (*revoke*) tokennya di Cloudflare; keduanya tidak dipakai lagi.
 
-1. **Buat environment sebelum PR #8 di-merge.** Di GitHub → repo → **Settings → Environments → New environment**, buat `staging` dan `production`.
-2. **`staging`:** **Deployment branches and tags** → *Selected branches and tags* → tambahkan `main`.
-3. **`production`:**
-   - **Required reviewers** → centang dan pilih akun Anda. Jangan centang *Prevent self-review*, karena Anda sendiri yang memicu dan menyetujui.
+## 5. Production (nanti: setelah domain dan data asli ada)
+
+**Wajib sebelum production: akun Cloudflare terpisah khusus PusatK3.** Token build staging (`pusatk3 build token`, dikelola Workers Builds) dan token API lainnya berlaku untuk seluruh akun, dan kode build (dependensi npm) berjalan dengan token itu. Di akun bersama, token staging bisa menyentuh resource production dan proyek lain (selfgrow). Akun terpisah menutup risiko itu.
+
+Lalu, di akun PusatK3:
+1. GitHub → **Settings → Environments → New environment** `production`:
+   - **Required reviewers** → akun Anda (jangan centang *Prevent self-review*).
    - **Deployment branches and tags** → *Selected branches and tags* → `main`.
-4. **Pastikan akun Cloudflare punya subdomain `workers.dev`:** dashboard → **Workers & Pages** → bila diminta, pilih nama subdomain. Deploy otomatis gagal bila subdomain belum ada.
-5. **Buat dua token Cloudflare terpisah** (dashboard → **My Profile → API Tokens → Create Token → Custom token**), masing-masing dengan izin minimal:
-   - *Account → Workers Scripts: Edit*
-   - *Account → D1: Edit*
-   - *Account → Account Settings: Read*
-   - Token **production** juga butuh *Zone → Workers Routes: Edit* dan *Zone → Zone: Read* untuk zona `pusatk3.id`. Pilihan zona baru muncul setelah langkah 1 selesai, jadi buat token staging dulu dan token production setelah domain aktif.
-6. **Simpan sebagai environment secret** (bukan repository secret), di masing-masing environment:
+2. Token Cloudflare production (**My Profile → API Tokens → Create Token → Custom token**): *Account → Workers Scripts: Edit*, *Account → D1: Edit*, *Account → Account Settings: Read*, *Zone → Workers Routes: Edit* dan *Zone → Zone: Read* untuk zona `pusatk3.id`.
+3. Environment secret `production`: `CLOUDFLARE_API_TOKEN` (token tadi), `CLOUDFLARE_ACCOUNT_ID` (ID akun PusatK3).
+4. Environment variable `production`: `PUBLIC_MEDIA_BASE_URL` = `https://media.pusatk3.id` (setelah langkah 3).
 
-| Environment | Secret | Isi |
-| --- | --- | --- |
-| `staging` | `CLOUDFLARE_API_TOKEN` | token staging |
-| `staging` | `CLOUDFLARE_ACCOUNT_ID` | ID akun Cloudflare (dashboard, halaman Workers & Pages) |
-| `production` | `CLOUDFLARE_API_TOKEN` | token production |
-| `production` | `CLOUDFLARE_ACCOUNT_ID` | ID akun yang sama |
-
-7. Pertimbangkan akun Cloudflare terpisah khusus PusatK3 sebelum rilis production, karena izin token Workers/D1 berlaku untuk seluruh akun (ADR 0011).
-
-## 5. Variabel environment GitHub (bukan rahasia)
-
-Di **Settings → Environments → (staging / production) → Environment variables**:
-
-| Environment | Variabel | Isi |
-| --- | --- | --- |
-| `staging` | `PUBLIC_MEDIA_BASE_URL` | Kosongkan dulu; nanti alamat r2.dev bucket `pusatk3-media-staging` bila video staging diaktifkan |
-| `production` | `PUBLIC_MEDIA_BASE_URL` | `https://media.pusatk3.id` (setelah langkah 3) |
+Variabel build staging (mis. `PUBLIC_MEDIA_BASE_URL` untuk video staging) diisi sebagai **build variable** Worker `pusatk3-web-staging` di Cloudflare (Settings → Build), bukan di GitHub.
 
 ## 6. Cara kerja deploy (#8, ADR 0012)
 

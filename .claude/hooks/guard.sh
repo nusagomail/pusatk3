@@ -77,6 +77,14 @@ if [[ "$tool" == "Bash" ]]; then
   if has 'git push' && has '(--force|--force-with-lease| -f( |$))' && has '(main|master)'; then
     block "force push ke main."
   fi
+  # Every commit on main deploys staging (Workers Builds, ADR 0015): main only changes via PR.
+  if has 'git[[:space:]]+push' && has '([[:space:]:+]|refs/heads/)(main|master)([[:space:]]|$)'; then
+    block "push langsung ke main men-deploy staging tanpa CI; lewat PR saja (ADR 0015)."
+  fi
+  if has 'git[[:space:]]+push' && ! has '(^|[[:space:]])origin[[:space:]]+[^[:space:]-]' \
+    && [[ "$(git -C "${CLAUDE_PROJECT_DIR:-.}" symbolic-ref --short HEAD 2>/dev/null)" =~ ^(main|master)$ ]]; then
+    block "sedang di cabang main: git push tanpa nama cabang akan men-deploy staging; lewat PR saja."
+  fi
 fi
 
 exit 0

@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -105,10 +105,10 @@ describe('ci.yml', () => {
 
 describe('staging deploys', () => {
   it('are not done by GitHub Actions (Workers Builds, ADR 0015)', () => {
-    expect(
-      existsSync(resolve(import.meta.dirname, '../.github/workflows/deploy-staging.yml')),
-    ).toBe(false);
-    for (const name of WORKFLOWS) expect(read(name)).not.toMatch(/--env staging/);
+    // Every workflow file is listed (and so checked by the rules above); none mentions staging.
+    const files = readdirSync(resolve(import.meta.dirname, '../.github/workflows')).sort();
+    expect(files).toEqual([...WORKFLOWS].sort());
+    for (const name of WORKFLOWS) expect(read(name)).not.toMatch(/staging/i);
   });
 });
 

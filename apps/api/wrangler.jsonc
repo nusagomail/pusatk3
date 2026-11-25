@@ -1,4 +1,4 @@
-// API Worker. Top level = local development (`pnpm dev`, tests). Deploys only from CI (#8):
+// API Worker. Top level = local development (`pnpm dev`, tests). Deploys: staging by Cloudflare Workers Builds (ADR 0015), production by GitHub Actions (ADR 0012):
 // staging = `--env staging`, production = `--env production` (owner approval).
 // Wrangler does NOT inherit vars, d1_databases or routes into environments: declare them per env.
 // See docs/adr/0011-lingkungan-cloudflare.md.
@@ -39,7 +39,7 @@
           "migrations_dir": "../../packages/db/migrations",
         },
       ],
-      // CI overrides APP_VERSION with the commit SHA (--var APP_VERSION:<sha>).
+      // Deploys override APP_VERSION with the commit SHA (--var APP_VERSION:<sha>).
       "vars": {
         "APP_VERSION": "staging",
       },
