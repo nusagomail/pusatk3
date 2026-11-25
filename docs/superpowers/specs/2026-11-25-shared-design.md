@@ -16,6 +16,7 @@ Satu sumber untuk konstanta (peran, status, penerbit, dll.) dan skema Zod yang d
 ## Bukan tujuan
 
 - Label tampilan ID/EN (dibuat bersama UI, #5/#6), skema entitas (penyedia, jadwal: Fase 1), kategori K3 (seed DB, #4).
+- Enum `auth_accounts.provider` (google/email) dan `plans.code` (free/pro/business): menyentuh auth dan pembayaran (gerbang persetujuan), ditambahkan di Fase 2 dan Fase 4.
 
 ## Pendekatan
 
@@ -28,6 +29,6 @@ Satu sumber untuk konstanta (peran, status, penerbit, dll.) dan skema Zod yang d
 
 - Penerbit: 5 nilai dari `docs/skema-db.md` (`kemnaker`, `bnsp`, `pupr`, `esdm`, `intl`). Issue #2 menyebut hanya 2; dokumen yang diikuti. Kode huruf besar di `docs/kategori-k3.md` dipetakan saat impor seed (#4).
 - Kode error: `BAD_REQUEST` 400, `UNAUTHORIZED` 401, `FORBIDDEN` 403, `NOT_FOUND` 404, `CONFLICT` 409, `VALIDATION_ERROR` 422, `RATE_LIMITED` 429, `INTERNAL_ERROR` 500.
-- Error: `{ error: { code, message, fields? } }`; `fields` = `[{ path, message }]`, hanya untuk menandai isian form yang salah. Objek ketat (isian tak dikenal ditolak).
-- Paginasi: query `cursor` (opsional, string tak kosong) dan `limit` (dari string query, bilangan bulat 1–100, bawaan 20), ketat; respons `{ items, nextCursor: string | null }`.
+- Error: `{ error: { code, message, fields? } }`; `fields` = `[{ path, message }]`, hanya untuk `VALIDATION_ERROR`. `message` 1–500 karakter. Amplop respons membuang field tak dikenal (bukan menolak); lihat ADR 0006.
+- Paginasi: query `cursor` (opsional, 1–512 karakter) dan `limit` (desimal kanonik 1–100, bawaan 20), ketat (parameter asing ditolak); respons `{ items, nextCursor: string | null }`.
 - Daftar peran hanya menyalin dokumen; tidak mengubah auth/hak akses. Mengubah daftar ini nanti termasuk gerbang persetujuan.

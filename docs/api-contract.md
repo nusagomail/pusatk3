@@ -17,8 +17,9 @@
   | `RATE_LIMITED` | 429 | Terlalu banyak permintaan |
   | `INTERNAL_ERROR` | 500 | Kesalahan server |
 
-  Khusus `VALIDATION_ERROR`, boleh menyertakan `fields: [{ "path": "phone", "message": "..." }]` agar form bisa menandai isian yang salah.
-- Paginasi: cursor (`?cursor=…&limit=…`), respons `{ items, nextCursor }`. `limit` bilangan bulat 1–100, bawaan 20; `cursor` opsional dan tidak boleh kosong; `nextCursor` bernilai `null` di halaman terakhir. Skema: `paginationQuerySchema` dan `paginatedSchema(item)` di `@pusatk3/shared`.
+  Khusus `VALIDATION_ERROR`, boleh menyertakan `fields: [{ "path": "phone", "message": "..." }]` agar form bisa menandai isian yang salah; kode lain tidak boleh membawa `fields`. `path` adalah path isian yang digabung titik (mis. `items.0.phone`); kesalahan di level objek (tanpa path) masuk ke `message`, bukan `fields`. `message` maksimal 500 karakter.
+- Paginasi: cursor (`?cursor=…&limit=…`), respons `{ items, nextCursor }`. `limit` bilangan bulat 1–100 dalam bentuk desimal kanonik (`20`, bukan `020`/`2e1`/` 20 `) agar satu ukuran halaman = satu URL (ramah cache), bawaan 20; `cursor` opsional, 1–512 karakter; `nextCursor` bernilai `null` di halaman terakhir. Skema: `paginationQuerySchema` dan `paginatedSchema(item)` di `@pusatk3/shared`.
+- Input (body/query) memakai objek ketat: parameter tak dikenal ditolak 422. Karena itu web **tidak** meneruskan seluruh query string halaman ke API (mis. `utm_*`, `fbclid`), hanya parameter yang dikenal (whitelist). Respons memakai skema eksplisit yang membuang field tak dikenal saat di-parse, sehingga menambah field respons tidak memecah klien lama.
 - Auth: cookie sesi `HttpOnly; Secure; SameSite=Lax`. Mutasi dari browser wajib lolos cek CSRF/origin.
 - Otorisasi: middleware `requireUser`, `requireProviderRole(providerId, ['owner','admin'])`, `requireAdmin(role)`. **Selalu ambil `providerId` dari data di database, bukan dari body.**
 - Rate limiting per IP + per user di endpoint auth, lead, dan pencarian.

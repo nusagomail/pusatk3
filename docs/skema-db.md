@@ -6,7 +6,7 @@ Sumber kebenaran skema. Setiap perubahan skema di kode wajib memperbarui file in
 
 | Tabel | Kolom utama | Catatan |
 | --- | --- | --- |
-| `users` | email, name, phone, locale, deleted_at | Satu akun untuk user dan anggota penyedia |
+| `users` | email, name, phone, locale (id/en), deleted_at | Satu akun untuk user dan anggota penyedia |
 | `auth_accounts` | user_id, provider (google/email), provider_account_id | Dikelola library auth |
 | `sessions` | user_id, expires_at, ip, user_agent | Untuk "perangkat yang sedang masuk" |
 | `user_two_factor` | user_id, secret (terenkripsi), backup_codes (hash), enabled_at | Wajib untuk penyedia/admin |
@@ -30,7 +30,7 @@ Sumber kebenaran skema. Setiap perubahan skema di kode wajib memperbarui file in
 | `cities` | slug, name, province | |
 | `course_fields` | slug, name, sort_order | Bidang (14), lihat `docs/kategori-k3.md` |
 | `course_categories` | field_id, slug, name, issuers (kemnaker/bnsp/pupr/esdm/intl, array), document_type, typical_validity_years (nullable), regulation_ref, synonyms | Seed dari `docs/data/kategori-k3.csv`; sinonim untuk pencarian |
-| `schedules` | provider_id, branch_id, category_id, title, issuer, mode (offline/online), start_date, end_date, price_idr (nullable), quota, description, requirements, level (nullable, mis. Kelas I / Madya), certificate_kind (official/training_only), status (draft/published/expired) | Expired otomatis lewat Cron |
+| `schedules` | provider_id, branch_id, category_id, title, issuer (kemnaker/bnsp/pupr/esdm/intl), mode (offline/online), start_date, end_date, price_idr (nullable), quota, description, requirements, level (nullable, mis. Kelas I / Madya), certificate_kind (official/training_only), status (draft/published/expired) | Expired otomatis lewat Cron |
 | `saved_schedules` | user_id, schedule_id | |
 
 ## Lead & ulasan
@@ -58,5 +58,6 @@ Sumber kebenaran skema. Setiap perubahan skema di kode wajib memperbarui file in
 | `courses`, `lessons`, `lesson_progress` | konten e-course + progres |
 
 ## Aturan
+- Nilai enum di tabel ini juga ada sebagai konstanta di `packages/shared/src/constants.ts`; ubah keduanya bersama. Kolom `issuer` di `provider_licenses` dan `cert_reminders` belum ditetapkan apakah enum atau teks bebas (mis. nama LSP untuk TUK); putuskan saat tabelnya dibuat.
 - Hapus akun user: soft delete + anonimisasi data pribadi di `leads` sesuai kebijakan retensi.
 - Tidak ada kolom untuk menyimpan scan sertifikat user.
