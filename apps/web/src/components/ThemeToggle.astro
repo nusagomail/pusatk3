@@ -1,0 +1,78 @@
+---
+/** Switches light/dark. aria-pressed = dark mode on. Works without storage (private mode). */
+---
+
+<button class="theme-toggle" type="button" aria-pressed="false" aria-label="Mode gelap">
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 24 24"
+    width="20"
+    height="20"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+  >
+    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"></path>
+  </svg>
+</button>
+
+<script>
+  import { nextTheme, readStoredTheme, resolveTheme, THEME_STORAGE_KEY } from '../lib/theme';
+
+  const root = document.documentElement;
+  const media = window.matchMedia('(prefers-color-scheme: dark)');
+  const current = () =>
+    resolveTheme(readStoredTheme(safeStorage()) ?? themeFromDom(), media.matches);
+
+  function safeStorage(): Storage | undefined {
+    try {
+      return window.localStorage;
+    } catch {
+      return undefined;
+    }
+  }
+
+  function themeFromDom() {
+    const value = root.dataset.theme;
+    return value === 'light' || value === 'dark' ? value : null;
+  }
+
+  function sync() {
+    for (const button of document.querySelectorAll<HTMLButtonElement>('.theme-toggle')) {
+      button.setAttribute('aria-pressed', String(current() === 'dark'));
+    }
+  }
+
+  for (const button of document.querySelectorAll<HTMLButtonElement>('.theme-toggle')) {
+    button.addEventListener('click', () => {
+      const theme = nextTheme(current());
+      root.dataset.theme = theme;
+      try {
+        safeStorage()?.setItem(THEME_STORAGE_KEY, theme);
+      } catch {
+        // Storage blocked: the choice still applies to this page.
+      }
+      sync();
+    });
+  }
+  media.addEventListener('change', sync);
+  sync();
+</script>
+
+<style>
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--touch-target);
+    height: var(--touch-target);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-button);
+    background: transparent;
+    color: var(--color-ink);
+    cursor: pointer;
+  }
+  .theme-toggle[aria-pressed='true'] {
+    background: var(--color-surface);
+  }
+</style>
