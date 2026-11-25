@@ -10,10 +10,10 @@ const doc = readFileSync(resolve(here, '../../../docs/design-tokens.md'), 'utf8'
 /** Rows of the "Warna" table in docs/design-tokens.md: token → { light, dark }. */
 function documentedTokens() {
   const tokens = new Map<string, { light: string; dark: string }>();
-  for (const match of doc.matchAll(
+  for (const [, token = '', light = '', dark = ''] of doc.matchAll(
     /^\| `(--color-[\w-]+)` \| `(#[0-9A-F]{6})` \| `(#[0-9A-F]{6})` \|/gim,
   )) {
-    tokens.set(match[1]!, { light: match[2]!.toUpperCase(), dark: match[3]!.toUpperCase() });
+    tokens.set(token, { light: light.toUpperCase(), dark: dark.toUpperCase() });
   }
   return tokens;
 }
@@ -24,9 +24,9 @@ function block(selector: RegExp): Map<string, string> {
   if (start < 0) throw new Error(`no block ${selector}`);
   const body = css.slice(css.indexOf('{', start) + 1, css.indexOf('}', start));
   return new Map(
-    [...body.matchAll(/(--color-[\w-]+):\s*(#[0-9a-f]{6})/gi)].map((m) => [
-      m[1]!,
-      m[2]!.toUpperCase(),
+    [...body.matchAll(/(--color-[\w-]+):\s*(#[0-9a-f]{6})/gi)].map(([, token = '', hex = '']) => [
+      token,
+      hex.toUpperCase(),
     ]),
   );
 }
@@ -79,7 +79,9 @@ describe.each([
   ['dark', dark],
 ] as const)('contrast (%s theme)', (_theme, values) => {
   it.each(PAIRS)('%s on %s ≥ 4.5:1', (text, background) => {
-    expect(contrastRatio(values.get(text)!, values.get(background)!)).toBeGreaterThanOrEqual(4.5);
+    const fg = values.get(text);
+    const bg = values.get(background);
+    expect(fg && bg ? contrastRatio(fg, bg) : 0).toBeGreaterThanOrEqual(4.5);
   });
 });
 
