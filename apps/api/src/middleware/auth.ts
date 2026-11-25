@@ -3,7 +3,10 @@ import type { Context, MiddlewareHandler } from 'hono';
 import type { AppEnv } from '../env';
 import { AppError } from '../lib/errors';
 
-// Authorization guards. Order on a route: rate limit → auth guard → validation → handler.
+// Authorization guards. Order on a route:
+//   rate limit → requireUser() → validate… → requireProviderRole(...) / requireAdmin(...) → handler
+// so resolvers read validated params (`c.req.valid('param')`). A resolver returning null means
+// the record does not exist → 404, not 403, so other providers' data is not revealed.
 //
 // FAIL-CLOSED STUBS: there is no authentication yet (Fase 2, ADR 0003). Every guard
 // rejects with 401 and never calls `next()`. Do not loosen these without owner approval
