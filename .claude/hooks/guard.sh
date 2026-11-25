@@ -24,7 +24,8 @@ if [[ "$tool" == "Bash" ]]; then
     echo "Diblokir: deploy production hanya atas perintah pemilik (lihat docs/workflow.md)." >&2
     exit 2
   fi
-  if grep -Eq 'd1 (migrations apply|execute)[^|;&]*--remote' <<<"$cmd"; then
+  # Any D1 command or project db:* script aimed at a remote database (incl. --no-local --remote).
+  if grep -Eq '(\bd1\b|db:(migrate|seed|generate))' <<<"$cmd" && grep -Eq -- '--remote\b' <<<"$cmd"; then
     echo "Diblokir: operasi D1 remote hanya lewat CI." >&2
     exit 2
   fi
