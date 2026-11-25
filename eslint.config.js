@@ -1,5 +1,6 @@
 // @ts-check
 import js from '@eslint/js';
+import astro from 'eslint-plugin-astro';
 import { defineConfig } from 'eslint/config';
 import prettier from 'eslint-config-prettier';
 import globals from 'globals';
@@ -16,12 +17,16 @@ export default defineConfig(
       '**/coverage/**',
       '**/playwright-report/**',
       '**/test-results/**',
+      '**/.astro/**',
       'docs/**',
       'brand/**',
     ],
   },
   js.configs.recommended,
   tseslint.configs.strict,
+  // .astro files: parsed and linted (frontmatter + template), incl. accessibility rules.
+  astro.configs['flat/recommended'],
+  astro.configs['flat/jsx-a11y-strict'],
   {
     languageOptions: {
       ecmaVersion: 2023,
