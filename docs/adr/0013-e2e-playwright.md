@@ -7,7 +7,7 @@ Status: diterima · 25 November 2026 · issue #9. Desain: `docs/superpowers/spec
   - web hasil build dengan `wrangler dev -c dist/client/wrangler.json` di `127.0.0.1:4322`. Ini workerd yang sama dengan Cloudflare: `_headers`, CSP, dan halaman 404 ikut teruji.
   - API dengan `wrangler dev` di `127.0.0.1:8787`.
 
-  Hanya binding lokal yang dipakai, tanpa token dan tanpa resource remote. Kami tidak memakai `astro dev`, karena hasilnya berbeda dengan yang di-deploy. Situs staging juga tidak diuji di sini; uji asapnya sudah ada di `deploy-staging.yml`.
+  Hanya binding lokal yang dipakai, tanpa token dan tanpa resource remote. Kami tidak memakai `astro dev`, karena hasilnya berbeda dengan yang di-deploy. Situs staging juga tidak diuji di sini (staging di-deploy Workers Builds, ADR 0015).
 - **`@playwright/test` dikunci persis ke `1.63.0`** (rilis 4 September 2026). Versi ini cocok dengan Chromium yang sudah terpasang di sesi cloud Claude Code, sehingga sesi tidak perlu mengunduh browser. CI memasang browser yang cocok dengan `playwright install --with-deps --only-shell chromium` (semua tes headless). Hanya Chromium yang dipakai.
 - **Isi tes** (`e2e/`):
   - beranda tampil tanpa login dan label "Contoh tampilan" terlihat;
@@ -21,5 +21,5 @@ Status: diterima · 25 November 2026 · issue #9. Desain: `docs/superpowers/spec
 ## Konsekuensi
 - Menaikkan versi Playwright berarti versi baru tidak lagi cocok dengan browser bawaan sesi cloud. Saat menaikkan, pilih versi berumur ≥ 2 minggu dan perbarui tes struktur. Di sesi cloud, jalankan dengan `executablePath` `/opt/pw-browsers/chromium` bila versinya berbeda.
 - Server selalu dinyalakan baru (`reuseExistingServer: false`, telemetri wrangler mati): bila port 4322/8787 terpakai (mis. `pnpm dev` masih jalan), tes gagal dengan jelas, bukan diam-diam menguji server lama.
-- Job `e2e` ikut menjadi gerbang deploy staging: `deploy-staging.yml` hanya berjalan bila seluruh CI sukses, jadi e2e gagal berarti staging tidak diperbarui. `retries: 1` di CI bisa menutupi tes yang tidak stabil; periksa tanda *flaky* di keluaran.
+- Sejak ADR 0015, deploy staging tidak menunggu CI; e2e menjaga PR sebelum di-merge. `retries: 1` di CI bisa menutupi tes yang tidak stabil; periksa tanda *flaky* di keluaran.
 - Tes e2e untuk fitur Fase 1 (pencarian, detail jadwal) ditambahkan di issue masing-masing.

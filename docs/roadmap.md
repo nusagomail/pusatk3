@@ -15,7 +15,7 @@ Setiap fase dipecah menjadi issue GitHub (label `fase-0` … `fase-5`). Claude C
 
 **Selesai bila:** PR contoh lolos CI, staging menampilkan halaman beranda statis dan `/api/v1/health` merespons.
 
-Status: Fase 0 **belum selesai**. Semua butir sudah dikerjakan; e2e lulus lokal dan dijalankan CI di PR issue #9. Tampilan beranda dan health **di staging** menunggu pemilik mengatur environment GitHub dan token Cloudflare (`docs/setup-cloudflare.md` langkah 4); setelah itu deploy staging pertama otomatis berjalan dan diuji asap.
+Status: Fase 0 **selesai** (25 November 2026). PR lolos CI termasuk e2e; staging tampil di https://pusatk3-web-staging.nusagomail.workers.dev dan `/api/v1/health` di https://pusatk3-api-staging.nusagomail.workers.dev (deploy lewat Cloudflare Workers Builds, ADR 0015).
 
 ## Fase 1 — Direktori publik
 

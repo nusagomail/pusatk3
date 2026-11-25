@@ -35,7 +35,10 @@ Status 25 November 2026:
 
 Untuk staging: bucket `pusatk3-media-staging` sudah ada tetapi belum bisa diakses publik. Untuk menampilkan video di staging, aktifkan **Public Development URL (r2.dev)** di bucket itu dan unggah video yang sama, atau minta Claude Code melakukannya (perlu persetujuan Anda). URL r2.dev dibatasi lajunya dan hanya untuk staging, bukan production.
 
-## 4. Environment dan secret GitHub Actions (#8)
+## 4. Environment dan secret GitHub Actions (production saja)
+
+Staging **tidak** memakai GitHub Actions lagi: staging di-deploy oleh Cloudflare Workers Builds (ADR 0015), sudah aktif, tanpa secret di GitHub. Bagian ini hanya untuk rilis production nanti; baris `staging` di bawah tidak diperlukan.
+
 
 **Urutan penting: lindungi environment dulu, baru isi secret.** Secret environment tersedia untuk workflow dari branch mana pun yang menyebut environment itu, kecuali environment dibatasi ke `main`. Yang benar-benar menjaga deploy adalah pengaturan environment ini, bukan isi file workflow.
 
@@ -72,5 +75,5 @@ Di **Settings → Environments → (staging / production) → Environment variab
 
 ## 6. Cara kerja deploy (#8, ADR 0012)
 
-- **Staging:** otomatis setiap kali PR di-merge ke `main` dan CI hijau. Selama secret staging belum diisi, deploy dilewati dengan pesan "Deploy staging dilewati" di tab **Actions** (bukan error). Setelah secret diisi, merge berikutnya akan men-deploy; alamat staging tercetak di ringkasan run ("Staging: web … · API …").
+- **Staging (Cloudflare Workers Builds, ADR 0015):** otomatis setiap kali ada commit baru di `main`. Dua Worker terhubung ke repo GitHub: `pusatk3-api-staging` (folder `apps/api`: migrasi D1 staging lalu deploy API) dan `pusatk3-web-staging` (folder `apps/web`: build dengan `CLOUDFLARE_ENV=staging` lalu deploy). Status dan log: dashboard Cloudflare → **Workers & Pages** → worker → **Deployments**. Alamat: web https://pusatk3-web-staging.nusagomail.workers.dev, API https://pusatk3-api-staging.nusagomail.workers.dev/api/v1/health.
 - **Production:** tidak pernah otomatis. Tab **Actions → Deploy production → Run workflow** (cabang `main`), lalu setujui di halaman run (reviewer environment `production`). Deploy ditolak otomatis bila ID database production belum benar, situs masih memakai jadwal contoh, secret belum ada, atau dijalankan dari cabang selain `main`. Sebelum menjalankannya, ikuti checklist `/siapkan-rilis` (pastikan commit itu sudah hijau di CI dan sudah dicek di staging).

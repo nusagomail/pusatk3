@@ -15,7 +15,7 @@ Cara memasang semuanya: `docs/setup-claude-code.md`.
 7. **Review.** Jalankan subagent `reviewer` (aturan keamanan & bisnis PusatK3) selain review bawaan Superpowers. Perbaiki semua temuan **Kritis**.
 8. Perbarui `docs/` bila skema, API, atau keputusan berubah.
 9. **Selesai:** selalu pilih **buka Pull Request**. Jangan merge ke `main` secara lokal dan jangan menghapus branch sebelum PR di-merge.
-10. **Gerbang 2 — pemilik menyetujui dan me-merge PR.** Merge ke `main` → CI → deploy staging otomatis (`deploy-staging.yml`).
+10. **Gerbang 2 — pemilik menyetujui dan me-merge PR.** Merge ke `main` → deploy staging otomatis oleh Cloudflare Workers Builds (ADR 0015); CI di `main` tetap berjalan untuk pemeriksaan.
 11. **Gerbang 3 — deploy production** hanya atas perintah pemilik (`/siapkan-rilis`), dijalankan pemilik lewat **Actions → Deploy production** dan disetujui di environment `production` (ADR 0012).
 
 ## Gerbang persetujuan wajib
