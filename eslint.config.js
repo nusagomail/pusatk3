@@ -48,6 +48,7 @@ export default defineConfig(
       'tests/**/*.ts',
       '{apps,packages}/*/*.config.{js,ts}',
       '{apps,packages}/*/scripts/**/*.ts',
+      'scripts/**/*.{js,mjs}',
     ],
     languageOptions: { globals: { ...globals.node } },
   },
