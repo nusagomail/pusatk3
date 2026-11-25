@@ -21,12 +21,39 @@ describe('paginationQuerySchema', () => {
     expect(paginationQuerySchema.parse({ limit: '100' }).limit).toBe(PAGINATION_MAX_LIMIT);
   });
 
-  it.each(['0', '101', '-1', '1.5', 'abc', '', ' '])('rejects limit %j', (limit) => {
+  it('accepts a number limit from non-query callers', () => {
+    expect(paginationQuerySchema.parse({ limit: 5 }).limit).toBe(5);
+  });
+
+  // Only canonical decimal strings, so one page size has one URL (cache-friendly).
+  it.each([
+    '0',
+    '101',
+    '-1',
+    '1.5',
+    'abc',
+    '',
+    ' ',
+    '1e1',
+    '0x10',
+    '0b11',
+    ' 5 ',
+    '+5',
+    '5.0',
+    '020',
+    'Infinity',
+  ])('rejects limit %j', (limit) => {
     expect(paginationQuerySchema.safeParse({ limit }).success).toBe(false);
   });
 
-  it('rejects an empty cursor', () => {
+  it.each([[['5']], [['5', '6']], [true], [{}]])('rejects non-scalar limit %j', (limit) => {
+    expect(paginationQuerySchema.safeParse({ limit }).success).toBe(false);
+  });
+
+  it('rejects an empty or oversized cursor', () => {
     expect(paginationQuerySchema.safeParse({ cursor: '' }).success).toBe(false);
+    expect(paginationQuerySchema.safeParse({ cursor: 'a'.repeat(513) }).success).toBe(false);
+    expect(paginationQuerySchema.safeParse({ cursor: 'a'.repeat(512) }).success).toBe(true);
   });
 
   it('rejects unknown query keys', () => {
@@ -46,8 +73,14 @@ describe('paginatedSchema', () => {
     expect(schema.safeParse({ items: [] }).success).toBe(false);
   });
 
-  it('validates each item and rejects unknown keys', () => {
+  it('validates each item', () => {
     expect(schema.safeParse({ items: [{ id: 1 }], nextCursor: null }).success).toBe(false);
-    expect(schema.safeParse({ items: [], nextCursor: null, total: 3 }).success).toBe(false);
+  });
+
+  it('strips unknown envelope keys instead of failing (forward compatible)', () => {
+    expect(schema.parse({ items: [], nextCursor: null, total: 3 })).toEqual({
+      items: [],
+      nextCursor: null,
+    });
   });
 });

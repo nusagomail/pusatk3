@@ -39,22 +39,29 @@ describe('apiErrorSchema', () => {
     expect(apiErrorSchema.parse(body)).toEqual(body);
   });
 
-  it('rejects an empty message', () => {
-    expect(apiErrorSchema.safeParse({ error: { code: 'NOT_FOUND', message: '' } }).success).toBe(
+  it.each(['', '   ', 'x'.repeat(501)])('rejects message %j', (message) => {
+    expect(apiErrorSchema.safeParse({ error: { code: 'NOT_FOUND', message } }).success).toBe(false);
+  });
+
+  it('rejects unknown codes', () => {
+    expect(apiErrorSchema.safeParse({ error: { code: 'TEAPOT', message: 'x' } }).success).toBe(
       false,
     );
   });
 
-  it('rejects unknown codes and unknown keys', () => {
-    expect(apiErrorSchema.safeParse({ error: { code: 'TEAPOT', message: 'x' } }).success).toBe(
-      false,
-    );
+  it('strips unknown keys so internals never pass through a parsed body', () => {
+    const parsed = apiErrorSchema.parse({
+      error: { code: 'NOT_FOUND', message: 'x', stack: 'at ...' },
+      debug: true,
+    });
+    expect(parsed).toEqual({ error: { code: 'NOT_FOUND', message: 'x' } });
+  });
+
+  it('allows fields only for VALIDATION_ERROR', () => {
     expect(
-      apiErrorSchema.safeParse({ error: { code: 'NOT_FOUND', message: 'x', stack: 'at ...' } })
-        .success,
-    ).toBe(false);
-    expect(
-      apiErrorSchema.safeParse({ error: { code: 'NOT_FOUND', message: 'x' }, debug: true }).success,
+      apiErrorSchema.safeParse({
+        error: { code: 'FORBIDDEN', message: 'x', fields: [{ path: 'a', message: 'b' }] },
+      }).success,
     ).toBe(false);
   });
 
