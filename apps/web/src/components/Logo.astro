@@ -1,0 +1,64 @@
+---
+/**
+ * PusatK3 "Simpul" logo, same geometry as brand/logo-horizontal.svg (checked by tests).
+ * Knot and wordmark follow the theme (navy on light, white on dark / `onDark`);
+ * the centre dot is always orange (docs/design-tokens.md).
+ */
+interface Props {
+  /** Force the white variant (hero, footer). */
+  onDark?: boolean;
+  height?: number;
+}
+
+const { onDark = false, height = 36 } = Astro.props;
+---
+
+<svg
+  class:list={['logo', onDark && 'logo--on-dark']}
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 240 64"
+  height={height}
+  width={(height * 240) / 64}
+  role="img"
+  aria-label="PusatK3"
+>
+  <g stroke-linecap="round" stroke-width="3" stroke="currentColor">
+    <path d="M32 32L32 9M32 32L51.9 20.5M32 32L51.9 43.5M32 32L32 55M32 32L12.1 43.5M32 32L12.1 20.5"></path>
+  </g>
+  <g fill="currentColor">
+    <circle cx="32" cy="9" r="5.5"></circle>
+    <circle cx="51.9" cy="20.5" r="5.5"></circle>
+    <circle cx="51.9" cy="43.5" r="5.5"></circle>
+    <circle cx="32" cy="55" r="5.5"></circle>
+    <circle cx="12.1" cy="43.5" r="5.5"></circle>
+    <circle cx="12.1" cy="20.5" r="5.5"></circle>
+  </g>
+  <circle cx="32" cy="32" r="10.5" fill="#E07400"></circle>
+  <text x="76" y="44" font-size="38" font-weight="800" letter-spacing="-1.2">
+    <tspan fill="currentColor">pusat</tspan>
+    <tspan class="logo__k3">k3</tspan>
+  </text>
+</svg>
+
+<style>
+  .logo {
+    display: block;
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+  .logo--on-dark {
+    color: var(--color-on-hero);
+  }
+  .logo__k3 {
+    fill: #e07400;
+  }
+  :global(:root[data-theme='dark']) .logo__k3,
+  .logo--on-dark .logo__k3 {
+    fill: #f28c1b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) .logo__k3 {
+      fill: #f28c1b;
+    }
+  }
+</style>

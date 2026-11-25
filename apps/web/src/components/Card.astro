@@ -1,0 +1,25 @@
+---
+interface Props {
+  as?: 'article' | 'div' | 'section';
+  /** Subtle surface background instead of the page background. */
+  muted?: boolean;
+}
+
+const { as: Element = 'article', muted = false } = Astro.props;
+---
+
+<Element class:list={['card', muted && 'card--muted']}>
+  <slot />
+</Element>
+
+<style>
+  .card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    padding: 1.125rem;
+  }
+  .card--muted {
+    background: var(--color-surface);
+  }
+</style>

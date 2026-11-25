@@ -1,0 +1,85 @@
+---
+/** Labelled native <select> (accessible and keyboard friendly without JS). */
+interface Option {
+  value: string;
+  label: string;
+}
+
+interface Props {
+  label: string;
+  name: string;
+  options: readonly Option[];
+  id?: string;
+  value?: string;
+  required?: boolean;
+  error?: string;
+  hideLabel?: boolean;
+}
+
+const {
+  label,
+  name,
+  options,
+  id = `f-${name}`,
+  value,
+  required,
+  error,
+  hideLabel = false,
+} = Astro.props;
+const errorId = error ? `${id}-error` : undefined;
+---
+
+<div class="field">
+  <label for={id} class:list={['field__label', hideLabel && 'visually-hidden']}>
+    {label}
+  </label>
+  <select
+    class="field__control"
+    id={id}
+    name={name}
+    required={required}
+    aria-describedby={errorId}
+    aria-invalid={error ? 'true' : undefined}
+  >
+    {options.map((option) => (
+      <option value={option.value} selected={option.value === value}>
+        {option.label}
+      </option>
+    ))}
+  </select>
+  {error && (
+    <p class="field__error" id={errorId}>
+      {error}
+    </p>
+  )}
+</div>
+
+<style>
+  .field {
+    display: grid;
+    gap: 0.375rem;
+  }
+  .field__label {
+    font-size: var(--font-size-label);
+    font-weight: var(--font-weight-strong);
+    color: var(--color-ink-muted);
+  }
+  .field__control {
+    min-height: var(--touch-target);
+    padding: 0 0.875rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-input);
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font: inherit;
+  }
+  .field__control[aria-invalid='true'] {
+    border-color: var(--color-danger);
+  }
+  .field__error {
+    margin: 0;
+    font-size: var(--font-size-label);
+    color: var(--color-danger);
+    font-weight: var(--font-weight-strong);
+  }
+</style>
