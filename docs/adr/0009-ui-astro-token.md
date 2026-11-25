@@ -10,6 +10,11 @@ Status: diterima · 25 November 2026 · issue #6. Desain: `docs/superpowers/spec
 - **Aksesibilitas dicek lint** (`eslint-plugin-jsx-a11y-x`, fork yang mendukung ESLint 10) dan tes (label, `aria-describedby`, target 44 px). Navigasi HP memakai `<details>` (tanpa JS).
 
 ## Konsekuensi
-- Skrip inline tema perlu hash di CSP saat CSP web dipasang (#5).
+- Ada dua skrip inline yang perlu hash saat CSP web dipasang (#5): skrip tema di `<head>` dan skrip `ThemeToggle` yang di-inline Astro. Pertimbangkan dukungan CSP bawaan Astro (hash otomatis).
+- `/internal/komponen` dikeluarkan dari build production di #5; `trailingSlash` diselaraskan saat adapter dipasang.
+- **Lead WhatsApp (Fase 1):** `docs/prd.md` mewajibkan setiap klik WhatsApp dicatat. `WhatsAppButton` saat ini menaut langsung ke `wa.me`; di Fase 1 tautannya diarahkan ke endpoint redirect API yang mencatat lead lalu meneruskan ke WhatsApp.
+- **Nomor WhatsApp** dinormalisasi dengan aturan bersama `normalizeWhatsAppNumber` / `whatsappNumberSchema` (`@pusatk3/shared`), yang juga dipakai API saat menyimpan data penyedia. Nomor tidak valid → tombol tidak tampil (halaman tetap jalan).
+- **Label sponsor** hanya lewat `SponsorLabel` (teks tetap, tanpa props), bukan `Pill`, agar slot berbayar selalu berlabel (prinsip PRD 3).
+- Garis tepi kontrol form memakai `--color-border-strong` (≥ 3:1); `--color-border` hanya untuk garis pemisah dekoratif.
 - `packages/ui` belum dibuat; token dipindah ke paket bersama bila aplikasi mobile dimulai.
 - Tes komponen merender HTML (Astro Container API); tampilan nyata dicek dengan tangkapan layar Chromium. E2E Playwright otomatis di #9.
