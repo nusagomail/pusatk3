@@ -17,5 +17,12 @@ Aturan wajib 4: halaman publik bisa di-cache CDN dan tanpa login. Respons yang d
 - **React ditunda** ke Fase 2 (dashboard). Issue #5 menyebut integrasi React; dipasang saat ada komponen yang memakainya.
 
 ## Konsekuensi
+- **Syarat untuk #7/#8 dan Fase 1:**
+  - HTML yang di-cache CDN merujuk file `/_astro/*` ber-hash yang berganti tiap deploy. Begitu Cache Rules/Cache API aktif, setiap deploy wajib mem-purge URL HTML (atau mempertahankan aset versi sebelumnya), agar HTML lama tidak merujuk aset yang sudah hilang.
+  - `public/_headers` tidak berlaku untuk respons yang dibuat Worker. Halaman SSR wajib memakai middleware Astro yang memasang header keamanan yang sama (dengan tes).
+  - Staging tidak boleh terindeks: kirim `X-Robots-Tag: noindex` (atau `robots.txt` `Disallow: /`) per lingkungan.
+  - Video: setel `PUBLIC_MEDIA_BASE_URL` sebagai variabel lingkungan build (CI); berkas `.env` sengaja tidak dipakai untuk nilai ini agar halaman dan CSP (`media-src`) selalu sama.
+- Meta CSP diletakkan Astro di akhir `<head>`, sehingga skrip tema dan JSON-LD sebelumnya tidak dicakup meta itu; isi `<body>` tetap terlindungi. CSP via header untuk halaman SSR bisa dipertimbangkan di Fase 1.
+- Gerbang rilis "beranda tidak ke production selama masih memakai jadwal contoh" saat ini proses manual; workflow production (#8) sebaiknya gagal selama `SAMPLE_SCHEDULES` masih dipakai.
 - Setiap halaman publik prerender baru: tambahkan aturan `Cache-Control` di `public/_headers` dan path di `src/data/site.ts` (`PUBLIC_PAGES`, untuk sitemap).
 - Prerender memakai runtime workerd; di lingkungan tanpa internet muncul pesan "Request was cancelled" (adapter mengambil contoh `request.cf`) tanpa menggagalkan build.
