@@ -21,6 +21,8 @@ Mockup dibuat di kanvas desain Claude (private milik pemilik). Sumber markup tia
 | E-course | `/belajar`, `/belajar/[kursus]/[pelajaran]` | Filter topik, grid kursus, banner "bukan sertifikasi resmi"; halaman pelajaran: video, ringkasan, "ditinjau oleh", daftar isi + progres, ajakan sertifikasi | `Ecourse.dc.html`, `Pelajaran.dc.html` |
 | Masuk | `/masuk` | Langkah 1: Google atau email → kirim kode; langkah 2: 6 kotak OTP, kirim ulang, catatan 2FA penyedia. Tanpa password | `Masuk.dc.html` |
 
+Catatan beranda (#5): sampai data penyedia dikurasi (Fase 1), "Jadwal terdekat" memakai data contoh yang **selalu** berlabel "Contoh tampilan" / "Contoh" (keputusan pemilik), dan beranda tidak dirilis ke production sebelum data asli ada.
+
 ## Dashboard
 
 | Halaman | Rute | Isi | Referensi |

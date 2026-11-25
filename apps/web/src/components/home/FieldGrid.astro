@@ -1,0 +1,48 @@
+---
+import { FEATURED_FIELDS } from '../../data/home';
+---
+
+<ul class="fields">
+  {FEATURED_FIELDS.map((field) => (
+    <li>
+      <a class="fields__card" href={`/cari?field=${field.slug}`}>
+        <span class="fields__name">{field.name}</span>
+        <span class="fields__meta">
+          {field.count} sertifikasi · {field.note}
+        </span>
+      </a>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .fields__card {
+    display: grid;
+    gap: 0.25rem;
+    height: 100%;
+    padding: 1rem 1.125rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    background: var(--color-bg);
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+  .fields__card:hover {
+    border-color: var(--color-border-strong);
+  }
+  .fields__name {
+    font-weight: var(--font-weight-strong);
+  }
+  .fields__meta {
+    color: var(--color-ink-subtle);
+    font-size: 0.875rem;
+  }
+</style>

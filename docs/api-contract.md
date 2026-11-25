@@ -39,7 +39,7 @@
 | Metode | Path | Fungsi |
 | --- | --- | --- |
 | GET | `/health` | Cek layanan: `{ "status": "ok", "version": "<sha commit / dev>" }`, `Cache-Control: no-store` (`healthResponseSchema`) |
-| GET | `/search` | Cari jadwal/penyedia (q, city, category, mode, issuer, month, priceMin, priceMax) |
+| GET | `/search` | Cari jadwal/penyedia (q, field, city, category, mode, issuer, month, priceMin, priceMax). `field` = slug bidang K3 (mis. `k3-umum`), dipakai tautan bidang di beranda |
 | GET | `/schedules/:id` | Detail jadwal |
 | GET | `/providers/:slug` | Profil publik penyedia |
 | GET | `/categories` | Bidang K3 + kategori sertifikasi (`categoriesResponseSchema`): `{ items: [{ slug, name, categories: [{ slug, name, issuers, documentType, typicalValidityYears, regulationRef }] }] }`, bidang urut `sort_order`, kategori di tiap bidang urut nama (collation `id`, lalu slug); bidang tanpa kategori tidak tampil. Tanpa parameter (parameter apa pun → 422). `Cache-Control: public, max-age=300, s-maxage=3600, stale-while-revalidate=86400`; daftar kosong (DB belum di-seed) → `no-store`. Purge saat seed/kategori berubah: `/api/v1/categories` |

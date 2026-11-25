@@ -1,0 +1,30 @@
+---
+import Button from '../components/Button.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Halaman tidak ditemukan — PusatK3"
+  description="Halaman yang Anda cari tidak ada."
+  noindex
+>
+  <div class="not-found">
+    <h1>Halaman tidak ditemukan</h1>
+    <p>
+      Halaman ini belum tersedia atau alamatnya salah. Fitur pencarian pelatihan sedang disiapkan.
+    </p>
+    <Button href="/">Kembali ke Beranda</Button>
+  </div>
+</BaseLayout>
+
+<style>
+  .not-found {
+    max-width: var(--content-width);
+    margin: 0 auto;
+    padding: 4rem 1rem;
+  }
+  .not-found p {
+    max-width: 60ch;
+    color: var(--color-ink-muted);
+  }
+</style>

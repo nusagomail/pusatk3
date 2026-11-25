@@ -1,0 +1,62 @@
+---
+/** Homepage section wrapper with an h2 and an optional "see all" link. */
+interface Props {
+  id: string;
+  title: string;
+  more?: { href: string; label: string };
+  muted?: boolean;
+}
+
+const { id, title, more, muted = false } = Astro.props;
+---
+
+<section
+  class:list={['section', muted && 'section--muted']}
+  id={id}
+  aria-labelledby={`${id}-title`}
+>
+  <div class="section__inner">
+    <div class="section__head">
+      <h2 id={`${id}-title`}>{title}</h2>
+      {more && (
+        <a class="section__more" href={more.href}>
+          {more.label}
+        </a>
+      )}
+    </div>
+    <slot />
+  </div>
+</section>
+
+<style>
+  .section--muted {
+    background: var(--color-surface);
+  }
+  .section__inner {
+    max-width: var(--content-width);
+    margin: 0 auto;
+    padding: 2.5rem 1rem;
+  }
+  .section__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    margin-bottom: 1rem;
+  }
+  .section__head h2 {
+    margin: 0;
+  }
+  .section__more {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-target);
+    font-weight: var(--font-weight-strong);
+  }
+  @media (min-width: 900px) {
+    .section__inner {
+      padding: 3.5rem 1.5rem;
+    }
+  }
+</style>

@@ -1,0 +1,236 @@
+---
+import Button from '../components/Button.astro';
+import FieldGrid from '../components/home/FieldGrid.astro';
+import HomeHero from '../components/home/HomeHero.astro';
+import IntroVideo from '../components/home/IntroVideo.astro';
+import ScheduleCard from '../components/home/ScheduleCard.astro';
+import Section from '../components/home/Section.astro';
+import JsonLd from '../components/JsonLd.astro';
+import { CITY_CHIPS, SAMPLE_SCHEDULES } from '../data/home';
+import { SITE_URL, absoluteUrl } from '../data/site';
+import { safeMediaBaseUrl } from '../lib/media';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const mediaBaseUrl = safeMediaBaseUrl(import.meta.env.PUBLIC_MEDIA_BASE_URL);
+const description =
+  'Temukan dan bandingkan jadwal pelatihan dan sertifikasi K3 (Kemnaker, BNSP) beserta legalitas penyedianya, lalu hubungi penyedia langsung. Gratis untuk peserta.';
+
+const organization = {
+  '@type': 'Organization',
+  name: 'PusatK3',
+  url: `${SITE_URL}/`,
+  logo: absoluteUrl('/favicon.svg'),
+  description:
+    'Direktori independen pelatihan dan sertifikasi K3 di Indonesia, bukan situs pemerintah. PusatK3 tidak menyelenggarakan pelatihan, tidak menerbitkan sertifikat, dan tidak memproses pembayaran pelatihan.',
+};
+const website = {
+  '@type': 'WebSite',
+  name: 'PusatK3',
+  url: `${SITE_URL}/`,
+  inLanguage: 'id',
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: `${SITE_URL}/cari?q={search_term_string}`,
+    'query-input': 'required name=search_term_string',
+  },
+};
+const video = mediaBaseUrl
+  ? {
+      '@type': 'VideoObject',
+      name: 'Kenali PusatK3',
+      description:
+        'Perkenalan PusatK3 dalam 1 menit: cara mencari, membandingkan, dan menghubungi penyedia pelatihan K3.',
+      thumbnailUrl: absoluteUrl('/video/pusatk3-intro-poster.jpg'),
+      uploadDate: '2026-11-25',
+      duration: 'PT1M21S',
+      contentUrl: `${mediaBaseUrl}/pusatk3-intro.mp4`,
+      inLanguage: 'id',
+    }
+  : null;
+
+const steps = [
+  { title: 'Cari', text: 'Cari pelatihan berdasarkan jenis, kota, dan tanggal.' },
+  {
+    title: 'Bandingkan',
+    text: 'Lihat legalitas penyedia, penerbit sertifikat, jadwal, dan ulasan peserta.',
+  },
+  {
+    title: 'Hubungi langsung',
+    text: 'Chat penyedia lewat WhatsApp atau kirim pertanyaan. Pendaftaran dan pembayaran langsung ke penyedia.',
+  },
+];
+---
+
+<BaseLayout
+  title="PusatK3 — Direktori pelatihan & sertifikasi K3 di Indonesia"
+  description={description}
+>
+  <Fragment slot="head">
+    <JsonLd data={organization} />
+    <JsonLd data={website} />
+    {video && <JsonLd data={video} />}
+  </Fragment>
+  <HomeHero />
+
+  <Section id="bidang" title="Bidang K3" more={{ href: '/cari', label: 'Lihat semua 14 bidang' }}>
+    <FieldGrid />
+  </Section>
+
+  <Section id="jadwal" title="Jadwal terdekat" muted>
+    <p class="sample-note">
+      <strong>Contoh tampilan.</strong> Jadwal di bawah ini bukan jadwal asli; jadwal dari penyedia
+      tampil setelah data dikurasi.
+    </p>
+    <div class="schedules">
+      {SAMPLE_SCHEDULES.map((schedule) => (
+        <ScheduleCard schedule={schedule} sample />
+      ))}
+    </div>
+  </Section>
+
+  <Section id="kota" title="Cari berdasarkan kota">
+    <ul class="chips">
+      {CITY_CHIPS.map((city) => (
+        <li>
+          <a href={`/cari?${city.query}`}>{city.label}</a>
+        </li>
+      ))}
+    </ul>
+  </Section>
+
+  <Section id="cara-kerja" title="Cara kerja PusatK3" muted>
+    <p class="about">
+      PusatK3 adalah direktori independen pelatihan dan sertifikasi K3 di Indonesia: tempat
+      membandingkan jadwal, penerbit sertifikat, dan legalitas penyedia (PJK3, LSP, TUK), lalu
+      menghubungi penyedia langsung. Gratis untuk peserta; PusatK3 tidak menyelenggarakan pelatihan
+      dan tidak memproses pembayaran.
+    </p>
+    <ol class="steps">
+      {steps.map((step, index) => (
+        <li>
+          <span class="steps__number" aria-hidden="true">
+            {index + 1}
+          </span>
+          <h3>{step.title}</h3>
+          <p>{step.text}</p>
+        </li>
+      ))}
+    </ol>
+  </Section>
+
+  <Section id="kenali" title="Kenali PusatK3">
+    <IntroVideo mediaBaseUrl={mediaBaseUrl ?? undefined} />
+  </Section>
+
+  <section class="cta" aria-labelledby="cta-title">
+    <div class="cta__inner">
+      <div>
+        <h2 id="cta-title">Anda penyedia pelatihan K3?</h2>
+        <p>
+          Klaim profil gratis, verifikasi legalitas, dan terima calon peserta dari seluruh
+          Indonesia.
+        </p>
+      </div>
+      <Button href="/untuk-penyedia">Klaim profil gratis</Button>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .sample-note {
+    margin: 0 0 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    background: var(--color-warning-bg);
+    color: var(--color-ink);
+  }
+  .schedules {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .chips a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-target);
+    padding: 0 1rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    color: var(--color-ink);
+    font-weight: var(--font-weight-nav);
+    text-decoration: none;
+  }
+  .chips a:hover {
+    background: var(--color-surface);
+  }
+  .about {
+    max-width: 70ch;
+    margin: 0 0 1.25rem;
+    color: var(--color-ink-muted);
+  }
+  .steps {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .steps li {
+    padding: 1.25rem;
+    border-radius: var(--radius-card);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+  }
+  .steps__number {
+    display: inline-grid;
+    place-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    font-weight: var(--font-weight-display);
+  }
+  .steps h3 {
+    margin: 0.75rem 0 0.25rem;
+  }
+  .steps p {
+    margin: 0;
+    color: var(--color-ink-muted);
+  }
+  .cta {
+    background: var(--color-surface);
+  }
+  .cta__inner {
+    display: grid;
+    gap: 1rem;
+    align-items: center;
+    max-width: var(--content-width);
+    margin: 0 auto;
+    padding: 2.5rem 1rem;
+  }
+  .cta h2 {
+    margin: 0 0 0.25rem;
+  }
+  .cta p {
+    margin: 0;
+    color: var(--color-ink-muted);
+  }
+  @media (min-width: 900px) {
+    .steps {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .cta__inner {
+      grid-template-columns: 1fr auto;
+      padding: 3rem 1.5rem;
+    }
+  }
+</style>

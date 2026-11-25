@@ -1,0 +1,101 @@
+---
+/**
+ * "Kenali PusatK3" (brand/video/README.md). The MP4 is never bundled: it is served from
+ * `mediaBaseUrl` (R2/CDN, https only). Without it: poster + transcript, no play button.
+ * No autoplay: the video has narration.
+ */
+import { safeMediaBaseUrl } from '../../lib/media';
+
+interface Props {
+  mediaBaseUrl?: string | undefined;
+}
+
+const { mediaBaseUrl } = Astro.props;
+const base = safeMediaBaseUrl(mediaBaseUrl);
+const poster = '/video/pusatk3-intro-poster.jpg';
+const transcript = [
+  'Butuh pelatihan atau sertifikasi K3, tapi bingung harus mulai dari mana? Jadwalnya tersebar di mana-mana, biayanya tidak jelas, dan sulit memastikan penyedianya benar-benar berizin.',
+  'Kenalkan, PusatK3. Satu tempat untuk menemukan pelatihan dan sertifikasi K3 di seluruh Indonesia, dengan 59 jenis sertifikasi dari 14 bidang.',
+  'Cukup ketik sertifikasi yang Anda butuhkan, misalnya operator forklift, lalu pilih kotanya. Dalam hitungan detik, Anda bisa membandingkan jadwal, biaya, penerbit sertifikat, dan lokasi dari berbagai penyedia.',
+  'Penyedia yang berlabel terverifikasi sudah kami periksa legalitasnya. Dan label ini tidak bisa dibeli.',
+  'Sudah menemukan yang cocok? Hubungi penyedianya langsung lewat WhatsApp atau formulir, tanpa perantara dan tanpa biaya tambahan.',
+  'Simpan jadwal favorit Anda, dan pasang pengingat agar sertifikat atau lisensi Anda tidak lewat masa berlaku.',
+  'Untuk penyedia pelatihan, daftarkan lembaga Anda, kelola jadwal, dan terima calon peserta langsung dari dashboard.',
+  'PusatK3. Gratis untuk peserta, selamanya. Temukan pelatihan K3 yang tepat, mulai hari ini di pusatk3.id.',
+];
+---
+
+<figure class="intro">
+  <div class="intro__frame">
+    {base ? (
+      <video
+        src={`${base}/pusatk3-intro.mp4`}
+        poster={poster}
+        controls
+        preload="none"
+        playsinline
+        width="1920"
+        height="1080"
+      >
+        <track
+          kind="captions"
+          srclang="id"
+          label="Indonesia"
+          src="/video/pusatk3-intro.id.vtt"
+          default
+        />
+      </video>
+    ) : (
+      <img
+        src={poster}
+        alt="Logo PusatK3 dan tulisan: Gratis untuk peserta, selamanya. Temukan pelatihan K3 yang tepat, mulai hari ini."
+        width="1920"
+        height="1080"
+        loading="lazy"
+        decoding="async"
+      />
+    )}
+  </div>
+  <figcaption>{base ? 'Kenali PusatK3 dalam 1 menit' : 'Ringkasan PusatK3'}</figcaption>
+  <details class="intro__transcript">
+    <summary>Baca transkrip</summary>
+    {transcript.map((paragraph) => (
+      <p>{paragraph}</p>
+    ))}
+  </details>
+</figure>
+
+<style>
+  .intro {
+    margin: 0;
+    max-width: 52rem;
+  }
+  .intro__frame {
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    border-radius: var(--radius-card);
+    background: var(--color-hero);
+  }
+  .intro__frame video,
+  .intro__frame img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .intro figcaption {
+    margin-top: 0.75rem;
+    font-weight: var(--font-weight-strong);
+  }
+  .intro__transcript summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-target);
+    color: var(--color-accent-text);
+    font-weight: var(--font-weight-strong);
+    cursor: pointer;
+  }
+  .intro__transcript p {
+    color: var(--color-ink-muted);
+  }
+</style>

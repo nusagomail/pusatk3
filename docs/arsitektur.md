@@ -10,7 +10,7 @@
 
 ```
 apps/
-  web/        Astro (SSR di Cloudflare) — halaman publik + dashboard (komponen React)
+  web/        Astro di Cloudflare (prerender bawaan, SSR bila perlu data segar) — halaman publik + dashboard (komponen React, Fase 2)
   api/        Hono di Cloudflare Workers — REST /api/v1
   mobile/     Expo (Fase 5)
 packages/
@@ -40,7 +40,7 @@ Layanan pihak ketiga: Meilisearch/Typesense (pencarian), Resend (email), Midtran
 ## Alur cache halaman publik
 
 1. Request ke halaman publik → cek cache CDN.
-2. Miss → render SSR dengan data dari API → simpan dengan `stale-while-revalidate`.
+2. Miss → halaman prerender disajikan dari aset statis; halaman SSR dirender dengan data dari API dan **disimpan lewat Cache API/Cache Rules** (header `s-maxage` + `stale-while-revalidate` saja tidak membuat respons Worker masuk cache). Rincian: ADR 0010.
 3. Penyedia mengubah jadwal/profil → API memasukkan tugas ke Queue → purge URL terkait (profil, detail jadwal, halaman kota × kategori).
 
 ## Lingkungan

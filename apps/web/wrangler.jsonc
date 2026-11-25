@@ -1,0 +1,13 @@
+// Local/build configuration for the web Worker. staging/production environments: issue #7.
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "pusatk3-web",
+  "compatibility_date": "2026-11-01",
+  // No public *.workers.dev URL until environments are set up (#7).
+  "workers_dev": false,
+  "preview_urls": false,
+  // Unknown paths get the static 404 page (src/pages/404.astro) instead of an empty body.
+  "assets": { "not_found_handling": "404-page" },
+  // Off until #7 decides log retention: invocation logs include full URLs (possible PII).
+  "observability": { "enabled": false },
+}
