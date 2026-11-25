@@ -1,0 +1,71 @@
+# Production deploy: started by hand only, from main, through the protected `production`
+# environment (required reviewer: the owner). Gate 3 in docs/workflow.md; ADR 0012.
+name: Deploy production
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to production
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: production
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      SHA: ${{ github.sha }}
+    steps:
+      - name: Check Cloudflare secrets
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID belum diisi di environment production (docs/setup-cloudflare.md langkah 4)."
+            exit 1
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Production preflight
+        run: node scripts/production-preflight.mjs .
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+
+      - name: Apply D1 migrations (production)
+        run: pnpm --filter @pusatk3/api exec wrangler d1 migrations apply DB --env production --remote
+
+      - name: Deploy API (production)
+        run: pnpm --filter @pusatk3/api exec wrangler deploy --env production --var APP_VERSION:"$SHA"
+
+      - name: Build web (production, indexable)
+        env:
+          CLOUDFLARE_ENV: production
+          PUBLIC_MEDIA_BASE_URL: ${{ vars.PUBLIC_MEDIA_BASE_URL }}
+        run: pnpm --filter @pusatk3/web build
+
+      - name: Deploy web (production)
+        run: pnpm --filter @pusatk3/web exec wrangler deploy
+
+      - name: Smoke test
+        run: |
+          curl -fsS --retry 5 --retry-delay 5 --retry-all-errors https://pusatk3.id/api/v1/health | tee health.json
+          grep -q "\"version\":\"$SHA\"" health.json
+          curl -fsS --retry 5 --retry-delay 5 --retry-all-errors -D headers.txt -o index.html https://pusatk3.id/
+          if grep -qi '^x-robots-tag: noindex' headers.txt; then echo "::error::production is noindex"; exit 1; fi
+          grep -q 'PusatK3' index.html

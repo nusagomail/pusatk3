@@ -1,0 +1,96 @@
+# Deploys the commit CI just tested on main to staging (docs/adr/0012-ci-deploy.md).
+# Until the owner adds the Cloudflare secrets to the `staging` environment, the deploy is
+# skipped with a notice so main stays green (owner decision A, #8).
+name: Deploy staging
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to staging
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: staging
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - name: Check Cloudflare secrets
+        id: secrets
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::notice::Deploy staging dilewati: CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID belum diisi di environment staging (docs/setup-cloudflare.md langkah 4)."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - if: steps.secrets.outputs.ready == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply D1 migrations (staging)
+        if: steps.secrets.outputs.ready == 'true'
+        run: pnpm --filter @pusatk3/api exec wrangler d1 migrations apply DB --env staging --remote
+
+      - name: Deploy API (staging)
+        id: api
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          pnpm --filter @pusatk3/api exec wrangler deploy --env staging --var APP_VERSION:"$SHA" | tee api-deploy.log
+          echo "url=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' api-deploy.log | head -1)" >> "$GITHUB_OUTPUT"
+
+      - name: Build web (staging, noindex)
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          CLOUDFLARE_ENV: staging
+          PUBLIC_MEDIA_BASE_URL: ${{ vars.PUBLIC_MEDIA_BASE_URL }}
+        run: pnpm --filter @pusatk3/web build
+
+      - name: Deploy web (staging)
+        id: web
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          pnpm --filter @pusatk3/web exec wrangler deploy | tee web-deploy.log
+          echo "url=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' web-deploy.log | head -1)" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke test
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          API_URL: ${{ steps.api.outputs.url }}
+          WEB_URL: ${{ steps.web.outputs.url }}
+        run: |
+          test -n "$API_URL" || { echo "::error::API URL not found in deploy output"; exit 1; }
+          test -n "$WEB_URL" || { echo "::error::Web URL not found in deploy output"; exit 1; }
+          curl -fsS --retry 5 --retry-delay 5 --retry-all-errors "$API_URL/api/v1/health" | tee health.json
+          grep -q "\"version\":\"$SHA\"" health.json
+          curl -fsS --retry 5 --retry-delay 5 --retry-all-errors -D headers.txt -o index.html "$WEB_URL/"
+          grep -qi '^x-robots-tag: noindex' headers.txt
+          grep -q 'PusatK3' index.html
+          echo "::notice::Staging: web $WEB_URL · API $API_URL/api/v1/health"
