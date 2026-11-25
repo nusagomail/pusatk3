@@ -73,6 +73,21 @@ describe('production build', () => {
     expect(html).toMatch(/<meta name="robots" content="noindex, nofollow"/);
   });
 
+  it('serves 404.html for unknown paths and keeps the Worker private', () => {
+    const config = JSON.parse(readFileSync(client('wrangler.json'), 'utf8')) as {
+      assets?: { not_found_handling?: string };
+      workers_dev?: boolean;
+      preview_urls?: boolean;
+      observability?: { enabled?: boolean };
+      kv_namespaces?: unknown[];
+    };
+    expect(config.assets?.not_found_handling).toBe('404-page');
+    expect(config.workers_dev).toBe(false);
+    expect(config.preview_urls).toBe(false);
+    expect(config.observability?.enabled).toBe(false);
+    expect(config.kv_namespaces ?? []).toEqual([]);
+  });
+
   it('does not bundle the intro video', () => {
     expect(files(out).filter((file) => file.endsWith('.mp4'))).toEqual([]);
   });
