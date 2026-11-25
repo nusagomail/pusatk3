@@ -1,3 +1,9 @@
 packages:
   - apps/*
   - packages/*
+
+# Install scripts allowed to run (pnpm 10 blocks them by default).
+# esbuild and workerd download/verify their platform binary (wrangler, Workers tests).
+onlyBuiltDependencies:
+  - esbuild
+  - workerd
