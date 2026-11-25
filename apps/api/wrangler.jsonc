@@ -9,6 +9,15 @@
   "compatibility_flags": ["no_nodejs_compat", "no_nodejs_compat_v2"],
   // No public *.workers.dev URL until environments are set up (#7).
   "workers_dev": false,
+  // Local D1 only (state in .wrangler/). staging/production databases: #7; remote migrations: CI only.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pusatk3-local",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "../../packages/db/migrations",
+    },
+  ],
   "vars": {
     "APP_VERSION": "dev",
   },

@@ -38,7 +38,12 @@ export default defineConfig(
   {
     // Node globals only for root tooling and tests. Workers (apps/api) and browser
     // code (apps/web) get their own globals when those apps are added.
-    files: ['*.{js,ts}', 'tests/**/*.ts', '{apps,packages}/*/*.config.{js,ts}'],
+    files: [
+      '*.{js,ts}',
+      'tests/**/*.ts',
+      '{apps,packages}/*/*.config.{js,ts}',
+      '{apps,packages}/*/scripts/**/*.ts',
+    ],
     languageOptions: { globals: { ...globals.node } },
   },
   {
