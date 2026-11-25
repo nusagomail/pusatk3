@@ -3,6 +3,7 @@ import { secureHeaders } from 'hono/secure-headers';
 import type { AppEnv } from './env';
 import { notFound, onError } from './middleware/errors';
 import { mutableResponse, requestId } from './middleware/request-id';
+import { categoriesRoutes } from './routes/categories';
 import { healthRoutes } from './routes/health';
 
 export const API_BASE_PATH = '/api/v1';
@@ -41,6 +42,7 @@ export function createApp(options: CreateAppOptions = {}) {
 
   const v1: Router = new Hono<AppEnv>();
   v1.route('/', healthRoutes);
+  v1.route('/', categoriesRoutes);
   options.extend?.(v1);
   app.route(API_BASE_PATH, v1);
   return app;

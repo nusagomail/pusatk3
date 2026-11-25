@@ -42,7 +42,8 @@
 | GET | `/search` | Cari jadwal/penyedia (q, city, category, mode, issuer, month, priceMin, priceMax) |
 | GET | `/schedules/:id` | Detail jadwal |
 | GET | `/providers/:slug` | Profil publik penyedia |
-| GET | `/cities`, `/categories` | Data referensi |
+| GET | `/categories` | Bidang K3 + kategori sertifikasi (`categoriesResponseSchema`): `{ items: [{ slug, name, categories: [{ slug, name, issuers, documentType, typicalValidityYears, regulationRef }] }] }`, bidang urut `sort_order`, kategori di tiap bidang urut nama. Tanpa parameter (parameter apa pun → 422). `Cache-Control: public, max-age=300, s-maxage=3600, stale-while-revalidate=86400`. Purge saat seed/kategori berubah: `/api/v1/categories` |
+| GET | `/cities` | Data referensi kota (Fase 1) |
 | POST | `/leads` | Catat lead (Turnstile wajib) |
 
 ### Auth
