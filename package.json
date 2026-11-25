@@ -12,7 +12,10 @@
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "typecheck": "tsc -p tsconfig.json && turbo run typecheck",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:generate": "pnpm --filter @pusatk3/db db:generate",
+    "db:migrate:local": "pnpm --filter @pusatk3/api db:migrate:local",
+    "db:seed:local": "pnpm --filter @pusatk3/api db:seed:local"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -1,6 +1,7 @@
 /** Bindings and vars from wrangler.jsonc. */
 export interface Env {
   APP_VERSION: string;
+  DB: D1Database;
 }
 
 export interface AppEnv {
