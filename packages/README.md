@@ -4,7 +4,7 @@ Kode bersama yang dipakai oleh `apps/`. Lihat `docs/arsitektur.md`.
 
 | Folder    | Isi                                                                                  | Issue |
 | --------- | ------------------------------------------------------------------------------------ | ----- |
-| `shared/` | Tipe, skema Zod, konstanta                                                           | #2    |
+| `shared/` | `@pusatk3/shared`: konstanta domain, skema Zod (error, paginasi, health, kategori)   | #2    |
 | `db/`     | `@pusatk3/db`: skema Drizzle, migrasi D1 (`migrations/`), pembaca CSV kategori, seed | #4    |
 | `ui/`     | Design tokens + komponen (bila dipakai web & mobile)                                 | #6    |
 
