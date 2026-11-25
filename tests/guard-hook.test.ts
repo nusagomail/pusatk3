@@ -46,6 +46,8 @@ describe('guard hook: remote database access is blocked', () => {
     'wrangler d1 time-travel restore pusatk3-staging --timestamp=2026-11-25T00:00:00Z',
     'wrangler d1 time-travel info pusatk3-staging',
     'pnpm --filter @pusatk3/api exec wrangler d1 delete pusatk3-staging',
+    'wrangler d1 -c apps/api/wrangler.jsonc delete pusatk3-staging',
+    'wrangler d1 --config apps/api/wrangler.jsonc time-travel restore pusatk3-staging',
   ])('blocks always-remote %j', (command) => {
     expect(bash(command)).toBe(2);
   });
@@ -53,6 +55,11 @@ describe('guard hook: remote database access is blocked', () => {
   it.each([
     'pnpm --filter @pusatk3/api exec wrangler dev --env staging --remote',
     'wrangler dev --remote',
+    'pnpm exec wrangler dev -r --env staging',
+    // The api `dev` script runs `wrangler dev` without the word "wrangler" in the command.
+    'pnpm --filter @pusatk3/api dev --remote',
+    'cd apps/api && pnpm dev -- --remote',
+    'pnpm dev -- -r',
   ])('blocks remote dev sessions %j', (command) => {
     expect(bash(command)).toBe(2);
   });

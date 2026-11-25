@@ -73,6 +73,12 @@ describe.each(['api', 'web'] as const)('apps/%s/wrangler.jsonc', (app) => {
     expect(production.routes).toEqual([{ pattern, zone_name: 'pusatk3.id' }]);
   });
 
+  it('never binds to remote resources during local dev', () => {
+    for (const env of [local, staging, production]) {
+      for (const db of env.d1_databases) expect((db as { remote?: boolean }).remote).not.toBe(true);
+    }
+  });
+
   it('has no secret-looking vars in any environment', () => {
     for (const env of [local, staging, production]) {
       for (const key of Object.keys(env.vars))

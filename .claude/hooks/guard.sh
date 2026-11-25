@@ -48,13 +48,16 @@ if [[ "$tool" == "Bash" ]]; then
   fi
 
   # --- Remote databases (CI only) ---
-  if has "(^|[^[:alnum:]_])d1[[:space:]]+(create|delete|info|list|insights|time-travel)([^[:alnum:]_-]|$)"; then
+  # Matched anywhere after "d1", so options in between (e.g. `d1 -c file delete`) do not hide it.
+  # Fails safe: a local command that merely contains one of these words is also blocked.
+  if has "$D1" && has "(^|[[:space:]])(create|delete|info|list|insights|time-travel)([^[:alnum:]_-]|$)"; then
     block "subperintah D1 ini selalu bekerja pada database remote; hanya lewat CI/pemilik."
   fi
   if { has "$D1" || has 'db:(migrate|seed|generate)'; } && has "$REMOTE"; then
     block "operasi D1 remote hanya lewat CI."
   fi
-  if has 'wrangler' && has "(^|[[:space:]])dev$W" && has "$REMOTE"; then
+  # Any dev session with --remote or its alias -r (`pnpm dev` runs `wrangler dev` without the word).
+  if has "(^|[[:space:]])dev$W" && has "(--remote|(^|[[:space:]])-r)([^[:alnum:]_-]|$)"; then
     block "wrangler dev --remote memakai resource Cloudflare sungguhan; jalankan lokal saja."
   fi
 
