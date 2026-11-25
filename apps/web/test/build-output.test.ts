@@ -32,7 +32,7 @@ function headerRules(text: string): Map<string, string[]> {
 beforeAll(() => {
   out = mkdtempSync(join(tmpdir(), 'pusatk3-web-build-'));
   // Empty (not just unset) so a local .env cannot enable the video in this build.
-  const env = { ...process.env, PUBLIC_MEDIA_BASE_URL: '' };
+  const env = { ...process.env, PUBLIC_MEDIA_BASE_URL: '', DEPLOY_ENV: 'production' };
   try {
     execFileSync('pnpm', ['exec', 'astro', 'build', '--outDir', out], {
       cwd: root,
@@ -113,6 +113,11 @@ describe('_headers', () => {
     expect(home).toMatch(
       /Cache-Control: public, max-age=0, must-revalidate, s-maxage=3600, stale-while-revalidate=86400/,
     );
+  });
+
+  it('production builds are indexable (no X-Robots-Tag)', () => {
+    expect(readFileSync(client('_headers'), 'utf8')).not.toContain('X-Robots-Tag');
+    expect(readFileSync(client('robots.txt'), 'utf8')).toContain('Allow: /');
   });
 
   it('keeps immutable caching for hashed assets', () => {

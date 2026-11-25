@@ -65,10 +65,9 @@ describe('JsonLd', () => {
 });
 
 describe('robots.txt and sitemap.xml', () => {
-  it('allow crawling and point to the sitemap', async () => {
+  it('block crawlers outside production builds (tests do not set DEPLOY_ENV)', async () => {
     const text = await (await robots({} as never)).text();
-    expect(text).toMatch(/User-agent: \*\nAllow: \//);
-    expect(text).toContain('Sitemap: https://pusatk3.id/sitemap.xml');
+    expect(text).toBe('User-agent: *\nDisallow: /\n');
   });
 
   it('list the public pages and never internal ones', async () => {

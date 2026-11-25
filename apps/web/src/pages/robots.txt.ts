@@ -1,8 +1,9 @@
 import type { APIRoute } from 'astro';
-import { absoluteUrl } from '../data/site';
+import { isProductionDeploy, robotsTxt } from '../lib/deploy';
 
-// Policy for AI crawlers (GEO) is decided in Fase 3; until then everything public is allowed.
+// Production allows crawling; staging/local builds block it (ADR 0011). Policy for AI crawlers
+// (GEO) is decided in Fase 3.
 export const GET: APIRoute = () =>
-  new Response(`User-agent: *\nAllow: /\n\nSitemap: ${absoluteUrl('/sitemap.xml')}\n`, {
+  new Response(robotsTxt(isProductionDeploy(import.meta.env.DEPLOY_ENV)), {
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
   });
