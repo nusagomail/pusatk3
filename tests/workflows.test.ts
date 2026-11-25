@@ -3,6 +3,8 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 // Structure and safety rules for .github/workflows (docs/adr/0012-ci-deploy.md).
+// The real gate for deploys is the GitHub environment protection set by the owner
+// (docs/setup-cloudflare.md); these tests keep the workflow files honest.
 const read = (name: string) =>
   readFileSync(resolve(import.meta.dirname, '../.github/workflows', name), 'utf8');
 
@@ -13,7 +15,7 @@ const PINNED = {
   'pnpm/action-setup': '73e46992e05b19abd31f2f3c20e0e7370d762115', // v6.1.1
 };
 
-/** Text of the YAML block whose first line is `  <name>:` up to the next sibling key. */
+/** Text of the YAML block whose first line is `<indent><name>:` up to the next sibling key. */
 function block(text: string, name: string, indent = 2): string {
   const pad = ' '.repeat(indent);
   const start = text.indexOf(`\n${pad}${name}:`);
@@ -23,12 +25,22 @@ function block(text: string, name: string, indent = 2): string {
   return next < 0 ? rest : rest.slice(0, next + 1);
 }
 
+const indexOf = (text: string, needle: string) => {
+  const index = text.indexOf(needle);
+  if (index < 0) throw new Error(`missing: ${needle}`);
+  return index;
+};
+
 describe.each(WORKFLOWS)('%s', (name) => {
   const text = read(name);
 
   it('grants read-only repository access by default', () => {
     expect(text).toMatch(/^permissions:\n {2}contents: read\n/m);
     expect(text).not.toMatch(/: write/);
+  });
+
+  it('runs every step with bash -eo pipefail', () => {
+    expect(text).toMatch(/^defaults:\n {2}run:\n {4}shell: bash\n/m);
   });
 
   it('never uses pull_request_target', () => {
@@ -50,10 +62,15 @@ describe.each(WORKFLOWS)('%s', (name) => {
     expect(disabled).toBe(checkouts);
   });
 
-  it('never interpolates secrets into shell commands', () => {
+  it('exposes secrets only as step-level env, never in commands', () => {
+    expect(text).not.toMatch(/toJSON\(\s*secrets\s*\)/);
+    expect(text).not.toMatch(/secrets\[/);
+    expect(text).not.toMatch(/\$\{\{\s*env\.CLOUDFLARE_/);
     for (const line of text.split('\n')) {
-      if (/\$\{\{\s*secrets\./.test(line))
-        expect(line).toMatch(/^\s+[A-Z_]+: \$\{\{ secrets\.[A-Z_]+ \}\}$/);
+      if (/(?<![.\w])secrets\./.test(line)) {
+        // Steps are list items at 6 spaces; their `env:` keys sit at 10 spaces.
+        expect(line).toMatch(/^ {10}[A-Z_]+: \$\{\{ secrets\.[A-Z_]+ \}\}$/);
+      }
     }
   });
 
@@ -80,6 +97,7 @@ describe('ci.yml', () => {
 
   it('has no access to secrets and cancels superseded PR runs', () => {
     expect(text).not.toMatch(/secrets\./);
+    expect(text).not.toMatch(/environment:/);
     expect(text).toMatch(/cancel-in-progress: \$\{\{ github\.event_name == 'pull_request' \}\}/);
   });
 });
@@ -87,13 +105,16 @@ describe('ci.yml', () => {
 describe('deploy-staging.yml', () => {
   const text = read('deploy-staging.yml');
 
-  it('runs only after CI succeeded for a push to main, on the commit CI tested', () => {
+  it('runs only after CI succeeded for a push to main of this repository, on the tested commit', () => {
     expect(block(text, 'on', 0)).toMatch(
       /workflow_run:\n\s+workflows: \[CI\]\n\s+types: \[completed\]/,
     );
     expect(text).toContain("github.event.workflow_run.conclusion == 'success'");
     expect(text).toContain("github.event.workflow_run.head_branch == 'main'");
     expect(text).toContain("github.event.workflow_run.event == 'push'");
+    expect(text).toContain(
+      'github.event.workflow_run.head_repository.full_name == github.repository',
+    );
     expect(text).toContain('ref: ${{ github.event.workflow_run.head_sha }}');
   });
 
@@ -103,20 +124,26 @@ describe('deploy-staging.yml', () => {
   });
 
   it('skips with a notice (not a failure) until the token exists (owner decision A)', () => {
-    expect(text).toMatch(/::notice::/);
-    expect(text).toMatch(/if: steps\.secrets\.outputs\.ready == 'true'/);
+    expect(text).toMatch(/::notice::Deploy staging dilewati/);
+    expect(text).toMatch(/if: steps\.token\.outputs\.ready == 'true'/);
   });
 
-  it('migrates, deploys API and web, then smoke-tests', () => {
+  it('migrates, deploys API, checks the built worker, deploys web, then smoke-tests', () => {
     const order = [
       'd1 migrations apply DB --env staging --remote',
       'wrangler deploy --env staging --var APP_VERSION:',
       'CLOUDFLARE_ENV: staging',
+      '"pusatk3-web-staging"',
       'pnpm --filter @pusatk3/web exec wrangler deploy',
       '/api/v1/health',
-    ].map((needle) => text.indexOf(needle));
-    expect(order.every((index) => index >= 0)).toBe(true);
+      'robots.txt',
+    ].map((needle) => indexOf(text, needle));
     expect([...order].sort((a, b) => a - b)).toEqual(order);
+  });
+
+  it('waits for the new version instead of failing on a stale edge', () => {
+    expect(text).toMatch(/for attempt in/);
+    expect(text).toContain('--retry-max-time');
   });
 
   it('serializes deploys instead of cancelling one midway', () => {
@@ -126,45 +153,36 @@ describe('deploy-staging.yml', () => {
 
 describe('deploy-production.yml', () => {
   const text = read('deploy-production.yml');
-  const triggers = block(text, 'on', 0);
 
   it('can only be started by hand', () => {
-    expect(triggers).toMatch(/workflow_dispatch:/);
-    for (const other of [
-      'push',
-      'pull_request',
-      'workflow_run',
-      'schedule',
-      'repository_dispatch',
-    ]) {
-      expect(triggers).not.toMatch(new RegExp(`\\b${other}:`));
-    }
+    expect(text).toMatch(/^on:\n {2}workflow_dispatch:\n\n/m);
   });
 
-  it('deploys only main, through the protected production environment', () => {
-    expect(text).toContain("if: github.ref == 'refs/heads/main'");
+  it('uses the protected production environment and fails hard outside main', () => {
     expect(text).toMatch(/environment: production/);
+    expect(text).toMatch(/"\$GITHUB_REF" = refs\/heads\/main/);
   });
 
-  it('runs the preflight and all quality gates before touching Cloudflare', () => {
-    const first = (needle: string) => text.indexOf(needle);
-    const deploy = first('d1 migrations apply');
-    for (const gate of ['production-preflight.mjs', 'pnpm lint', 'pnpm typecheck', 'pnpm test']) {
-      expect(first(gate), gate).toBeGreaterThan(0);
-      expect(first(gate), gate).toBeLessThan(deploy);
+  it('refuses before installing anything, then runs every gate before touching Cloudflare', () => {
+    const preflight = indexOf(text, 'node scripts/production-preflight.mjs');
+    const install = indexOf(text, 'pnpm install --frozen-lockfile');
+    const secretCheck = indexOf(text, '::error::CLOUDFLARE_API_TOKEN');
+    const firstCloudflare = indexOf(text, 'd1 migrations apply');
+    expect(preflight).toBeLessThan(install);
+    expect(secretCheck).toBeLessThan(firstCloudflare);
+    for (const gate of ['pnpm lint', 'pnpm typecheck', 'pnpm test']) {
+      expect(indexOf(text, gate), gate).toBeGreaterThan(install);
+      expect(indexOf(text, gate), gate).toBeLessThan(firstCloudflare);
     }
   });
 
-  it('fails hard when the token is missing', () => {
-    expect(text).toMatch(/::error::/);
-    expect(text).not.toMatch(/::notice::.*CLOUDFLARE_API_TOKEN/);
-  });
-
-  it('targets production consistently and smoke-tests pusatk3.id', () => {
+  it('targets production consistently and smoke-tests pusatk3.id as indexable', () => {
     expect(text).toContain('d1 migrations apply DB --env production --remote');
     expect(text).toContain('wrangler deploy --env production --var APP_VERSION:');
     expect(text).toContain('CLOUDFLARE_ENV: production');
+    expect(text).toContain('"pusatk3-web-production"');
     expect(text).toContain('https://pusatk3.id/api/v1/health');
+    expect(text).toContain('https://pusatk3.id/robots.txt');
     expect(text).not.toMatch(/staging/);
   });
 });

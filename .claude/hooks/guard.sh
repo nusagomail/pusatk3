@@ -40,6 +40,11 @@ if [[ "$tool" == "Bash" ]]; then
   if has "CLOUDFLARE_ENV=[\"']?production"; then
     block "CLOUDFLARE_ENV=production hanya dipakai CI/pemilik (lihat docs/adr/0011-lingkungan-cloudflare.md)."
   fi
+  # Starting the production workflow is gate 3 (owner only), also via gh.
+  if has '(^|[[:space:]])gh[[:space:]]' && has '(workflow[[:space:]]+run|dispatches)' \
+    && has '(deploy-production|Deploy production)'; then
+    block "workflow deploy production hanya dijalankan pemilik (docs/workflow.md gerbang 3)."
+  fi
   # A web build for production makes a plain `wrangler deploy` target production.
   web_build="${CLAUDE_PROJECT_DIR:-.}/apps/web/dist/client/wrangler.json"
   if [[ -f "$web_build" ]] && grep -Eq '"targetEnvironment"[[:space:]]*:[[:space:]]*"production"' "$web_build" \

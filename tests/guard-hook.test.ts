@@ -82,9 +82,20 @@ describe('guard hook: production deploys stay with the owner', () => {
     'CLOUDFLARE_ENV=production pnpm --filter @pusatk3/web exec wrangler deploy',
     'CLOUDFLARE_ENV="production" pnpm --filter @pusatk3/web build',
     'export CLOUDFLARE_ENV=production && cd apps/web && npx wrangler deploy',
+    // Triggering the production workflow from the session (gate 3 belongs to the owner).
+    'gh workflow run deploy-production.yml',
+    'gh workflow run "Deploy production" --ref main',
+    'gh api -X POST repos/nusagomail/pusatk3/actions/workflows/deploy-production.yml/dispatches -f ref=main',
   ])('blocks %j', (command) => {
     expect(bash(command)).toBe(2);
   });
+
+  it.each(['gh workflow view deploy-production.yml', 'gh run list --workflow ci.yml'])(
+    'allows read-only %j',
+    (command) => {
+      expect(bash(command)).toBe(0);
+    },
+  );
 
   it('blocks a plain deploy when the web build output targets production', () => {
     const project = mkdtempSync(join(tmpdir(), 'guard-prod-build-'));
