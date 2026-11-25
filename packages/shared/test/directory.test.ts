@@ -21,12 +21,17 @@ describe('isoDateSchema', () => {
     expect(isoDateSchema.parse(value)).toBe(value);
   });
 
-  it.each(['10/01/2027', '2027-1-10', '2027-02-30', '2027-13-01', '2027-01-10T00:00:00Z', ''])(
-    'rejects %j',
-    (value) => {
-      expect(isoDateSchema.safeParse(value).success).toBe(false);
-    },
-  );
+  it.each([
+    '10/01/2027',
+    '2027-1-10',
+    '2027-02-30',
+    '2027-13-01',
+    '2027-01-10T00:00:00Z',
+    '',
+    '0202-01-10',
+  ])('rejects %j', (value) => {
+    expect(isoDateSchema.safeParse(value).success).toBe(false);
+  });
 });
 
 describe('providerInputSchema', () => {
@@ -50,9 +55,27 @@ describe('providerInputSchema', () => {
     ['bad email', { email: 'bukan-email' }],
     ['non-https website', { website: 'http://contoh.id' }],
     ['script website', { website: 'javascript:alert(1)' }],
+    ['website with credentials', { website: 'https://kemnaker.go.id@evil.id' }],
+    ['localhost website', { website: 'https://localhost' }],
+    ['IP website', { website: 'https://127.0.0.1' }],
+    ['host without a dot', { website: 'https://x' }],
+    ['control character in name', { name: 'PT A\u0000B' }],
+    ['markup in phone', { phone: '<script>' }],
     ['unknown field', { plan: 'pro' }],
   ])('rejects %s', (_name, overrides) => {
     expect(providerInputSchema.safeParse({ ...valid, ...overrides }).success).toBe(false);
+  });
+
+  it('normalises website and email', () => {
+    const parsed = providerInputSchema.parse({
+      ...valid,
+      website: 'HTTPS://Contoh.ID/profil',
+      email: 'Info@Contoh.ID',
+      description: 'Baris satu\nBaris dua',
+    });
+    expect(parsed.website).toBe('https://contoh.id/profil');
+    expect(parsed.email).toBe('info@contoh.id');
+    expect(parsed.description).toBe('Baris satu\nBaris dua');
   });
 
   it('never accepts verification or plan from input (badge is never bought)', () => {
@@ -109,6 +132,12 @@ describe('scheduleInputSchema', () => {
 
   it('accepts an online schedule without a branch', () => {
     expect(scheduleInputSchema.parse(valid).status).toBe('draft');
+  });
+
+  it('refuses a branch on online schedules', () => {
+    expect(scheduleInputSchema.safeParse({ ...valid, branchName: 'Kantor pusat' }).success).toBe(
+      false,
+    );
   });
 
   it('requires a branch for offline schedules', () => {

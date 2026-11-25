@@ -12,11 +12,13 @@ import {
 import { sql, type SQL } from 'drizzle-orm';
 import {
   check,
+  foreignKey,
   index,
   integer,
   real,
   sqliteTable,
   text,
+  uniqueIndex,
   type AnySQLiteColumn,
 } from 'drizzle-orm/sqlite-core';
 import { cities, courseCategories } from './catalog';
@@ -27,6 +29,9 @@ import { baseColumns } from './columns';
 
 /** CHECK (column IN (...)); values come from our own constants, never from input. */
 function oneOf(column: AnySQLiteColumn, values: readonly string[]): SQL {
+  for (const value of values) {
+    if (!/^[a-z0-9_]+$/.test(value)) throw new Error(`unsafe enum value in CHECK: ${value}`);
+  }
   return sql`${column} IN (${sql.raw(values.map((v) => `'${v}'`).join(', '))})`;
 }
 
@@ -86,8 +91,16 @@ export const branches = sqliteTable(
     isMain: integer('is_main', { mode: 'boolean' }).notNull().default(false),
   },
   (t) => [
-    index('branches_provider_id_idx').on(t.providerId),
+    // Lets schedules reference (branch, provider) so a branch of another provider is refused.
+    uniqueIndex('branches_id_provider_id_unique').on(t.id, t.providerId),
+    // Natural key for imports: branch names are unique per provider.
+    uniqueIndex('branches_provider_id_name_unique').on(t.providerId, t.name),
     index('branches_city_id_idx').on(t.cityId),
+    check('branches_is_main_check', sql`${t.isMain} IN (0, 1)`),
+    check(
+      'branches_coordinates_check',
+      sql`(${t.lat} IS NULL AND ${t.lng} IS NULL) OR (typeof(${t.lat}) = 'real' AND typeof(${t.lng}) = 'real' AND ${t.lat} BETWEEN -90 AND 90 AND ${t.lng} BETWEEN -180 AND 180)`,
+    ),
   ],
 );
 
@@ -113,7 +126,8 @@ export const providerLicenses = sqliteTable(
       'provider_licenses_valid_until_check',
       sql`${t.validUntil} IS NULL OR ${isoDate(t.validUntil)}`,
     ),
-    index('provider_licenses_provider_id_idx').on(t.providerId),
+    // Natural key for imports and re-verification: one license number per kind per provider.
+    uniqueIndex('provider_licenses_provider_kind_number_unique').on(t.providerId, t.kind, t.number),
   ],
 );
 
@@ -124,8 +138,8 @@ export const schedules = sqliteTable(
     providerId: text('provider_id')
       .notNull()
       .references(() => providers.id),
-    /** Null for online schedules. */
-    branchId: text('branch_id').references(() => branches.id),
+    /** Required for offline, null for online; must belong to the same provider (FK below). */
+    branchId: text('branch_id'),
     categoryId: text('category_id')
       .notNull()
       .references(() => courseCategories.id),
@@ -153,8 +167,23 @@ export const schedules = sqliteTable(
       'schedules_dates_check',
       sql`${isoDate(t.startDate)} AND ${isoDate(t.endDate)} AND ${t.endDate} >= ${t.startDate}`,
     ),
-    check('schedules_price_check', sql`${t.priceIdr} IS NULL OR ${t.priceIdr} >= 0`),
-    check('schedules_quota_check', sql`${t.quota} IS NULL OR ${t.quota} >= 1`),
+    check(
+      'schedules_branch_check',
+      sql`(${t.mode} = 'offline' AND ${t.branchId} IS NOT NULL) OR (${t.mode} = 'online' AND ${t.branchId} IS NULL)`,
+    ),
+    check(
+      'schedules_price_check',
+      sql`${t.priceIdr} IS NULL OR (typeof(${t.priceIdr}) = 'integer' AND ${t.priceIdr} >= 0)`,
+    ),
+    check(
+      'schedules_quota_check',
+      sql`${t.quota} IS NULL OR (typeof(${t.quota}) = 'integer' AND ${t.quota} >= 1)`,
+    ),
+    foreignKey({
+      name: 'schedules_branch_same_provider_fk',
+      columns: [t.branchId, t.providerId],
+      foreignColumns: [branches.id, branches.providerId],
+    }),
     // Public listings: published schedules by date; provider and category pages.
     index('schedules_status_start_date_idx').on(t.status, t.startDate),
     index('schedules_provider_id_idx').on(t.providerId),

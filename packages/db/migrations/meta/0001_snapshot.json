@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "a38bfd93-b6da-49a7-b033-19e2c00e7729",
+  "id": "a0b9e088-107c-4510-b3fd-9192146eef94",
   "prevId": "2c614e59-a4ff-433e-86b9-51f3b76f6e2d",
   "tables": {
     "cities": {
@@ -309,12 +309,21 @@
         }
       },
       "indexes": {
-        "branches_provider_id_idx": {
-          "name": "branches_provider_id_idx",
+        "branches_id_provider_id_unique": {
+          "name": "branches_id_provider_id_unique",
           "columns": [
+            "id",
             "provider_id"
           ],
-          "isUnique": false
+          "isUnique": true
+        },
+        "branches_provider_id_name_unique": {
+          "name": "branches_provider_id_name_unique",
+          "columns": [
+            "provider_id",
+            "name"
+          ],
+          "isUnique": true
         },
         "branches_city_id_idx": {
           "name": "branches_city_id_idx",
@@ -354,7 +363,16 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "checkConstraints": {
+        "branches_is_main_check": {
+          "name": "branches_is_main_check",
+          "value": "\"branches\".\"is_main\" IN (0, 1)"
+        },
+        "branches_coordinates_check": {
+          "name": "branches_coordinates_check",
+          "value": "(\"branches\".\"lat\" IS NULL AND \"branches\".\"lng\" IS NULL) OR (typeof(\"branches\".\"lat\") = 'real' AND typeof(\"branches\".\"lng\") = 'real' AND \"branches\".\"lat\" BETWEEN -90 AND 90 AND \"branches\".\"lng\" BETWEEN -180 AND 180)"
+        }
+      }
     },
     "provider_licenses": {
       "name": "provider_licenses",
@@ -424,12 +442,14 @@
         }
       },
       "indexes": {
-        "provider_licenses_provider_id_idx": {
-          "name": "provider_licenses_provider_id_idx",
+        "provider_licenses_provider_kind_number_unique": {
+          "name": "provider_licenses_provider_kind_number_unique",
           "columns": [
-            "provider_id"
+            "provider_id",
+            "kind",
+            "number"
           ],
-          "isUnique": false
+          "isUnique": true
         }
       },
       "foreignKeys": {
@@ -786,19 +806,6 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "schedules_branch_id_branches_id_fk": {
-          "name": "schedules_branch_id_branches_id_fk",
-          "tableFrom": "schedules",
-          "tableTo": "branches",
-          "columnsFrom": [
-            "branch_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
         "schedules_category_id_course_categories_id_fk": {
           "name": "schedules_category_id_course_categories_id_fk",
           "tableFrom": "schedules",
@@ -808,6 +815,21 @@
           ],
           "columnsTo": [
             "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "schedules_branch_same_provider_fk": {
+          "name": "schedules_branch_same_provider_fk",
+          "tableFrom": "schedules",
+          "tableTo": "branches",
+          "columnsFrom": [
+            "branch_id",
+            "provider_id"
+          ],
+          "columnsTo": [
+            "id",
+            "provider_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -836,13 +858,17 @@
           "name": "schedules_dates_check",
           "value": "\"schedules\".\"start_date\" GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]' AND \"schedules\".\"end_date\" GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]' AND \"schedules\".\"end_date\" >= \"schedules\".\"start_date\""
         },
+        "schedules_branch_check": {
+          "name": "schedules_branch_check",
+          "value": "(\"schedules\".\"mode\" = 'offline' AND \"schedules\".\"branch_id\" IS NOT NULL) OR (\"schedules\".\"mode\" = 'online' AND \"schedules\".\"branch_id\" IS NULL)"
+        },
         "schedules_price_check": {
           "name": "schedules_price_check",
-          "value": "\"schedules\".\"price_idr\" IS NULL OR \"schedules\".\"price_idr\" >= 0"
+          "value": "\"schedules\".\"price_idr\" IS NULL OR (typeof(\"schedules\".\"price_idr\") = 'integer' AND \"schedules\".\"price_idr\" >= 0)"
         },
         "schedules_quota_check": {
           "name": "schedules_quota_check",
-          "value": "\"schedules\".\"quota\" IS NULL OR \"schedules\".\"quota\" >= 1"
+          "value": "\"schedules\".\"quota\" IS NULL OR (typeof(\"schedules\".\"quota\") = 'integer' AND \"schedules\".\"quota\" >= 1)"
         }
       }
     }

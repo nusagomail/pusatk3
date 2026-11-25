@@ -126,11 +126,31 @@ describe('schema matches docs/skema-db.md', () => {
     expect(slug?.isUnique).toBe(true);
   });
 
-  it('enum columns are guarded by CHECK constraints', () => {
+  it('enum and range columns are guarded by named CHECK constraints', () => {
     const checks = (table: Parameters<typeof getTableConfig>[0]) =>
-      getTableConfig(table).checks.map((c) => c.name);
-    expect(checks(providers).length).toBeGreaterThanOrEqual(4);
-    expect(checks(providerLicenses).length).toBeGreaterThanOrEqual(1);
-    expect(checks(schedules).length).toBeGreaterThanOrEqual(6);
+      getTableConfig(table)
+        .checks.map((c) => c.name)
+        .sort();
+    expect(checks(providers)).toEqual([
+      'providers_plan_check',
+      'providers_status_check',
+      'providers_type_check',
+      'providers_verification_status_check',
+    ]);
+    expect(checks(branches)).toEqual(['branches_coordinates_check', 'branches_is_main_check']);
+    expect(checks(providerLicenses)).toEqual([
+      'provider_licenses_kind_check',
+      'provider_licenses_valid_until_check',
+    ]);
+    expect(checks(schedules)).toEqual([
+      'schedules_branch_check',
+      'schedules_certificate_kind_check',
+      'schedules_dates_check',
+      'schedules_issuer_check',
+      'schedules_mode_check',
+      'schedules_price_check',
+      'schedules_quota_check',
+      'schedules_status_check',
+    ]);
   });
 });
