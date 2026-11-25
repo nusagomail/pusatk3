@@ -38,7 +38,7 @@ Prasyarat: Node 22.23.4+ (`.nvmrc`) dan pnpm 10.28 (terkunci di `packageManager`
 | Perintah | Fungsi |
 | --- | --- |
 | `pnpm install` | Pasang dependensi semua app/paket |
-| `pnpm dev` | Jalankan semua app lokal (`turbo run dev`); API di http://127.0.0.1:8787/api/v1/health |
+| `pnpm dev` | Jalankan semua app lokal (`turbo run dev`); API di http://127.0.0.1:8787/api/v1/health, web di http://localhost:4321 |
 | `pnpm build` | Build semua app/paket (`turbo run build`) |
 | `pnpm lint` | ESLint seluruh repo + cek format Prettier |
 | `pnpm format` | Rapikan format dengan Prettier |
