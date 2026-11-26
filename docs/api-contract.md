@@ -18,13 +18,14 @@
   | `VALIDATION_ERROR` | 422 | Input gagal validasi Zod |
   | `RATE_LIMITED` | 429 | Terlalu banyak permintaan |
   | `INTERNAL_ERROR` | 500 | Kesalahan server |
+  | `SERVICE_UNAVAILABLE` | 503 | Fitur belum aktif di lingkungan ini (mis. form tanpa secret Turnstile) atau layanan luar tidak terjangkau |
 
   Khusus `VALIDATION_ERROR`, boleh menyertakan `fields: [{ "path": "phone", "message": "..." }]` agar form bisa menandai isian yang salah; kode lain tidak boleh membawa `fields`. `path` adalah path isian yang digabung titik (mis. `items.0.phone`); kesalahan di level objek (tanpa path) masuk ke `message`, bukan `fields`. `message` maksimal 500 karakter. `fields` maksimal 50 entri; path kosong dibuang. Respons error selalu `Cache-Control: no-store`.
 - Paginasi: cursor (`?cursor=…&limit=…`), respons `{ items, nextCursor }`. `limit` bilangan bulat 1–100 dalam bentuk desimal kanonik (`20`, bukan `020`/`2e1`/` 20 `) agar satu ukuran halaman = satu URL (ramah cache), bawaan 20; `cursor` opsional, 1–512 karakter; `nextCursor` bernilai `null` di halaman terakhir. Skema: `paginationQuerySchema` dan `paginatedSchema(item)` di `@pusatk3/shared`.
 - Input (body/query) memakai objek ketat: parameter tak dikenal ditolak 422. Karena itu web **tidak** meneruskan seluruh query string halaman ke API (mis. `utm_*`, `fbclid`), hanya parameter yang dikenal (whitelist). Respons memakai skema eksplisit yang membuang field tak dikenal saat di-parse, sehingga menambah field respons tidak memecah klien lama.
 - Auth: cookie sesi `HttpOnly; Secure; SameSite=Lax`. Mutasi dari browser wajib lolos cek CSRF/origin.
 - Otorisasi: middleware `requireUser()`, `requireProviderRole(roles, resolveProviderId)`, `requireAdmin(roles)`. **Selalu ambil `providerId` dari data di database, bukan dari body.** Urutan di rute: rate limit → `requireUser()` → `validate…` → `requireProviderRole(...)` → handler. `resolveProviderId` membaca param yang sudah divalidasi (`c.req.valid('param')`), mencari record di DB, dan mengembalikan `null` bila tidak ada → 404 (bukan 403) agar keberadaan data penyedia lain tidak bocor.
-- Rate limiting per IP + per user di endpoint auth, lead, dan pencarian.
+- Rate limiting per IP + per user di endpoint auth, lead, dan pencarian. Fase 1 (ADR 0022): binding Workers Rate Limiting per IP `CF-Connecting-IP`; baca publik 120/menit, form lead 5/menit, klik WhatsApp 20/menit; trafik halaman dari web (service binding) dibatasi di Worker web.
 
 ## Perilaku umum (`apps/api`)
 
@@ -45,7 +46,8 @@
 | GET | `/providers/:slug` | Profil publik penyedia (`providerProfileSchema`): kontak, cabang (kantor pusat dulu), legalitas, maks 50 jadwal yang tampil (mulai terdekat). Penyedia `closed`/tidak ada → 404; parameter query apa pun → 422. Cache sama dengan `/search` |
 | GET | `/categories` | Bidang K3 + kategori sertifikasi (`categoriesResponseSchema`): `{ items: [{ slug, name, categories: [{ slug, name, issuers, documentType, typicalValidityYears, regulationRef }] }] }`, bidang urut `sort_order`, kategori di tiap bidang urut nama (collation `id`, lalu slug); bidang tanpa kategori tidak tampil. Tanpa parameter (parameter apa pun → 422). `Cache-Control: public, max-age=300, s-maxage=3600, stale-while-revalidate=86400`; daftar kosong (DB belum di-seed) → `no-store`. Cache edge seperti `/search` (ADR 0021): seed/impor menulis versi data baru |
 | GET | `/cities` | Daftar kota `{ items: [{ slug, name, province }] }` urut nama; tanpa parameter (parameter apa pun → 422). Cache seperti `/categories` |
-| POST | `/leads` | Catat lead (Turnstile wajib) |
+| POST | `/leads` | Form "Kirim pertanyaan" (`leadFormRequestSchema`): `scheduleId`, `name`, `phone` (HP Indonesia) dan/atau `email`, `message` (10–1000), `consent: true`, `turnstileToken`. Hanya jadwal yang tampil milik penyedia `claimed` (selain itu 404). Turnstile gagal → 403, belum dikonfigurasi/tidak terjangkau → 503. Rate limit 5/menit per IP → 429 + `Retry-After`. Jawaban `201 { "status": "received" }`, `no-store`. Tidak ada endpoint publik untuk membaca lead (ADR 0022) |
+| POST | `/leads/whatsapp` | Catat klik WhatsApp tanpa data pribadi (`leadClickRequestSchema`): tepat satu dari `{ scheduleId }` atau `{ providerSlug }`; hanya penyedia tidak `closed` yang punya nomor WhatsApp (selain itu 404). Tanpa Turnstile; rate limit 20/menit per IP. Jawaban `202 { "status": "received" }` |
 
 ### Auth
 | Metode | Path | Fungsi |

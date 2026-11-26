@@ -14,6 +14,7 @@ Siapkan rilis production. Jangan men-deploy sendiri.
 6. Susun catatan rilis singkat (bahasa Indonesia) dan usulan tag versi.
 7. Pastikan rate limit untuk endpoint publik direktori (`/search`, `/schedules/:id`, `/providers/:slug`) sudah aktif (ADR 0018, #28); bila belum, rilis ditunda. Cache API (ADR 0021) hanya bekerja di zona `pusatk3.id`: setelah rilis, pastikan kunjungan kedua `/cari` **dan** `https://pusatk3.id/api/v1/search?q=k3` (API langsung) menjawab `X-Cache: HIT`.
 8. Pastikan web production punya service binding `API` ke `pusatk3-api-production` (ADR 0019; perubahan binding production butuh persetujuan pemilik).
-9. Pastikan rate limit halaman direktori tidak bergantung pada IP yang terlihat API lewat service binding (ADR 0019).
-10. Pastikan klik WhatsApp di halaman jadwal/profil tercatat sebagai lead (#28), bukan tautan wa.me langsung (ADR 0019).
-11. Tampilkan ringkasan ke pemilik dan tunggu perintah eksplisit "deploy production".
+9. Pastikan rate limit halaman direktori tidak bergantung pada IP yang terlihat API lewat service binding (ADR 0019, ADR 0022): setelah rilis, cek bahwa request web → API lewat binding tidak membawa `CF-Connecting-IP` (kalau membawa, semua pengunjung berbagi satu kunci rate limit API).
+10. Pastikan pemilik sudah mengisi `TURNSTILE_SECRET` (Workers secret API production) dan site key Turnstile web production; tanpa itu form pertanyaan menjawab 503 (ADR 0022). Cron retensi lead harus tampil di Triggers Worker API production.
+11. Pastikan klik WhatsApp di halaman jadwal/profil tercatat sebagai lead (#28): tombol tetap membuka wa.me langsung, pencatatan lewat beacon ke web lalu `POST /api/v1/leads/whatsapp` (ADR 0022).
+12. Tampilkan ringkasan ke pemilik dan tunggu perintah eksplisit "deploy production".

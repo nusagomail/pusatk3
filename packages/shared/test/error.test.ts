@@ -14,6 +14,7 @@ describe('error codes', () => {
       VALIDATION_ERROR: 422,
       RATE_LIMITED: 429,
       INTERNAL_ERROR: 500,
+      SERVICE_UNAVAILABLE: 503,
     });
     expect(Object.keys(ERROR_HTTP_STATUS)).toEqual([...ERROR_CODES]);
   });

@@ -39,6 +39,19 @@
           "migrations_dir": "../../packages/db/migrations",
         },
       ],
+      // Per-visitor limits (ADR 0022). Namespace ids are account-wide: 28xxx are reserved for
+      // pusatk3 (shared account, ADR 0016).
+      "ratelimits": [
+        { "name": "RL_READ", "namespace_id": "28101", "simple": { "limit": 120, "period": 60 } },
+        { "name": "RL_LEAD_FORM", "namespace_id": "28102", "simple": { "limit": 5, "period": 60 } },
+        {
+          "name": "RL_LEAD_CLICK",
+          "namespace_id": "28103",
+          "simple": { "limit": 20, "period": 60 },
+        },
+      ],
+      // Daily lead retention at 02:17 WIB (ADR 0022).
+      "triggers": { "crons": ["17 19 * * *"] },
       // Deploys override APP_VERSION with the commit SHA (--var APP_VERSION:<sha>).
       "vars": {
         "APP_VERSION": "staging",
@@ -61,6 +74,19 @@
           "migrations_dir": "../../packages/db/migrations",
         },
       ],
+      // Per-visitor limits (ADR 0022). Namespace ids are account-wide: 28xxx are reserved for
+      // pusatk3 (shared account, ADR 0016).
+      "ratelimits": [
+        { "name": "RL_READ", "namespace_id": "28201", "simple": { "limit": 120, "period": 60 } },
+        { "name": "RL_LEAD_FORM", "namespace_id": "28202", "simple": { "limit": 5, "period": 60 } },
+        {
+          "name": "RL_LEAD_CLICK",
+          "namespace_id": "28203",
+          "simple": { "limit": 20, "period": 60 },
+        },
+      ],
+      // Daily lead retention at 02:17 WIB (ADR 0022).
+      "triggers": { "crons": ["17 19 * * *"] },
       "vars": {
         "APP_VERSION": "production",
       },

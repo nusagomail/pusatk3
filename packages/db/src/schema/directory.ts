@@ -28,7 +28,7 @@ import { baseColumns } from './columns';
 // constraints built from the shared constants, so the database refuses unknown values too.
 
 /** CHECK (column IN (...)); values come from our own constants, never from input. */
-function oneOf(column: AnySQLiteColumn, values: readonly string[]): SQL {
+export function oneOf(column: AnySQLiteColumn, values: readonly string[]): SQL {
   for (const value of values) {
     if (!/^[a-z0-9_]+$/.test(value)) throw new Error(`unsafe enum value in CHECK: ${value}`);
   }
@@ -36,7 +36,7 @@ function oneOf(column: AnySQLiteColumn, values: readonly string[]): SQL {
 }
 
 /** "YYYY-MM-DD" shape (real-date validation happens in the Zod schema). */
-function isoDate(column: AnySQLiteColumn): SQL {
+export function isoDate(column: AnySQLiteColumn): SQL {
   return sql`${column} GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]'`;
 }
 

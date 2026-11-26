@@ -2,11 +2,13 @@ import { Hono } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
 import type { AppEnv } from './env';
 import { edgeCache, type EdgeCacheOptions } from './middleware/edge-cache';
+import { rateLimit } from './middleware/rate-limit';
 import { notFound, onError } from './middleware/errors';
 import { mutableResponse, requestId } from './middleware/request-id';
 import { categoriesRoutes } from './routes/categories';
 import { directoryRoutes } from './routes/directory';
 import { healthRoutes } from './routes/health';
+import { leadRoutes } from './routes/leads';
 import { metaRoutes } from './routes/meta';
 
 export const API_BASE_PATH = '/api/v1';
@@ -20,6 +22,8 @@ export interface CreateAppOptions {
   now?: () => number;
   /** Edge cache for public GET responses (ADR 0021). Off unless given (src/index.ts does). */
   edgeCache?: EdgeCacheOptions;
+  /** Test-only network access for Turnstile siteverify. Defaults to the global fetch. */
+  fetch?: typeof fetch;
 }
 
 export function createApp(options: CreateAppOptions = {}) {
@@ -53,6 +57,11 @@ export function createApp(options: CreateAppOptions = {}) {
   app.notFound(notFound);
 
   const v1: Router = new Hono<AppEnv>();
+  // Public reads: per-visitor limit before the cache, so cached answers count too (ADR 0022).
+  const readLimit = rateLimit('RL_READ', 'read');
+  for (const path of ['/search', '/schedules/*', '/providers/*', '/cities', '/categories']) {
+    v1.use(path, readLimit);
+  }
   if (options.edgeCache) {
     const cached = edgeCache(options.edgeCache);
     for (const path of ['/search', '/schedules/*', '/providers/*', '/cities', '/categories']) {
@@ -61,6 +70,7 @@ export function createApp(options: CreateAppOptions = {}) {
   }
   v1.route('/', healthRoutes);
   v1.route('/', metaRoutes);
+  v1.route('/', leadRoutes({ fetch: options.fetch }));
   v1.route('/', categoriesRoutes);
   v1.route('/', directoryRoutes);
   options.extend?.(v1);
