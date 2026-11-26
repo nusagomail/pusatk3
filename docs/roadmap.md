@@ -23,8 +23,8 @@ Status: Fase 0 **selesai** (25 November 2026). PR lolos CI termasuk e2e; staging
 - [x] Skrip impor data hasil kurasi (CSV → D1) dengan deduplikasi (#22; data contoh Jabodetabek, data asli menyusul)
 - [x] Halaman: beranda, hasil pencarian, detail jadwal, profil penyedia (#24, #25)
 - [x] Pencarian dengan filter + sinonim K3 (D1, ADR 0020; sinkronisasi index baru perlu bila pindah ke mesin pencari eksternal)
-- [ ] Halaman SEO kota × jenis pelatihan (hanya terbit jika data cukup), sitemap, schema.org
-- [ ] Pencatatan lead (klik WA, form pertanyaan) dengan Turnstile
+- [x] Halaman SEO kota × jenis pelatihan (hanya terbit jika data cukup), sitemap, schema.org (#27, ADR 0023; FAQ menunggu tinjauan Ahli K3)
+- [x] Pencatatan lead (klik WA, form pertanyaan) dengan Turnstile (#28, ADR 0022)
 - [x] Cache edge + purge saat data berubah (Cache API + versi data, ADR 0021; aktif di zona `pusatk3.id`; Lighthouse 100 di 4 halaman, cek otomatis di CI menyusul di #41)
 
 **Selesai bila:** data contoh 1 wilayah tampil lengkap, Lighthouse ≥ 90 di halaman publik, lead tercatat.

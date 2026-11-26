@@ -69,7 +69,7 @@ describe('directory import into D1', () => {
     expect(await count('providers')).toBe(4);
     expect(await count('branches')).toBe(5);
     expect(await count('provider_licenses')).toBe(4);
-    expect(await count('schedules')).toBe(12);
+    expect(await count('schedules')).toBe(14);
   });
 
   it('marks sample providers and never sets status, verification or plan', async () => {
@@ -107,13 +107,13 @@ describe('directory import into D1', () => {
     expect(
       await one(`SELECT price_idr FROM schedules WHERE title = 'Pembinaan Ahli K3 Umum (Contoh)'`),
     ).toEqual({ price_idr: 5_750_000 });
-    expect(await count('schedules')).toBe(12);
+    expect(await count('schedules')).toBe(14);
   });
 
   it('never deletes rows that are missing from the import', async () => {
     await runImport();
     await runImport({ ...sample, jadwal: jadwal.split('\n').slice(0, 2).join('\n') });
-    expect(await count('schedules')).toBe(12);
+    expect(await count('schedules')).toBe(14);
   });
 
   it('keeps the plan set outside the import', async () => {

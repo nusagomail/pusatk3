@@ -29,14 +29,28 @@ export function durationDays(startDate: string, endDate: string): number {
  * schema.org Course + CourseInstance for an upcoming, real schedule. Sample (fictional) data
  * never gets structured data; schedules that already started get no offer.
  */
+/** What the Course builder needs: a schedule detail, or a summary from a listing. */
+export type CourseSource = Pick<
+  ScheduleDetail,
+  'title' | 'category' | 'priceIdr' | 'mode' | 'startDate' | 'endDate'
+> & {
+  provider: Pick<ScheduleDetail['provider'], 'slug' | 'name' | 'isSample'>;
+  id?: string;
+  description?: string | null;
+  branch?: ScheduleDetail['branch'];
+  /** Used for the location when there is no branch (listing pages). */
+  city?: { name: string } | null;
+};
+
 export function courseJsonLd(
-  schedule: ScheduleDetail,
+  schedule: CourseSource,
   timing: ScheduleTiming,
 ): Record<string, unknown> | null {
   if (schedule.provider.isSample) return null;
   return {
     '@type': 'Course',
     name: schedule.title,
+    ...(schedule.id && { url: absoluteUrl(`/jadwal/${schedule.id}`) }),
     description: schedule.description ?? `${schedule.category.name} — ${schedule.provider.name}`,
     provider: {
       '@type': 'Organization',
@@ -56,18 +70,30 @@ export function courseJsonLd(
       courseWorkload: `P${durationDays(schedule.startDate, schedule.endDate)}D`,
       startDate: schedule.startDate,
       endDate: schedule.endDate,
-      ...(schedule.branch && {
-        location: {
-          '@type': 'Place',
-          name: schedule.branch.name,
-          address: {
-            '@type': 'PostalAddress',
-            streetAddress: schedule.branch.address,
-            addressLocality: schedule.branch.city.name,
-            addressCountry: 'ID',
-          },
-        },
-      }),
+      ...(schedule.branch
+        ? {
+            location: {
+              '@type': 'Place',
+              name: schedule.branch.name,
+              address: {
+                '@type': 'PostalAddress',
+                streetAddress: schedule.branch.address,
+                addressLocality: schedule.branch.city.name,
+                addressCountry: 'ID',
+              },
+            },
+          }
+        : schedule.city && {
+            location: {
+              '@type': 'Place',
+              name: schedule.city.name,
+              address: {
+                '@type': 'PostalAddress',
+                addressLocality: schedule.city.name,
+                addressCountry: 'ID',
+              },
+            },
+          }),
     },
   };
 }
