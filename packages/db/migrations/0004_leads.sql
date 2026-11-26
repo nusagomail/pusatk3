@@ -11,14 +11,15 @@ CREATE TABLE `leads` (
 	`email` text,
 	`message` text,
 	`consent_at` integer,
+	`consent_version` text,
 	`anonymized_at` integer,
 	`status` text DEFAULT 'new' NOT NULL,
 	FOREIGN KEY (`provider_id`) REFERENCES `providers`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`schedule_id`) REFERENCES `schedules`(`id`) ON UPDATE no action ON DELETE no action,
 	CONSTRAINT "leads_channel_check" CHECK("leads"."channel" IN ('whatsapp', 'form')),
 	CONSTRAINT "leads_status_check" CHECK("leads"."status" IN ('new', 'contacted', 'registered', 'closed')),
-	CONSTRAINT "leads_personal_data_check" CHECK(("leads"."channel" = 'whatsapp' AND "leads"."name" IS NULL AND "leads"."phone" IS NULL AND "leads"."email" IS NULL AND "leads"."message" IS NULL AND "leads"."consent_at" IS NULL)
-        OR ("leads"."channel" = 'form' AND ("leads"."anonymized_at" IS NOT NULL OR ("leads"."consent_at" IS NOT NULL AND "leads"."name" IS NOT NULL AND "leads"."message" IS NOT NULL AND ("leads"."phone" IS NOT NULL OR "leads"."email" IS NOT NULL)))))
+	CONSTRAINT "leads_personal_data_check" CHECK(("leads"."channel" = 'whatsapp' AND "leads"."name" IS NULL AND "leads"."phone" IS NULL AND "leads"."email" IS NULL AND "leads"."message" IS NULL AND "leads"."consent_at" IS NULL AND "leads"."consent_version" IS NULL)
+        OR ("leads"."channel" = 'form' AND ("leads"."anonymized_at" IS NOT NULL OR ("leads"."consent_at" IS NOT NULL AND "leads"."consent_version" IS NOT NULL AND "leads"."name" IS NOT NULL AND "leads"."message" IS NOT NULL AND ("leads"."phone" IS NOT NULL OR "leads"."email" IS NOT NULL)))))
 );
 --> statement-breakpoint
 CREATE INDEX `leads_provider_created_idx` ON `leads` (`provider_id`,`created_at`);--> statement-breakpoint

@@ -28,6 +28,8 @@ export const leads = sqliteTable(
     message: text('message'),
     /** When the visitor agreed to share the data with the provider (form only). */
     consentAt: integer('consent_at', { mode: 'timestamp_ms' }),
+    /** Version of the consent text shown (LEAD_CONSENT_VERSION, set by the server). */
+    consentVersion: text('consent_version'),
     /** When personal fields were cleared by the retention rule. */
     anonymizedAt: integer('anonymized_at', { mode: 'timestamp_ms' }),
     status: text('status', { enum: LEAD_STATUS_VALUES }).notNull().default('new'),
@@ -42,8 +44,8 @@ export const leads = sqliteTable(
     // (unless it was anonymized).
     check(
       'leads_personal_data_check',
-      sql`(${t.channel} = 'whatsapp' AND ${t.name} IS NULL AND ${t.phone} IS NULL AND ${t.email} IS NULL AND ${t.message} IS NULL AND ${t.consentAt} IS NULL)
-        OR (${t.channel} = 'form' AND (${t.anonymizedAt} IS NOT NULL OR (${t.consentAt} IS NOT NULL AND ${t.name} IS NOT NULL AND ${t.message} IS NOT NULL AND (${t.phone} IS NOT NULL OR ${t.email} IS NOT NULL))))`,
+      sql`(${t.channel} = 'whatsapp' AND ${t.name} IS NULL AND ${t.phone} IS NULL AND ${t.email} IS NULL AND ${t.message} IS NULL AND ${t.consentAt} IS NULL AND ${t.consentVersion} IS NULL)
+        OR (${t.channel} = 'form' AND (${t.anonymizedAt} IS NOT NULL OR (${t.consentAt} IS NOT NULL AND ${t.consentVersion} IS NOT NULL AND ${t.name} IS NOT NULL AND ${t.message} IS NOT NULL AND (${t.phone} IS NOT NULL OR ${t.email} IS NOT NULL))))`,
     ),
   ],
 );

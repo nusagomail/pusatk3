@@ -10,7 +10,9 @@ import { env } from 'cloudflare:test';
 import { drizzle } from 'drizzle-orm/d1';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/app';
+import { scheduled } from '../src/index';
 import { anonymizeExpiredLeads, retentionCutoff } from '../src/lib/lead-retention';
+import { rateLimitKey } from '../src/middleware/rate-limit';
 import { SITEVERIFY_URL, TURNSTILE_TEST_SECRETS } from '../src/lib/turnstile';
 import categoriesCsv from '../../../docs/data/kategori-k3.csv?raw';
 import cabang from '../../../docs/data/contoh/cabang.csv?raw';
@@ -104,6 +106,7 @@ interface LeadRow {
   email: string | null;
   message: string | null;
   consent_at: number | null;
+  consent_version: string | null;
   anonymized_at: number | null;
   status: string;
 }
@@ -123,12 +126,13 @@ describe('POST /api/v1/leads (question form, public)', () => {
       email: null,
       status: 'new',
       consent_at: TODAY,
+      consent_version: '2026-11-26',
     });
     expect(leadAcceptedResponseSchema.safeParse({ status: 'received' }).success).toBe(true);
   });
 
-  it('accepts an email instead of a phone number (lower-cased)', async () => {
-    const res = await post('/leads', await form({ phone: '', email: 'Budi@Contoh.ID' }));
+  it('accepts an email instead of a phone number (trimmed, lower-cased)', async () => {
+    const res = await post('/leads', await form({ phone: '', email: '  Budi@Contoh.ID ' }));
     expect(res.status).toBe(201);
     expect((await leadRows())[0]).toMatchObject({ phone: null, email: 'budi@contoh.id' });
   });
@@ -165,6 +169,7 @@ describe('POST /api/v1/leads (question form, public)', () => {
     ['a too short message', { message: 'Halo' }],
     ['a too long message', { message: 'x'.repeat(1001) }],
     ['a name with control characters', { name: 'Budi\u0000' }],
+    ['a name with an invisible direction override', { name: 'Budi\u202e' }],
     ['a provider chosen by the client', { providerId: 'x' }],
     ['a status chosen by the client', { status: 'registered' }],
     ['no Turnstile token', { turnstileToken: '' }],
@@ -199,9 +204,23 @@ describe('POST /api/v1/leads (question form, public)', () => {
       expect(await leadRows()).toEqual([]);
     });
 
+    it('never accepts Cloudflare test keys in a deployed environment (503, form off)', async () => {
+      const deployed = {
+        ...env,
+        APP_VERSION: 'sha-test',
+        TURNSTILE_SECRET: TURNSTILE_TEST_SECRETS.alwaysPasses,
+      };
+      await expectApiError(
+        await post('/leads', await form(), deployed),
+        503,
+        'SERVICE_UNAVAILABLE',
+      );
+      expect(await leadRows()).toEqual([]);
+    });
+
     it('checks the token with Cloudflare siteverify using the secret', async () => {
       const siteverify = vi.fn(async (_url: string, _init: RequestInit) =>
-        Response.json({ success: true }),
+        Response.json({ success: true, action: 'lead-form' }),
       );
       const withFetch = createApp({
         now: () => TODAY,
@@ -228,6 +247,21 @@ describe('POST /api/v1/leads (question form, public)', () => {
 
     it.each([
       ['refused by Cloudflare', async () => Response.json({ success: false }), 403],
+      [
+        'replayed (timeout-or-duplicate)',
+        async () => Response.json({ success: false, 'error-codes': ['timeout-or-duplicate'] }),
+        403,
+      ],
+      [
+        'made for another form (other action)',
+        async () => Response.json({ success: true, action: 'login' }),
+        403,
+      ],
+      [
+        'rejected because our secret is wrong (configuration, not a bot)',
+        async () => Response.json({ success: false, 'error-codes': ['invalid-input-secret'] }),
+        503,
+      ],
       ['Cloudflare answering an error', async () => new Response('x', { status: 500 }), 503],
       [
         'Cloudflare unreachable',
@@ -254,6 +288,40 @@ describe('POST /api/v1/leads (question form, public)', () => {
       expect(res.status).toBe(status);
       expect(await leadRows()).toEqual([]);
     });
+  });
+
+  it('refuses a body over 8 KB with 413 before reading it as JSON', async () => {
+    const res = await post('/leads', await form({ message: 'x'.repeat(9000) }));
+    await expectApiError(res, 413, 'PAYLOAD_TOO_LARGE');
+    expect(await leadRows()).toEqual([]);
+  });
+
+  it('limits calls from the web app by the visitor IP it forwards over the binding', async () => {
+    const { binding, keys } = limiter(false);
+    const res = await post(
+      '/leads',
+      await form(),
+      { ...env, RL_LEAD_FORM: binding },
+      {
+        'X-PusatK3-Visitor-IP': '203.0.113.9',
+      },
+    );
+    await expectApiError(res, 429, 'RATE_LIMITED');
+    expect(keys).toEqual(['lead-form:203.0.113.9']);
+  });
+
+  it('never lets an internet client choose its key: CF-Connecting-IP wins over the header', async () => {
+    const { binding, keys } = limiter(true);
+    await post(
+      '/leads',
+      await form(),
+      { ...env, RL_LEAD_FORM: binding },
+      {
+        'CF-Connecting-IP': '203.0.113.10',
+        'X-PusatK3-Visitor-IP': '1.1.1.1',
+      },
+    );
+    expect(keys).toEqual(['lead-form:203.0.113.10']);
   });
 
   it('is rate limited per visitor IP: 429 with Retry-After, nothing stored', async () => {
@@ -334,6 +402,28 @@ describe('POST /api/v1/leads/whatsapp (click, public)', () => {
     expect(await leadRows()).toEqual([]);
   });
 
+  it('refuses a body over 1 KB with 413', async () => {
+    await expectApiError(
+      await post('/leads/whatsapp', { providerSlug: 'a'.repeat(1100) }),
+      413,
+      'PAYLOAD_TOO_LARGE',
+    );
+  });
+
+  it('counts clicks for an unclaimed provider that has WhatsApp (no personal data)', async () => {
+    await run(`UPDATE providers SET whatsapp = '6281111111111' WHERE slug = '${UNCLAIMED}'`);
+    expect((await post('/leads/whatsapp', { providerSlug: UNCLAIMED })).status).toBe(202);
+  });
+
+  it.each([
+    ['a draft schedule', `UPDATE schedules SET status = 'draft'`],
+    ['a schedule that already started', `UPDATE schedules SET start_date = '2026-11-30'`],
+  ])('refuses a click on %s with 404', async (_name, change) => {
+    const scheduleId = await scheduleOf(CLAIMED);
+    await run(change);
+    await expectApiError(await post('/leads/whatsapp', { scheduleId }), 404, 'NOT_FOUND');
+  });
+
   it('is rate limited per visitor IP', async () => {
     const { binding, keys } = limiter(false);
     const res = await post(
@@ -386,6 +476,21 @@ describe('rate limit on public reads (ADR 0022)', () => {
     expect(binding.limit).not.toHaveBeenCalled();
   });
 
+  it.each([
+    '/providers/contoh-mitra-k3-jakarta',
+    '/schedules/01ARZ3NDEKTSV4RRFFQ69G5FAV',
+    '/categories',
+  ])('limits %s too', async (path) => {
+    const { binding } = limiter(false);
+    const res = await call(
+      app,
+      `/api/v1${path}`,
+      { headers: { 'CF-Connecting-IP': '198.51.100.3' } },
+      { ...env, RL_READ: binding },
+    );
+    await expectApiError(res, 429, 'RATE_LIMITED');
+  });
+
   it('lets requests through while under the limit', async () => {
     const { binding } = limiter(true);
     const res = await call(
@@ -431,6 +536,43 @@ describe('lead retention (UU PDP, 12 months)', () => {
     );
   });
 
+  it('the daily job runs the retention and reports failure instead of hiding it', async () => {
+    await post('/leads', await form());
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    await scheduled(env, Date.UTC(2027, 11, 1, 6, 0));
+    expect((await leadRows())[0]?.name).toBeNull();
+
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const broken = {
+      ...env,
+      DB: {
+        prepare: () => {
+          throw new TypeError('D1 down');
+        },
+      } as unknown as D1Database,
+    };
+    await expect(scheduled(broken)).rejects.toThrow('D1 down');
+    expect(JSON.stringify(errors.mock.calls)).toBe(
+      JSON.stringify([[JSON.stringify({ job: 'lead-retention', error: 'TypeError' })]]),
+    );
+  });
+
+  it('the database refuses a form lead without consent version or contact', async () => {
+    const [provider] = await all<{ id: string }>(
+      `SELECT id FROM providers WHERE slug = '${CLAIMED}'`,
+    );
+    for (const columns of [
+      `consent_at, name, message, phone) VALUES (1, 'Budi', 'Halo halo halo', '6281'`,
+      `consent_at, consent_version, name, message) VALUES (1, 'v', 'Budi', 'Halo halo halo'`,
+    ]) {
+      await expect(
+        run(
+          `INSERT INTO leads (id, created_at, updated_at, provider_id, channel, status, ${columns.replace(') VALUES (', `) VALUES ('f${columns.length}', 0, 0, '${provider?.id}', 'form', 'new', `)})`,
+        ),
+      ).rejects.toThrow(/CHECK constraint failed/);
+    }
+  });
+
   it('the database refuses personal data on a WhatsApp click', async () => {
     const [provider] = await all<{ id: string }>(
       `SELECT id FROM providers WHERE slug = '${CLAIMED}'`,
@@ -441,5 +583,17 @@ describe('lead retention (UU PDP, 12 months)', () => {
          VALUES ('x', 0, 0, '${provider?.id}', 'whatsapp', 'Budi', 'new')`,
       ),
     ).rejects.toThrow(/CHECK constraint failed/);
+  });
+});
+
+describe('rateLimitKey', () => {
+  it.each([
+    ['203.0.113.7', '203.0.113.7'],
+    ['2001:db8:85a3:1:aaaa:bbbb:cccc:dddd', '2001:db8:85a3:1::/64'],
+    ['2001:DB8:85A3:0001::1', '2001:db8:85a3:1::/64'],
+    ['2001:db8::1', '2001:db8:0:0::/64'],
+    ['::1', '0:0:0:0::/64'],
+  ])('%s → %s (IPv6 grouped by /64)', (ip, key) => {
+    expect(rateLimitKey(ip)).toBe(key);
   });
 });

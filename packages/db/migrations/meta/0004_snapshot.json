@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "f1192ccc-5513-432d-b74b-39fc88de0171",
+  "id": "57173abb-a4e4-43ba-a474-99985a96312d",
   "prevId": "78639a93-280b-496e-ad7a-765a3875c9cb",
   "tables": {
     "cities": {
@@ -1008,6 +1008,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "consent_version": {
+          "name": "consent_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "anonymized_at": {
           "name": "anonymized_at",
           "type": "integer",
@@ -1089,7 +1096,7 @@
         },
         "leads_personal_data_check": {
           "name": "leads_personal_data_check",
-          "value": "(\"leads\".\"channel\" = 'whatsapp' AND \"leads\".\"name\" IS NULL AND \"leads\".\"phone\" IS NULL AND \"leads\".\"email\" IS NULL AND \"leads\".\"message\" IS NULL AND \"leads\".\"consent_at\" IS NULL)\n        OR (\"leads\".\"channel\" = 'form' AND (\"leads\".\"anonymized_at\" IS NOT NULL OR (\"leads\".\"consent_at\" IS NOT NULL AND \"leads\".\"name\" IS NOT NULL AND \"leads\".\"message\" IS NOT NULL AND (\"leads\".\"phone\" IS NOT NULL OR \"leads\".\"email\" IS NOT NULL))))"
+          "value": "(\"leads\".\"channel\" = 'whatsapp' AND \"leads\".\"name\" IS NULL AND \"leads\".\"phone\" IS NULL AND \"leads\".\"email\" IS NULL AND \"leads\".\"message\" IS NULL AND \"leads\".\"consent_at\" IS NULL AND \"leads\".\"consent_version\" IS NULL)\n        OR (\"leads\".\"channel\" = 'form' AND (\"leads\".\"anonymized_at\" IS NOT NULL OR (\"leads\".\"consent_at\" IS NOT NULL AND \"leads\".\"consent_version\" IS NOT NULL AND \"leads\".\"name\" IS NOT NULL AND \"leads\".\"message\" IS NOT NULL AND (\"leads\".\"phone\" IS NOT NULL OR \"leads\".\"email\" IS NOT NULL))))"
         }
       }
     },

@@ -6,8 +6,21 @@ import { normalizeWhatsAppNumber } from './whatsapp';
 // fields are refused). Personal data only in the question form, with explicit consent (UU PDP).
 
 const ULID = /^[0-9A-Z]{26}$/;
-const SINGLE_LINE = /^[^\p{Cc}]*$/u;
+/** No control or invisible format characters (e.g. U+202E reverses text in the provider inbox). */
+const NAME_CHARS = /^[^\p{Cc}\p{Cf}]*$/u;
 const MULTILINE = /^(?:[^\p{Cc}]|[\n\r\t])*$/u;
+
+/**
+ * Consent text shown next to the checkbox, and its version stored with every form lead (set by
+ * the server, so the agreed wording can be proven later). Change the version with the text.
+ */
+export const LEAD_CONSENT_VERSION = '2026-11-26';
+export const LEAD_CONSENT_TEXT =
+  'Saya setuju nama, kontak, dan pertanyaan ini dikirim ke penyedia pelatihan yang saya hubungi ' +
+  'untuk menjawab pertanyaan saya. Data pribadi disimpan paling lama 12 bulan, lalu dihapus.';
+
+/** Turnstile widget action of the question form (checked by the API). */
+export const TURNSTILE_LEAD_ACTION = 'lead-form';
 
 export const LEAD_NAME_MAX = 100;
 export const LEAD_MESSAGE_MAX = 1000;
@@ -39,12 +52,17 @@ export const leadFormRequestSchema = z
       .trim()
       .min(2, 'Nama minimal 2 huruf')
       .max(LEAD_NAME_MAX)
-      .regex(SINGLE_LINE, 'Nama berisi karakter tidak sah'),
+      .regex(NAME_CHARS, 'Nama berisi karakter tidak sah'),
     // Empty strings from an HTML form mean "not given".
     phone: z.preprocess((v) => (v === '' ? undefined : v), leadPhoneSchema.optional()),
     email: z.preprocess(
-      (v) => (v === '' ? undefined : v),
-      z.email('Email tidak valid').max(254).toLowerCase().optional(),
+      (v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
+      z
+        .string()
+        .trim()
+        .pipe(z.email('Email tidak valid').max(254))
+        .transform((v) => v.toLowerCase())
+        .optional(),
     ),
     message: z
       .string()

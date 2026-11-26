@@ -1,11 +1,14 @@
 import { leads, providers, schedules } from '@pusatk3/db';
 import {
+  LEAD_CONSENT_VERSION,
   leadAcceptedResponseSchema,
   leadClickRequestSchema,
   leadFormRequestSchema,
+  TURNSTILE_LEAD_ACTION,
 } from '@pusatk3/shared';
 import { and, eq, isNotNull, ne } from 'drizzle-orm';
 import { Hono } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
 import type { AppEnv } from '../env';
 import { getDb } from '../lib/db';
 import { AppError } from '../lib/errors';
@@ -21,6 +24,17 @@ import { jakartaToday, visible } from './directory';
 // personal data is never logged.
 
 const accepted = () => leadAcceptedResponseSchema.parse({ status: 'received' });
+
+/** Body size limits: a form is a few KB at most, a click a few bytes (413 above). */
+export const LEAD_FORM_MAX_BYTES = 8 * 1024;
+export const LEAD_CLICK_MAX_BYTES = 1024;
+const limitBody = (maxSize: number) =>
+  bodyLimit({
+    maxSize,
+    onError: () => {
+      throw new AppError('PAYLOAD_TOO_LARGE');
+    },
+  });
 
 /**
  * Staging/production: the TURNSTILE_SECRET Workers secret (set by the owner); without it the form
@@ -45,14 +59,17 @@ export function leadRoutes(options: LeadRoutesOptions = {}) {
       .post(
         '/leads',
         rateLimit('RL_LEAD_FORM', 'lead-form'),
+        limitBody(LEAD_FORM_MAX_BYTES),
         validateJson(leadFormRequestSchema),
         async (c) => {
           const input = c.req.valid('json');
-          const turnstile = await verifyTurnstile(
-            input.turnstileToken,
-            turnstileSecret(c.env),
-            options.fetch,
-          );
+          const turnstile = await verifyTurnstile({
+            token: input.turnstileToken,
+            secret: turnstileSecret(c.env),
+            action: TURNSTILE_LEAD_ACTION,
+            local: c.env.APP_VERSION === 'dev',
+            fetch: options.fetch,
+          });
           if (turnstile === 'unavailable') throw new AppError('SERVICE_UNAVAILABLE');
           if (turnstile === 'failed') {
             throw new AppError(
@@ -86,6 +103,7 @@ export function leadRoutes(options: LeadRoutesOptions = {}) {
             email: input.email ?? null,
             message: input.message,
             consentAt: now,
+            consentVersion: LEAD_CONSENT_VERSION,
             createdAt: now,
             updatedAt: now,
           });
@@ -98,6 +116,7 @@ export function leadRoutes(options: LeadRoutesOptions = {}) {
       .post(
         '/leads/whatsapp',
         rateLimit('RL_LEAD_CLICK', 'lead-click'),
+        limitBody(LEAD_CLICK_MAX_BYTES),
         validateJson(leadClickRequestSchema),
         async (c) => {
           const input = c.req.valid('json');
