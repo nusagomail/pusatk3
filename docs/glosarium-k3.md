@@ -34,6 +34,16 @@ Dipakai untuk penamaan kategori, sinonim pencarian, dan konten. Konten K3 yang t
 | POP/POM/POU | Pengawas Operasional Pertama/Madya/Utama pertambangan | pengawas tambang |
 | Sertifikasi | Penerbitan sertifikat oleh Kemnaker atau BNSP lewat penyedia berizin | |
 | Pembinaan | Pelatihan sebelum sertifikasi Kemnaker | |
+| Safety officer | Sebutan umum petugas/ahli K3 di perusahaan (bukan nama sertifikasi resmi) | petugas k3, hse officer |
+| OHSAS 18001 | Standar SMK3 lama, digantikan ISO 45001 | ISO 45001 |
+| SKT K3 | Sertifikat Keterampilan (konstruksi) lama, kini SKK | SKK K3 |
+| SKTTK | Sertifikat Kompetensi Tenaga Teknik Ketenagalistrikan (ESDM) | ketenagalistrikan |
+| AWP | Aerial Work Platform: manlift, boom lift, scissor lift | manlift, boom lift |
+| Rope access | Akses tali untuk kerja di ketinggian | kerja di ketinggian |
+| BOSIET / FOET / HUET | Pelatihan keselamatan lepas pantai standar OPITO (dasar, penyegaran, evakuasi helikopter) | offshore survival |
+| OPITO | Lembaga standar pelatihan industri migas lepas pantai | |
+| IPAL | Instalasi Pengolahan Air Limbah | air limbah |
+| POIPPU | Penanggung jawab Operasional Instalasi Pengendalian Pencemaran Udara | PPPU, pencemaran udara |
 
 Daftar kategori resmi ada di `docs/kategori-k3.md`. Sinonim pencarian per kategori ada di kolom `sinonim` `docs/data/kategori-k3.csv` (ADR 0020).
 

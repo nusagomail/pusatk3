@@ -57,7 +57,7 @@ describe('parseCategoriesCsv on docs/data/kategori-k3.csv', () => {
       typicalValidityYears: 3,
       regulationRef:
         'UU 1/1970; Permenaker PER.02/MEN/1992 (Ahli K3); PP 50/2012 (SMK3); Permenaker 13/2025 (P2K3)',
-      synonyms: ['ak3u', 'ak3 umum', 'ahli k3', 'skp ahli k3', 'safety officer kemnaker'],
+      synonyms: ['ak3u', 'ak3 umum', 'ahli k3', 'skp ahli k3', 'keselamatan kerja', 'ohs', 'hse'],
     });
   });
 

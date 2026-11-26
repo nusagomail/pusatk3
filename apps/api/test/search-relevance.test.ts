@@ -62,10 +62,12 @@ beforeAll(async () => {
 describe('searchTokens', () => {
   it.each([
     ['AK3U', ['ak3u']],
-    ['  Ahli-K3, Umum! ', ['ahli', 'k3', 'umum']],
+    ['  Ahli-K3, Umum! ', ['ahli', 'umum']],
     ['sio SIO forklift', ['sio', 'forklift']],
     ['%_\\', []],
     ['a b c d e f g h', ['a', 'b', 'c', 'd', 'e', 'f']],
+    ['Pelatihan Sertifikasi K3 forklift di Bekasi', ['forklift', 'bekasi']],
+    ['pelatihan k3', ['pelatihan', 'k3']],
   ])('%j → %j', (q, tokens) => {
     expect(searchTokens(q)).toEqual(tokens);
   });
@@ -92,6 +94,20 @@ describe('search relevance for common K3 terms (#26)', () => {
     ['ska k3', ['skk-ahli-k3-konstruksi']],
     ['BOSIET', ['offshore-survival']],
     ['iso 45001', ['iso-45001']],
+    // Filler words and the issuer do not get in the way (#26 review).
+    ['pelatihan forklift', ['operator-forklift']],
+    ['sertifikasi ak3u', ['ahli-k3-umum']],
+    ['kursus ak3u', ['ahli-k3-umum']],
+    ['training k3 umum', ['ahli-k3-umum']],
+    ['k3 scaffolding', ['teknisi-perancah']],
+    ['sio k3 crane', ['operator-crane']],
+    ['forklift kemnaker', ['operator-forklift']],
+    ['forklift kemenaker online', ['operator-forklift']],
+    ['keselamatan kerja', ['ahli-k3-umum', 'petugas-k3']],
+    ['kebakaran kelas a', ['ahli-k3-kebakaran']],
+    ['kebakaran kelas d', ['petugas-peran-kebakaran']],
+    // Prefix of a word.
+    ['forklif', ['operator-forklift']],
   ])('%j finds %j', async (q, expected) => {
     const found = await categoriesFor(q);
     for (const slug of expected) expect(found, `${q} → ${slug}`).toContain(slug);
@@ -104,6 +120,9 @@ describe('search relevance for common K3 terms (#26)', () => {
     ['las', ['ahli-k3-kebakaran', 'regu-kebakaran']],
     ['fire warden', ['regu-kebakaran', 'ahli-k3-kebakaran']],
     ['scaffolding', ['tkbt', 'operator-crane']],
+    ['kebakaran kelas a', ['petugas-peran-kebakaran', 'koordinator-kebakaran']],
+    ['kebakaran kelas d', ['ahli-k3-kebakaran', 'regu-kebakaran']],
+    ['forklift kemnaker', ['operator-crane']],
   ])('%j does not find unrelated %j', async (q, unrelated) => {
     const found = await categoriesFor(q);
     for (const slug of unrelated) expect(found, `${q} ↛ ${slug}`).not.toContain(slug);
@@ -126,6 +145,33 @@ describe('search relevance for common K3 terms (#26)', () => {
     const byProvider = await search('nusantara ahli k3 muda');
     expect(byProvider.some((s) => s.provider.slug === 'contoh-lsp-k3-nusantara')).toBe(true);
   });
+
+  it('matches words of the schedule title', async () => {
+    const items = await search('pemahaman');
+    expect(items.map((s) => s.title)).toEqual(['Pelatihan Pemahaman ISO 45001 (Contoh)']);
+  });
+
+  it('the issuer narrows: online schedules here are all Kemnaker, none BNSP', async () => {
+    expect(await categoriesFor('forklift bnsp')).toEqual(new Set());
+  });
+
+  it('stays within the D1 limits with six words and every filter', async () => {
+    const res = await call(
+      app,
+      '/api/v1/search?q=' +
+        encodeURIComponent('ahli k3 umum jakarta online kemnaker extra kata') +
+        '&field=k3-umum&category=ahli-k3-umum&city=jakarta-selatan&mode=online&issuer=kemnaker' +
+        '&month=2027-01&priceMin=0&priceMax=99999999&verified=true&sort=price&limit=100',
+    );
+    expect(res.status).toBe(200);
+  });
+
+  it.each([`' OR 1=1 --`, `"); DROP TABLE schedules; --`, "\\' %"])(
+    'treats %j as plain words',
+    async (q) => {
+      expect(await search(q)).toHaveLength(0);
+    },
+  );
 
   it('is case and punctuation insensitive', async () => {
     expect(await categoriesFor('AHLI-K3 (umum)')).toEqual(await categoriesFor('ahli k3 umum'));

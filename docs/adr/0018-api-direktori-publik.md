@@ -1,6 +1,6 @@
 # ADR 0018: API direktori publik (pencarian, detail, profil, kota)
 
-Status: diterima · 26 November 2026 · issue #23. Urutan hasil: keputusan pemilik **A**.
+Status: diterima · 26 November 2026 · issue #23. Urutan hasil: keputusan pemilik **A**. Pencarian teks sebagian diganti ADR 0020 (#26).
 
 ## Keputusan
 - **Endpoint publik tanpa login:** `GET /search`, `/schedules/:id`, `/providers/:slug`, `/cities` (`apps/api/src/routes/directory.ts`, kontrak di `docs/api-contract.md`). Input divalidasi skema ketat `packages/shared` (parameter tak dikenal → 422); output skema eksplisit.
