@@ -30,7 +30,8 @@ import { AppError } from '../lib/errors';
 import { validateParam, validateQuery } from '../lib/validate';
 
 // Public directory API (docs/api-contract.md, ADR 0018). No login; responses are edge-cacheable.
-// Visible schedules: published, not ended (Asia/Jakarta date), provider not closed.
+// Listed schedules (search, profile): published, not started yet (Asia/Jakarta date), provider
+// not closed. The detail page also opens published schedules that already started.
 // Organic order never uses the plan (rule 5): soonest start first, or cheapest first.
 
 /** Today's calendar date in Asia/Jakarta (UTC+7, no daylight saving). */
@@ -112,7 +113,7 @@ function scheduleQuery(db: ReturnType<typeof getDb>, where: SQL | undefined) {
 const visible = (today: string) =>
   and(
     eq(schedules.status, 'published'),
-    gte(schedules.endDate, today),
+    gte(schedules.startDate, today),
     ne(providers.status, 'closed'),
   );
 
@@ -162,7 +163,7 @@ export const directoryRoutes = new Hono<AppEnv>()
         : [asc(schedules.startDate)];
     const rows = await scheduleQuery(
       getDb(c.env),
-      and(visible(jakartaToday()), ...searchFilters(q)),
+      and(visible(jakartaToday(c.var.now())), ...searchFilters(q)),
     )
       .orderBy(...order, asc(schedules.id))
       .limit(q.limit + 1)
@@ -268,7 +269,7 @@ export const directoryRoutes = new Hono<AppEnv>()
       .orderBy(sql`${branches.isMain} DESC`, asc(branches.name));
     const scheduleRows = await scheduleQuery(
       db,
-      and(visible(jakartaToday()), eq(schedules.providerId, provider.id)),
+      and(visible(jakartaToday(c.var.now())), eq(schedules.providerId, provider.id)),
     )
       .orderBy(asc(schedules.startDate), asc(schedules.id))
       .limit(PROVIDER_SCHEDULES_LIMIT);

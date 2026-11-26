@@ -25,7 +25,13 @@ export const SEARCH_SORT_VALUES = ['date', 'price'] as const;
 /** Search pages are offset based: the cursor is the next offset, at most SEARCH_MAX_OFFSET. */
 export const SEARCH_MAX_OFFSET = 1000;
 
-export const searchQuerySchema = paginationQuerySchema
+/** Drops empty values: a search form sends `?q=&city=` for fields left blank. */
+const withoutEmptyValues = (value: unknown) =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value).filter(([, v]) => v !== ''))
+    : value;
+
+const searchQueryObjectSchema = paginationQuerySchema
   .extend({
     cursor: z
       .string()
@@ -57,6 +63,8 @@ export const searchQuerySchema = paginationQuerySchema
     message: 'priceMin tidak boleh lebih besar dari priceMax',
     path: ['priceMin'],
   });
+
+export const searchQuerySchema = z.preprocess(withoutEmptyValues, searchQueryObjectSchema);
 export type SearchQuery = z.infer<typeof searchQuerySchema>;
 
 export const publicProviderRefSchema = z.object({

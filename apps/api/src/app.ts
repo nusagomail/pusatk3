@@ -14,12 +14,19 @@ type Router = Hono<AppEnv>;
 export interface CreateAppOptions {
   /** Test-only hook to mount extra routes under /api/v1. Never used by src/index.ts. */
   extend?: (v1: Router) => void;
+  /** Test-only clock (e.g. to pin "today" for date-based visibility). Defaults to Date.now. */
+  now?: () => number;
 }
 
 export function createApp(options: CreateAppOptions = {}) {
   const app = new Hono<AppEnv>();
   // Order matters: outer middleware sees the final response (including error responses).
   app.use(requestId);
+  const now = options.now ?? Date.now;
+  app.use(async (c, next) => {
+    c.set('now', now);
+    await next();
+  });
   // JSON-only API: nothing may load from it or frame it (docs/keamanan.md).
   app.use(
     secureHeaders({

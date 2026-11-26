@@ -11,19 +11,23 @@ import {
   scheduleDetailSchema,
   searchResponseSchema,
 } from '@pusatk3/shared';
-import { env, SELF } from 'cloudflare:test';
+import { env } from 'cloudflare:test';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { createApp } from '../src/app';
 import { jakartaToday } from '../src/routes/directory';
 import categoriesCsv from '../../../docs/data/kategori-k3.csv?raw';
 import cabang from '../../../docs/data/contoh/cabang.csv?raw';
 import jadwal from '../../../docs/data/contoh/jadwal.csv?raw';
 import legalitas from '../../../docs/data/contoh/legalitas.csv?raw';
 import penyedia from '../../../docs/data/contoh/penyedia.csv?raw';
-import { expectApiError } from './helpers';
+import { call, expectApiError } from './helpers';
 
 // Public directory API against the Jabodetabek sample data (11 published + 1 draft schedule).
 // Raw SQL here only prepares the database state under test.
-const api = (path: string) => SELF.fetch(`https://api.test/api/v1${path}`);
+// "Today" is pinned so the 2027 sample schedules stay upcoming whenever the tests run.
+const TODAY = Date.UTC(2026, 11, 1, 5, 0);
+const app = createApp({ now: () => TODAY });
+const api = (path: string, init?: RequestInit) => call(app, `/api/v1${path}`, init);
 const run = (query: string) => env.DB.prepare(query).run();
 const search = async (query = '') => {
   const res = await api(`/search${query}`);
@@ -145,6 +149,48 @@ describe('GET /api/v1/search (public)', () => {
     expect(body.items.every((s) => (predicate as (s: unknown) => boolean)(s))).toBe(true);
   });
 
+  it('treats empty form values as not set', async () => {
+    expect((await search('?q=&city=&mode=&sort=')).items).toHaveLength(11);
+  });
+
+  it('hides schedules that already started (registration is over), detail still opens', async () => {
+    await run(
+      `UPDATE schedules SET start_date = '2026-11-30', end_date = '2026-12-05' WHERE title = 'Pembinaan Ahli K3 Umum (Contoh)'`,
+    );
+    const titles = (await search()).items.map((s) => s.title);
+    expect(titles).not.toContain('Pembinaan Ahli K3 Umum (Contoh)');
+    const id = (
+      await env.DB.prepare(
+        `SELECT id FROM schedules WHERE title = 'Pembinaan Ahli K3 Umum (Contoh)'`,
+      ).first<{ id: string }>()
+    )?.id;
+    expect((await api(`/schedules/${id}`)).status).toBe(200);
+  });
+
+  it('accepts the last allowed cursor and stops there', async () => {
+    const body = await search('?cursor=1000');
+    expect(body).toMatchObject({ items: [], nextCursor: null });
+  });
+
+  it('breaks date ties by id, never by plan', async () => {
+    await run(`UPDATE schedules SET start_date = '2027-01-11' WHERE status = 'published'`);
+    const before = (await search()).items.map((s) => s.id);
+    expect(before).toEqual([...before].sort());
+    await run(`UPDATE providers SET plan = 'business' WHERE slug = 'contoh-tuk-k3-tangerang'`);
+    expect((await search()).items.map((s) => s.id)).toEqual(before);
+    expect((await search('?sort=price')).items.length).toBe(11);
+  });
+
+  it('answers the same for everyone and never sets cookies (safe to cache)', async () => {
+    const anonymous = await api('/search?limit=3');
+    const withCredentials = await api('/search?limit=3', {
+      headers: { Cookie: 'session=abc', Authorization: 'Bearer x' },
+    });
+    expect(anonymous.headers.get('set-cookie')).toBeNull();
+    expect(withCredentials.headers.get('set-cookie')).toBeNull();
+    expect(await withCredentials.text()).toBe(await anonymous.text());
+  });
+
   it('treats % and _ in the text as letters, not wildcards', async () => {
     expect((await search('?q=%25')).items).toHaveLength(0);
     expect((await search('?q=_')).items).toHaveLength(0);
@@ -230,6 +276,12 @@ describe('GET /api/v1/schedules/:id (public)', () => {
       phone: null,
       website: null,
     });
+  });
+
+  it('404 for expired schedules', async () => {
+    const id = await idOf('Pembinaan Ahli K3 Listrik%');
+    await run(`UPDATE schedules SET status = 'expired' WHERE id = '${id}'`);
+    await expectApiError(await api(`/schedules/${id}`), 404, 'NOT_FOUND');
   });
 
   it('online schedules have no branch', async () => {
