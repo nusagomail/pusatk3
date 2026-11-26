@@ -159,3 +159,26 @@ describe('scheduleInputSchema', () => {
     expect(scheduleInputSchema.safeParse({ ...valid, ...overrides }).success).toBe(false);
   });
 });
+
+describe('public contact schema', () => {
+  it('only lets https websites reach a page', async () => {
+    const { providerProfileSchema } = await import('../src/index');
+    const contact = (website: string | null) => ({
+      slug: 'pt-a',
+      name: 'PT A',
+      type: 'pjk3',
+      verified: false,
+      isSample: false,
+      description: null,
+      contact: { whatsapp: null, email: null, phone: null, website },
+      branches: [],
+      licenses: [],
+      schedules: [],
+    });
+    expect(providerProfileSchema.safeParse(contact('https://pt-a.co.id')).success).toBe(true);
+    expect(providerProfileSchema.safeParse(contact(null)).success).toBe(true);
+    for (const bad of ['javascript:alert(1)', 'http://pt-a.co.id', 'data:text/html,x']) {
+      expect(providerProfileSchema.safeParse(contact(bad)).success).toBe(false);
+    }
+  });
+});
