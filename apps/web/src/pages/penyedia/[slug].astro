@@ -178,7 +178,11 @@ const typeLabel = provider ? PROVIDER_TYPE_LABELS[provider.type] : '';
         ? 'Profil sedang tidak bisa dimuat — PusatK3'
         : 'Penyedia tidak ditemukan — PusatK3'
     }
-    description="Profil penyedia pelatihan ini tidak ditemukan atau sudah tidak tersedia."
+    description={
+      unavailable
+        ? 'Profil penyedia sedang tidak bisa dimuat.'
+        : 'Profil penyedia pelatihan ini tidak ditemukan atau sudah tidak tersedia.'
+    }
     noindex
   >
     <div class="profile">

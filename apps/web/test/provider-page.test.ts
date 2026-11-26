@@ -25,6 +25,7 @@ describe('profilePageStatus', () => {
     [false, null, 404],
     [false, 404, 404],
     [false, 422, 404],
+    [false, 502, 503],
     [false, 503, 503],
   ] as const)('found=%s failure=%s → %s', (found, failure, expected) => {
     expect(profilePageStatus(found, failure)).toBe(expected);
@@ -37,6 +38,27 @@ describe('organizationJsonLd', () => {
       '@type': 'Organization',
       sameAs: ['https://pt-a.co.id'],
       address: { streetAddress: 'Jl. A', addressLocality: 'Jakarta' },
+    });
+  });
+
+  it('falls back to the first branch and a generic description', () => {
+    const data = organizationJsonLd(
+      provider({
+        contact: { whatsapp: null, email: null, phone: null, website: null },
+        branches: [
+          {
+            name: 'Cabang',
+            address: 'Jl. B',
+            city: { slug: 'bekasi', name: 'Bekasi' },
+            isMain: false,
+          },
+        ],
+      }),
+    );
+    expect(data).not.toHaveProperty('sameAs');
+    expect(data).toMatchObject({
+      address: { addressLocality: 'Bekasi' },
+      description: expect.stringContaining('PJK3'),
     });
   });
 

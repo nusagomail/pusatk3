@@ -27,7 +27,8 @@ test('provider profile shows schedules, legality and branches, labelled as sampl
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Mitra K3 Jakarta (Contoh)');
   await expect(page.getByText('Contoh — data fiktif')).toBeVisible();
-  await expect(page.getByText('Terverifikasi')).toHaveCount(0);
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
+  await expect(page.getByText('Terverifikasi', { exact: true })).toHaveCount(0);
   await expect(page.locator('#jadwal article.result-card').first()).toBeVisible();
   await expect(page.getByText('Izin PJK3')).toBeVisible();
   await expect(page.locator('#cabang li')).toHaveCount(2);

@@ -122,7 +122,8 @@ const contactSchema = z.object({
   whatsapp: z.string().nullable(),
   email: z.string().nullable(),
   phone: z.string().nullable(),
-  website: z.string().nullable(),
+  /** Only https links ever reach a page (a `javascript:` URL would be a stored XSS). */
+  website: z.url({ protocol: /^https$/ }).nullable(),
 });
 
 export const scheduleDetailSchema = scheduleSummarySchema.extend({
