@@ -489,6 +489,8 @@ describe('rate limit on public reads (ADR 0022)', () => {
     '/providers/contoh-mitra-k3-jakarta',
     '/schedules/01ARZ3NDEKTSV4RRFFQ69G5FAV',
     '/categories',
+    '/landing-pages',
+    '/sitemap',
   ])('limits %s too', async (path) => {
     const { binding } = limiter(false);
     const res = await call(

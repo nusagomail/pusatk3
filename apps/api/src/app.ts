@@ -71,7 +71,7 @@ export function createApp(options: CreateAppOptions = {}) {
   const v1: Router = new Hono<AppEnv>();
   // Public reads: per-visitor limit before the cache, so cached answers count too (ADR 0022).
   const readLimit = rateLimit('RL_READ', 'read');
-  for (const path of [...PUBLIC_READ_PATHS]) {
+  for (const path of PUBLIC_READ_PATHS) {
     v1.use(path, readLimit);
   }
   if (options.edgeCache) {

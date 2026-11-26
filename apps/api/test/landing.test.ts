@@ -89,6 +89,20 @@ describe('GET /api/v1/landing-pages (public)', () => {
     expect(await landing()).toEqual([]);
   });
 
+  it('never counts online schedules (they belong to no city)', async () => {
+    await run(
+      `UPDATE schedules SET mode = 'online', branch_id = NULL WHERE title LIKE '%Cabang Bekasi%'`,
+    );
+    expect(await landing()).toEqual([]);
+  });
+
+  it('is sample (noindex) when real data alone does not pass, as in the sitemap', async () => {
+    await run(`UPDATE providers SET is_sample = 0 WHERE slug = 'contoh-pusat-pelatihan-k3-bekasi'`);
+    // Real: 2 schedules from 1 provider; the third is sample → still noindex, not in the sitemap.
+    expect((await landing())[0]?.isSample).toBe(true);
+    expect((await sitemap()).landingPages).toEqual([]);
+  });
+
   it('marks a page with real data only as not sample', async () => {
     await run(`UPDATE providers SET is_sample = 0`);
     expect((await landing())[0]?.isSample).toBe(false);

@@ -13,6 +13,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { apiGet } from '../../../lib/api';
 import { ISSUER_LABELS, formatDate, formatDateRange, formatPrice } from '../../../lib/format';
 import {
+  passesThinRule,
   landingJsonLd,
   landingPath,
   landingSummary,
@@ -35,29 +36,37 @@ const results = page
     )
   : null;
 const schedules = results?.ok ? results.data.items : [];
+const truncated = results?.ok ? results.data.nextCursor !== null : false;
 
 const unavailable = (pagesResult !== null && !pagesResult.ok) || (results !== null && !results.ok);
+const summary = landingSummary(schedules);
+// Published only when the shown rows pass the rule too (never a thin page with status 200).
+const published = page !== null && !unavailable && passesThinRule(summary);
 if (unavailable) {
   Astro.response.status = 503;
   Astro.response.headers.set('Retry-After', '60');
-} else if (!page) {
+} else if (!published) {
   Astro.response.status = 404;
 }
 
-const summary = landingSummary(schedules);
 const related = page ? relatedPages(page, allPages) : { sameCategory: [], sameCity: [] };
-const jsonLd = page && !unavailable ? landingJsonLd(page, schedules) : [];
+const jsonLd = published && page ? landingJsonLd(page, schedules) : [];
 const heading = page ? `Pelatihan ${page.category.name} di ${page.city.name}` : '';
+// Totals come from the page list (the table shows at most 100, soonest first).
 const answer = page
-  ? `Ada ${summary.schedules} jadwal ${page.category.name} di ${page.city.name} dari ${summary.providers.length} penyedia` +
+  ? `Ada ${page.schedules} jadwal ${page.category.name} di ${page.city.name} dari ${page.providers} penyedia` +
     (summary.firstStart ? `, mulai ${formatDate(summary.firstStart, { long: true })}` : '') +
     (summary.minPrice !== null ? `, harga mulai ${formatPrice(summary.minPrice)}` : '') +
     `. Penerbit sertifikat: ${summary.issuers.join(', ')}.`
   : '';
+// Short meta description (search results show about 155 characters).
+const description = page
+  ? `${page.schedules} jadwal ${page.category.name} di ${page.city.name} dari ${page.providers} penyedia. Bandingkan tanggal dan harga, hubungi penyedia langsung.`
+  : '';
 ---
 
-{page && !unavailable ? (
-  <BaseLayout title={`${heading} | PusatK3`} description={answer} noindex={page.isSample}>
+{published && page ? (
+  <BaseLayout title={`${heading} | PusatK3`} description={description} noindex={page.isSample}>
     <div class="landing">
       <nav aria-label="Breadcrumb" class="breadcrumb">
         <a href="/">Beranda</a>
@@ -71,9 +80,11 @@ const answer = page
       <p class="landing__answer">{answer}</p>
 
       <section aria-labelledby="jadwal-heading">
-        <h2 id="jadwal-heading">Jadwal terdekat</h2>
+        <h2 id="jadwal-heading">
+          {truncated ? `${schedules.length} jadwal terdekat` : 'Jadwal terdekat'}
+        </h2>
         <div class="landing__table-wrap">
-          <table class="landing__table">
+          <table class="landing__table" aria-labelledby="jadwal-heading">
             <thead>
               <tr>
                 <th scope="col">Tanggal</th>
@@ -182,6 +193,11 @@ const answer = page
     margin: 0 auto;
     padding: 1rem 1rem 3rem;
   }
+  .breadcrumb a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-target);
+  }
   .breadcrumb {
     display: flex;
     flex-wrap: wrap;
@@ -222,9 +238,9 @@ const answer = page
   .landing__table a,
   .landing__providers a,
   .landing__related a {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     min-height: var(--touch-target);
-    line-height: var(--touch-target);
   }
   .landing__note {
     color: var(--color-ink-muted);

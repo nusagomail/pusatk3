@@ -1,6 +1,12 @@
-import type { LandingPage, ScheduleSummary } from '@pusatk3/shared';
+import {
+  LANDING_MIN_PROVIDERS,
+  LANDING_MIN_SCHEDULES,
+  type LandingPage,
+  type ScheduleSummary,
+} from '@pusatk3/shared';
 import { absoluteUrl } from '../data/site';
 import { ISSUER_LABELS } from './format';
+import { courseJsonLd } from './schedule-page';
 
 // Pure logic of the SEO page /pelatihan/[kategori]/[kota] (#27, ADR 0023), unit-tested.
 
@@ -36,6 +42,16 @@ export function landingSummary(schedules: readonly ScheduleSummary[]): LandingSu
     minPrice: prices.length > 0 ? Math.min(...prices) : null,
     issuers: [...new Set(schedules.map((s) => ISSUER_LABELS[s.issuer]))],
   };
+}
+
+/**
+ * The thin-content rule checked again on the rows the page actually shows: the page list and the
+ * search are cached separately and can disagree briefly (a new day, a provider closing).
+ */
+export function passesThinRule(summary: LandingSummary): boolean {
+  return (
+    summary.schedules >= LANDING_MIN_SCHEDULES && summary.providers.length >= LANDING_MIN_PROVIDERS
+  );
 }
 
 /** Other published pages for the same category (other cities) and city (other categories). */
@@ -78,35 +94,11 @@ export function landingJsonLd(
     name: `Pelatihan ${page.category.name} di ${page.city.name}`,
     url,
     numberOfItems: real.length,
+    // Same Course/CourseInstance builder as the detail page, so the two never drift apart.
     itemListElement: real.map((s, index) => ({
       '@type': 'ListItem',
       position: index + 1,
-      item: {
-        '@type': 'Course',
-        name: s.title,
-        url: absoluteUrl(`/jadwal/${s.id}`),
-        description: `${s.category.name} oleh ${s.provider.name}, penerbit ${ISSUER_LABELS[s.issuer]}.`,
-        provider: {
-          '@type': 'Organization',
-          name: s.provider.name,
-          url: absoluteUrl(`/penyedia/${s.provider.slug}`),
-        },
-        hasCourseInstance: {
-          '@type': 'CourseInstance',
-          courseMode: 'onsite',
-          startDate: s.startDate,
-          endDate: s.endDate,
-          location: { '@type': 'Place', name: page.city.name, address: page.city.name },
-        },
-        ...(s.priceIdr !== null && {
-          offers: {
-            '@type': 'Offer',
-            price: s.priceIdr,
-            priceCurrency: 'IDR',
-            category: 'Paid',
-          },
-        }),
-      },
+      item: courseJsonLd(s, 'upcoming'),
     })),
   };
   return [breadcrumbs, list];

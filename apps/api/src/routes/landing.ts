@@ -32,7 +32,10 @@ export const landingRoutes = new Hono<AppEnv>()
         cityName: cities.name,
         schedules: scheduleCount,
         providers: providerCount,
-        anySample: sql<number>`max(${providers.isSample})`,
+        // Real (non-sample) data alone must pass the rule for the page to be indexable, the same
+        // rule /sitemap applies after leaving sample data out.
+        realSchedules: sql<number>`sum(case when ${providers.isSample} = 0 then 1 else 0 end)`,
+        realProviders: sql<number>`count(distinct case when ${providers.isSample} = 0 then ${providers.id} end)`,
       })
       .from(schedules)
       .innerJoin(providers, eq(providers.id, schedules.providerId))
@@ -51,7 +54,9 @@ export const landingRoutes = new Hono<AppEnv>()
         city: { slug: r.citySlug, name: r.cityName },
         schedules: r.schedules,
         providers: r.providers,
-        isSample: Number(r.anySample) === 1,
+        isSample:
+          Number(r.realSchedules) < LANDING_MIN_SCHEDULES ||
+          Number(r.realProviders) < LANDING_MIN_PROVIDERS,
       })),
     });
     c.header('Cache-Control', PUBLIC_DIRECTORY_CACHE);

@@ -94,14 +94,22 @@ describe('landingJsonLd', () => {
             provider: { '@type': 'Organization', name: 'PT A' },
             hasCourseInstance: {
               '@type': 'CourseInstance',
-              courseMode: 'onsite',
+              courseMode: 'Onsite',
+              courseWorkload: 'P4D',
               startDate: '2027-01-12',
+              location: { address: { addressLocality: 'Bekasi', addressCountry: 'ID' } },
             },
-            offers: { price: 3_200_000, priceCurrency: 'IDR' },
+            offers: { price: 3_200_000, priceCurrency: 'IDR', category: 'Paid' },
           },
         },
       ],
     });
+  });
+
+  it('always sends an offer category, also without a price (Google Course rules)', () => {
+    const [, list] = landingJsonLd(page(), [schedule({ priceIdr: null })]);
+    const item = (list as { itemListElement: { item: { offers: unknown } }[] }).itemListElement[0];
+    expect(item?.item.offers).toEqual({ '@type': 'Offer', category: 'Paid' });
   });
 
   it('gives sample data the breadcrumb only', () => {
@@ -141,11 +149,37 @@ describe('sitemap.xml', () => {
     expect(res.headers.get('cache-control')).toBeNull();
   });
 
-  it('falls back to the static pages and is not cached when the API is unavailable', async () => {
+  it('answers 503 (crawlers keep the old sitemap) and is not cached when the API is unavailable', async () => {
     const res = await sitemap({} as never);
+    expect(res.status).toBe(503);
+    expect(res.headers.get('retry-after')).toBe('120');
     const xml = await res.text();
     expect(xml).toContain('<loc>https://pusatk3.id/</loc>');
     expect(xml).not.toContain('/penyedia/');
     expect(res.headers.get('cache-control')).toBe('no-store');
+  });
+});
+
+describe('/pelatihan/[kategori]/[kota] thin-content check on the shown rows', () => {
+  it('answers 404 (noindex) when the search shows fewer rows than the rule needs', async () => {
+    const { experimental_AstroContainer: AstroContainer } = await import('astro/container');
+    const { default: LandingPageView } =
+      await import('../src/pages/pelatihan/[kategori]/[kota].astro');
+    runtime.API = {
+      fetch: vi.fn(async (request: Request) =>
+        new URL(request.url).pathname.endsWith('/landing-pages')
+          ? Response.json({ items: [page({ schedules: 3, providers: 2 })] })
+          : Response.json({ items: [schedule()], nextCursor: null, sponsored: [] }),
+      ),
+    };
+    const container = await AstroContainer.create();
+    const res = await container.renderToResponse(LandingPageView, {
+      params: { kategori: 'operator-forklift', kota: 'bekasi' },
+      request: new Request('https://pusatk3.test/pelatihan/operator-forklift/bekasi'),
+    });
+    expect(res.status).toBe(404);
+    const html = await res.text();
+    expect(html).toContain('Halaman belum tersedia');
+    expect(html).toMatch(/<meta name="robots" content="noindex/);
   });
 });
