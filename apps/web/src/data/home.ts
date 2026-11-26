@@ -1,7 +1,7 @@
 /**
- * Static homepage content (#5). Fields and counts mirror docs/data/kategori-k3.csv (checked by
- * tests); Fase 1 loads them from GET /api/v1/categories. Schedules are SAMPLES and are always
- * labelled "Contoh" on the page (owner decision for #5).
+ * Static homepage content. Since #25 the homepage reads schedules, cities and category counts from
+ * the API; the lists below are the editorial field selection and the fallbacks used when the API
+ * is unavailable. Field counts mirror docs/data/kategori-k3.csv (checked by tests).
  */
 
 export interface FeaturedField {
@@ -33,56 +33,7 @@ export const FEATURED_FIELDS: readonly FeaturedField[] = [
   },
 ];
 
-export interface SampleSchedule {
-  title: string;
-  issuer: string;
-  mode: 'Offline' | 'Online';
-  month: string;
-  /** Full month name for screen readers ("DES" would be spelled out). */
-  monthName: string;
-  days: string;
-  place: string;
-}
-
-export const SAMPLE_SCHEDULES: readonly SampleSchedule[] = [
-  {
-    title: 'Ahli K3 Umum',
-    issuer: 'Kemnaker',
-    mode: 'Offline',
-    month: 'DES',
-    monthName: 'Desember',
-    days: '8–19',
-    place: 'Surabaya',
-  },
-  {
-    title: 'Operator Forklift',
-    issuer: 'SIO Kemnaker',
-    mode: 'Offline',
-    month: 'DES',
-    monthName: 'Desember',
-    days: '10–12',
-    place: 'Bekasi',
-  },
-  {
-    title: 'K3 Listrik',
-    issuer: 'BNSP',
-    mode: 'Online',
-    month: 'DES',
-    monthName: 'Desember',
-    days: '15–18',
-    place: 'Online (Zoom)',
-  },
-  {
-    title: 'Petugas P3K',
-    issuer: 'Kemnaker',
-    mode: 'Offline',
-    month: 'DES',
-    monthName: 'Desember',
-    days: '16–17',
-    place: 'Batam',
-  },
-];
-
+/** Fallback city chips when GET /cities is unavailable. */
 export const CITY_CHIPS: readonly { label: string; query: string }[] = [
   { label: 'Jakarta', query: 'city=jakarta' },
   { label: 'Bekasi', query: 'city=bekasi' },
@@ -97,7 +48,7 @@ export const CITY_CHIPS: readonly { label: string; query: string }[] = [
   { label: 'Online', query: 'mode=online' },
 ];
 
-/** Same cities as the local seed (packages/db SAMPLE_CITIES); Fase 1 loads them from /cities. */
+/** Fallback city options when GET /cities is unavailable (same as the local seed). */
 export const SEARCH_CITIES = [
   { value: '', label: 'Semua kota & online' },
   { value: 'jakarta', label: 'Jakarta' },

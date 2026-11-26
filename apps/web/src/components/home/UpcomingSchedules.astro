@@ -1,0 +1,54 @@
+---
+/**
+ * "Jadwal terdekat" on the homepage: the next published schedules from the API (#25). Sample data
+ * is labelled "Contoh" by ResultCard; `null` means the API was unavailable.
+ */
+import type { ScheduleSummary } from '@pusatk3/shared';
+import ResultCard from '../directory/ResultCard.astro';
+
+interface Props {
+  schedules: readonly ScheduleSummary[] | null;
+}
+
+const { schedules } = Astro.props;
+const anySample = schedules?.some((s) => s.provider.isSample) ?? false;
+---
+
+{schedules === null ? (
+  <p class="upcoming__note">Jadwal terdekat sedang tidak bisa dimuat. Coba lagi sebentar lagi.</p>
+) : schedules.length === 0 ? (
+  <p class="upcoming__note">Belum ada jadwal yang akan datang.</p>
+) : (
+  <>
+    {anySample && (
+      <p class="upcoming__note">
+        <strong>Data contoh.</strong> Jadwal bertanda “Contoh” adalah data fiktif untuk uji coba.
+      </p>
+    )}
+    <ul class="upcoming">
+      {schedules.map((schedule) => (
+        <li>
+          <ResultCard schedule={schedule} />
+        </li>
+      ))}
+    </ul>
+  </>
+)}
+
+<style>
+  .upcoming {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .upcoming__note {
+    margin: 0 0 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    background: var(--color-warning-bg);
+    color: var(--color-ink);
+  }
+</style>

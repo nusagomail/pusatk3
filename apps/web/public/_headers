@@ -9,6 +9,5 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
 
-# Public prerendered pages: browsers revalidate, the CDN keeps them and refreshes in the background.
-/
-  Cache-Control: public, max-age=0, must-revalidate, s-maxage=3600, stale-while-revalidate=86400
+# Pages rendered on demand (homepage, /cari, /jadwal, /penyedia) get their headers from
+# src/middleware.ts: _headers only applies to static assets.

@@ -3,13 +3,48 @@ import Button from '../components/Button.astro';
 import FieldGrid from '../components/home/FieldGrid.astro';
 import HomeHero from '../components/home/HomeHero.astro';
 import IntroVideo from '../components/home/IntroVideo.astro';
-import ScheduleCard from '../components/home/ScheduleCard.astro';
+import UpcomingSchedules from '../components/home/UpcomingSchedules.astro';
 import Section from '../components/home/Section.astro';
 import JsonLd from '../components/JsonLd.astro';
-import { CITY_CHIPS, SAMPLE_SCHEDULES } from '../data/home';
+import { CITY_CHIPS, SEARCH_CITIES } from '../data/home';
+import { apiGet } from '../lib/api';
+import {
+  categoriesResponseSchema,
+  citiesResponseSchema,
+  searchResponseSchema,
+} from '@pusatk3/shared';
 import { SITE_URL, absoluteUrl } from '../data/site';
 import { safeMediaBaseUrl } from '../lib/media';
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+// Rendered on demand from the API (#25, ADR 0019). Each part has a fallback, so the homepage
+// always renders; a degraded page is not cached.
+export const prerender = false;
+
+const [schedulesResult, citiesResult, categoriesResult] = await Promise.all([
+  apiGet('/search?limit=4', searchResponseSchema),
+  apiGet('/cities', citiesResponseSchema),
+  apiGet('/categories', categoriesResponseSchema),
+]);
+if (!schedulesResult.ok || !citiesResult.ok || !categoriesResult.ok) {
+  Astro.response.headers.set('Cache-Control', 'no-store');
+}
+const upcoming = schedulesResult.ok ? schedulesResult.data.items : null;
+const cityOptions = citiesResult.ok
+  ? [
+      { value: '', label: 'Semua kota & online' },
+      ...citiesResult.data.items.map((c) => ({ value: c.slug, label: c.name })),
+    ]
+  : SEARCH_CITIES;
+const cityChips = citiesResult.ok
+  ? [
+      ...citiesResult.data.items.map((c) => ({ label: c.name, query: `city=${c.slug}` })),
+      { label: 'Online', query: 'mode=online' },
+    ]
+  : CITY_CHIPS;
+const fieldCounts = categoriesResult.ok
+  ? Object.fromEntries(categoriesResult.data.items.map((f) => [f.slug, f.categories.length]))
+  : {};
 
 const mediaBaseUrl = safeMediaBaseUrl(import.meta.env.PUBLIC_MEDIA_BASE_URL);
 const description =
@@ -70,27 +105,24 @@ const steps = [
     <JsonLd data={website} />
     {video && <JsonLd data={video} />}
   </Fragment>
-  <HomeHero />
+  <HomeHero cities={cityOptions} />
 
   <Section id="bidang" title="Bidang K3" more={{ href: '/cari', label: 'Lihat semua 14 bidang' }}>
-    <FieldGrid />
+    <FieldGrid counts={fieldCounts} />
   </Section>
 
-  <Section id="jadwal" title="Jadwal terdekat" muted>
-    <p class="sample-note">
-      <strong>Contoh tampilan.</strong> Jadwal di bawah ini bukan jadwal asli; jadwal dari penyedia
-      tampil setelah data dikurasi.
-    </p>
-    <div class="schedules">
-      {SAMPLE_SCHEDULES.map((schedule) => (
-        <ScheduleCard schedule={schedule} sample />
-      ))}
-    </div>
+  <Section
+    id="jadwal"
+    title="Jadwal terdekat"
+    muted
+    more={{ href: '/cari', label: 'Lihat semua jadwal' }}
+  >
+    <UpcomingSchedules schedules={upcoming} />
   </Section>
 
   <Section id="kota" title="Cari berdasarkan kota">
     <ul class="chips">
-      {CITY_CHIPS.map((city) => (
+      {cityChips.map((city) => (
         <li>
           <a href={`/cari?${city.query}`}>{city.label}</a>
         </li>
@@ -137,18 +169,6 @@ const steps = [
 </BaseLayout>
 
 <style>
-  .sample-note {
-    margin: 0 0 1rem;
-    padding: 0.75rem 1rem;
-    border-radius: 12px;
-    background: var(--color-warning-bg);
-    color: var(--color-ink);
-  }
-  .schedules {
-    display: grid;
-    gap: 0.75rem;
-    grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
-  }
   .chips {
     display: flex;
     flex-wrap: wrap;
