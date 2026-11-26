@@ -1,6 +1,8 @@
 /** Bindings and vars from wrangler.jsonc. */
 export interface Env {
   APP_VERSION: string;
+  /** Where this Worker runs (wrangler vars). Only `local` accepts Turnstile test keys. */
+  ENVIRONMENT?: 'local' | 'staging' | 'production';
   DB: D1Database;
   /** Turnstile secret (Workers secret in staging/production; test key locally). */
   TURNSTILE_SECRET?: string;

@@ -31,6 +31,7 @@ const schedule = (overrides: Partial<ScheduleDetail> = {}): ScheduleDetail => ({
     isSample: false,
     contact: { whatsapp: null, email: null, phone: null, website: null },
     licenses: [],
+    acceptsQuestions: false,
   },
   ...overrides,
 });

@@ -295,6 +295,15 @@ describe('GET /api/v1/schedules/:id (public)', () => {
       phone: null,
       website: null,
     });
+    // Unclaimed: nobody reads questions yet, so the form stays hidden (ADR 0022).
+    expect(body.provider.acceptsQuestions).toBe(false);
+  });
+
+  it('accepts questions only once the provider claimed its profile', async () => {
+    const id = await idOf('Pembinaan Ahli K3 Umum (Contoh)');
+    await run(`UPDATE providers SET status = 'claimed' WHERE slug = 'contoh-mitra-k3-jakarta'`);
+    const body = scheduleDetailSchema.parse(await (await api(`/schedules/${id}`)).json());
+    expect(body.provider.acceptsQuestions).toBe(true);
   });
 
   it('404 for expired schedules', async () => {

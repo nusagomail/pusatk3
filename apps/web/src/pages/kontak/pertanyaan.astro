@@ -1,0 +1,88 @@
+---
+/**
+ * Result of the "Kirim pertanyaan" form (#28, ADR 0022). The form on /jadwal/[id] posts here;
+ * this forwards it to the API (which checks Turnstile, consent, visibility and rate limits) and
+ * says what happened. Never cached; Astro's origin check refuses cross-site form posts.
+ */
+import Button from '../../components/Button.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { apiPost } from '../../lib/api';
+import { questionFromForm, questionOutcome, type QuestionOutcome } from '../../lib/leads';
+
+export const prerender = false;
+
+Astro.response.headers.set('Cache-Control', 'no-store');
+
+if (Astro.request.method !== 'POST') return Astro.redirect('/cari', 303);
+
+const form = await Astro.request.formData().catch(() => new FormData());
+const body = questionFromForm(form);
+const scheduleId = /^[0-9A-Z]{26}$/.test(String(body.scheduleId)) ? String(body.scheduleId) : '';
+const result = await apiPost('/leads', body);
+const outcome: QuestionOutcome = questionOutcome(result.status);
+const fields = result.fields ?? [];
+if (outcome !== 'sent') Astro.response.status = result.status;
+
+const back = scheduleId ? `/jadwal/${scheduleId}#kontak` : '/cari';
+const MESSAGES: Record<QuestionOutcome, { title: string; text: string }> = {
+  sent: {
+    title: 'Pertanyaan terkirim',
+    text: 'Pertanyaan Anda sudah diteruskan ke penyedia. Penyedia akan menghubungi Anda lewat kontak yang Anda isi.',
+  },
+  invalid: {
+    title: 'Periksa kembali isian Anda',
+    text: 'Ada isian yang belum sesuai. Kembali ke halaman jadwal, perbaiki, lalu kirim lagi.',
+  },
+  blocked: {
+    title: 'Verifikasi anti-bot gagal',
+    text: 'Muat ulang halaman jadwal, lalu kirim pertanyaan sekali lagi.',
+  },
+  busy: {
+    title: 'Terlalu banyak kiriman',
+    text: 'Tunggu sekitar satu menit, lalu coba lagi.',
+  },
+  gone: {
+    title: 'Jadwal tidak lagi menerima pertanyaan',
+    text: 'Jadwal ini sudah tidak tersedia atau penyedia belum menerima pertanyaan lewat PusatK3.',
+  },
+  unavailable: {
+    title: 'Pertanyaan belum bisa dikirim',
+    text: 'Layanan sedang tidak tersedia. Coba lagi nanti, atau hubungi penyedia lewat WhatsApp.',
+  },
+};
+const message = MESSAGES[outcome];
+---
+
+<BaseLayout title={`${message.title} — PusatK3`} description={message.text} noindex>
+  <section class="question-result" aria-live="polite">
+    <h1>{message.title}</h1>
+    <p role={outcome === 'sent' ? 'status' : 'alert'}>{message.text}</p>
+    {fields.length > 0 && (
+      <ul class="question-result__fields">
+        {fields.map((field) => (
+          <li>{field.message}</li>
+        ))}
+      </ul>
+    )}
+    <p class="question-result__note">
+      PusatK3 tidak memproses pendaftaran maupun pembayaran. Daftar dan bayar langsung ke penyedia.
+    </p>
+    <Button href={back}>
+      {outcome === 'sent' ? 'Kembali ke jadwal' : 'Kembali dan coba lagi'}
+    </Button>
+  </section>
+</BaseLayout>
+
+<style>
+  .question-result {
+    max-width: 40rem;
+    margin: 0 auto;
+    padding: 2rem 1rem 3rem;
+  }
+  .question-result__fields {
+    color: var(--color-danger);
+  }
+  .question-result__note {
+    color: var(--color-ink-muted);
+  }
+</style>

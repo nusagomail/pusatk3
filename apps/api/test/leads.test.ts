@@ -195,7 +195,7 @@ describe('POST /api/v1/leads (question form, public)', () => {
     });
 
     it('is off (503) in a deployed environment without the secret', async () => {
-      const deployed = { ...env, APP_VERSION: 'sha-test', TURNSTILE_SECRET: undefined };
+      const deployed = { ...env, ENVIRONMENT: 'staging' as const, TURNSTILE_SECRET: undefined };
       await expectApiError(
         await post('/leads', await form(), deployed),
         503,
@@ -207,7 +207,7 @@ describe('POST /api/v1/leads (question form, public)', () => {
     it('never accepts Cloudflare test keys in a deployed environment (503, form off)', async () => {
       const deployed = {
         ...env,
-        APP_VERSION: 'sha-test',
+        ENVIRONMENT: 'production' as const,
         TURNSTILE_SECRET: TURNSTILE_TEST_SECRETS.alwaysPasses,
       };
       await expectApiError(

@@ -93,6 +93,7 @@ const typeLabel = provider ? PROVIDER_TYPE_LABELS[provider.type] : '';
             <WhatsAppButton
               phone={whatsapp}
               message={`Halo ${provider.name}, saya menemukan profil Anda di PusatK3.`}
+              lead={{ providerSlug: provider.slug }}
             >
               Chat via WhatsApp
             </WhatsAppButton>

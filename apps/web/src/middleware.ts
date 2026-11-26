@@ -1,7 +1,7 @@
 import { defineMiddleware } from 'astro:middleware';
 import { waitUntil } from 'cloudflare:workers';
 import { dataVersionResponseSchema } from '@pusatk3/shared';
-import { apiGet } from './lib/api';
+import { apiGet, visitorContext, visitorIpOf } from './lib/api';
 import { isProductionDeploy } from './lib/deploy';
 import { jakartaToday } from './lib/format';
 import { memoizedVersion, withPageCache } from './lib/page-cache';
@@ -47,18 +47,21 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const cache = import.meta.env.PROD
     ? (globalThis as { caches?: { default?: Cache } }).caches?.default
     : undefined;
-  return withPageCache(
-    context.request,
-    {
-      cache,
-      dataVersion,
-      buildId: BUILD_ID,
-      today: () => jakartaToday(),
-      keptParams,
-      setsCookies: () => !context.cookies.headers().next().done,
-      defer: waitUntil,
-    },
-    async () => withSsrHeaders(await next()),
+  // Every API call made while rendering carries the visitor IP (rate limits, ADR 0022).
+  return visitorContext.run({ ip: visitorIpOf(context.request) }, () =>
+    withPageCache(
+      context.request,
+      {
+        cache,
+        dataVersion,
+        buildId: BUILD_ID,
+        today: () => jakartaToday(),
+        keptParams,
+        setsCookies: () => !context.cookies.headers().next().done,
+        defer: waitUntil,
+      },
+      async () => withSsrHeaders(await next()),
+    ),
   );
 });
 

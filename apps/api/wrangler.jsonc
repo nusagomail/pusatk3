@@ -22,6 +22,8 @@
   ],
   "vars": {
     "APP_VERSION": "dev",
+    // Only "local" accepts Cloudflare's public Turnstile test keys (ADR 0022).
+    "ENVIRONMENT": "local",
   },
   "env": {
     "staging": {
@@ -55,6 +57,7 @@
       // Deploys override APP_VERSION with the commit SHA (--var APP_VERSION:<sha>).
       "vars": {
         "APP_VERSION": "staging",
+        "ENVIRONMENT": "staging",
       },
     },
     "production": {
@@ -89,6 +92,7 @@
       "triggers": { "crons": ["17 19 * * *"] },
       "vars": {
         "APP_VERSION": "production",
+        "ENVIRONMENT": "production",
       },
     },
   },

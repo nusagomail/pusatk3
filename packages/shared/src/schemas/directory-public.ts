@@ -134,6 +134,8 @@ export const scheduleDetailSchema = scheduleSummarySchema.extend({
   provider: publicProviderRefSchema.extend({
     contact: contactSchema,
     licenses: z.array(publicLicenseSchema),
+    /** The provider claimed its profile and can read questions (form shown, ADR 0022). */
+    acceptsQuestions: z.boolean(),
   }),
 });
 export type ScheduleDetail = z.infer<typeof scheduleDetailSchema>;
