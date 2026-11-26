@@ -21,4 +21,4 @@ API dan web perlu dideploy terpisah ke staging (otomatis dari `main`, #8) dan pr
 - `public/_headers` tidak berlaku untuk respons Worker: halaman SSR pertama (Fase 1) wajib memasang `X-Robots-Tag` staging lewat middleware Astro.
 - `robots.txt` `Disallow` membuat crawler tidak membaca `noindex`, sehingga URL staging yang ditautkan di tempat lain masih bisa muncul tanpa isi. Sebelum login (email OTP, Fase 2) tersedia di staging, pertimbangkan Cloudflare Access di depan staging.
 - Web staging dan API staging berbeda origin (dua subdomain `*.workers.dev`) sampai staging pindah ke `staging.pusatk3.id`; bila web perlu memanggil API dari browser sebelum itu, CORS harus diputuskan (Fase 1).
-- Saat Cache Rules/Cache API aktif (Fase 1), deploy wajib mem-purge HTML (ADR 0010).
+- Saat Cache Rules/Cache API aktif (Fase 1), deploy wajib mem-purge HTML (ADR 0010). **Diganti ADR 0021:** id build web dan versi API ada di kunci cache, jadi deploy tidak perlu purge.

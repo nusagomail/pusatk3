@@ -9,6 +9,7 @@ import {
 } from '@pusatk3/db';
 import {
   citiesQuerySchema,
+  noQuerySchema,
   citiesResponseSchema,
   PROVIDER_SCHEDULES_LIMIT,
   providerParamsSchema,
@@ -280,127 +281,137 @@ export const directoryRoutes = new Hono<AppEnv>()
     c.header('Cache-Control', PUBLIC_DIRECTORY_CACHE);
     return c.json(body);
   })
-  .get('/schedules/:id', validateParam(scheduleParamsSchema), async (c) => {
-    const { id } = c.req.valid('param');
-    const db = getDb(c.env);
-    const [row] = await db
-      .select({
-        ...summaryColumns,
-        providerId: providers.id,
-        description: schedules.description,
-        requirements: schedules.requirements,
-        quota: schedules.quota,
-        branchName: branches.name,
-        branchAddress: branches.address,
-        whatsapp: providers.whatsapp,
-        email: providers.email,
-        phone: providers.phone,
-        website: providers.website,
-      })
-      .from(schedules)
-      .innerJoin(providers, eq(providers.id, schedules.providerId))
-      .innerJoin(courseCategories, eq(courseCategories.id, schedules.categoryId))
-      .leftJoin(branches, eq(branches.id, schedules.branchId))
-      .leftJoin(cities, eq(cities.id, branches.cityId))
-      .where(
-        and(
-          eq(schedules.id, id),
-          eq(schedules.status, 'published'),
-          ne(providers.status, 'closed'),
-        ),
-      )
-      .limit(1);
-    if (!row) throw new AppError('NOT_FOUND');
-    const summary = toSummary(row);
-    const body = scheduleDetailSchema.parse({
-      ...summary,
-      description: row.description,
-      requirements: row.requirements,
-      quota: row.quota,
-      branch:
-        row.branchName && row.branchAddress && summary.city
-          ? { name: row.branchName, address: row.branchAddress, city: summary.city }
-          : null,
-      provider: {
-        ...summary.provider,
-        contact: {
-          whatsapp: row.whatsapp,
-          email: row.email,
-          phone: row.phone,
-          website: row.website,
+  .get(
+    '/schedules/:id',
+    validateParam(scheduleParamsSchema),
+    validateQuery(noQuerySchema),
+    async (c) => {
+      const { id } = c.req.valid('param');
+      const db = getDb(c.env);
+      const [row] = await db
+        .select({
+          ...summaryColumns,
+          providerId: providers.id,
+          description: schedules.description,
+          requirements: schedules.requirements,
+          quota: schedules.quota,
+          branchName: branches.name,
+          branchAddress: branches.address,
+          whatsapp: providers.whatsapp,
+          email: providers.email,
+          phone: providers.phone,
+          website: providers.website,
+        })
+        .from(schedules)
+        .innerJoin(providers, eq(providers.id, schedules.providerId))
+        .innerJoin(courseCategories, eq(courseCategories.id, schedules.categoryId))
+        .leftJoin(branches, eq(branches.id, schedules.branchId))
+        .leftJoin(cities, eq(cities.id, branches.cityId))
+        .where(
+          and(
+            eq(schedules.id, id),
+            eq(schedules.status, 'published'),
+            ne(providers.status, 'closed'),
+          ),
+        )
+        .limit(1);
+      if (!row) throw new AppError('NOT_FOUND');
+      const summary = toSummary(row);
+      const body = scheduleDetailSchema.parse({
+        ...summary,
+        description: row.description,
+        requirements: row.requirements,
+        quota: row.quota,
+        branch:
+          row.branchName && row.branchAddress && summary.city
+            ? { name: row.branchName, address: row.branchAddress, city: summary.city }
+            : null,
+        provider: {
+          ...summary.provider,
+          contact: {
+            whatsapp: row.whatsapp,
+            email: row.email,
+            phone: row.phone,
+            website: row.website,
+          },
+          licenses: await licensesOf(db, row.providerId),
         },
-        licenses: await licensesOf(db, row.providerId),
-      },
-    });
-    c.header('Cache-Control', PUBLIC_DIRECTORY_CACHE);
-    return c.json(body);
-  })
-  .get('/providers/:slug', validateParam(providerParamsSchema), async (c) => {
-    const { slug } = c.req.valid('param');
-    const db = getDb(c.env);
-    const [provider] = await db
-      .select({
-        id: providers.id,
-        slug: providers.slug,
-        name: providers.name,
-        type: providers.type,
-        description: providers.description,
-        verificationStatus: providers.verificationStatus,
-        isSample: providers.isSample,
-        whatsapp: providers.whatsapp,
-        email: providers.email,
-        phone: providers.phone,
-        website: providers.website,
-      })
-      .from(providers)
-      .where(and(eq(providers.slug, slug), ne(providers.status, 'closed')))
-      .limit(1);
-    if (!provider) throw new AppError('NOT_FOUND');
+      });
+      c.header('Cache-Control', PUBLIC_DIRECTORY_CACHE);
+      return c.json(body);
+    },
+  )
+  .get(
+    '/providers/:slug',
+    validateParam(providerParamsSchema),
+    validateQuery(noQuerySchema),
+    async (c) => {
+      const { slug } = c.req.valid('param');
+      const db = getDb(c.env);
+      const [provider] = await db
+        .select({
+          id: providers.id,
+          slug: providers.slug,
+          name: providers.name,
+          type: providers.type,
+          description: providers.description,
+          verificationStatus: providers.verificationStatus,
+          isSample: providers.isSample,
+          whatsapp: providers.whatsapp,
+          email: providers.email,
+          phone: providers.phone,
+          website: providers.website,
+        })
+        .from(providers)
+        .where(and(eq(providers.slug, slug), ne(providers.status, 'closed')))
+        .limit(1);
+      if (!provider) throw new AppError('NOT_FOUND');
 
-    const branchRows = await db
-      .select({
-        name: branches.name,
-        address: branches.address,
-        isMain: branches.isMain,
-        citySlug: cities.slug,
-        cityName: cities.name,
-      })
-      .from(branches)
-      .innerJoin(cities, eq(cities.id, branches.cityId))
-      .where(eq(branches.providerId, provider.id))
-      .orderBy(sql`${branches.isMain} DESC`, asc(branches.name));
-    const scheduleRows = await scheduleQuery(
-      db,
-      and(visible(jakartaToday(c.var.now())), eq(schedules.providerId, provider.id)),
-    )
-      .orderBy(asc(schedules.startDate), asc(schedules.id))
-      .limit(PROVIDER_SCHEDULES_LIMIT);
+      const branchRows = await db
+        .select({
+          name: branches.name,
+          address: branches.address,
+          isMain: branches.isMain,
+          citySlug: cities.slug,
+          cityName: cities.name,
+        })
+        .from(branches)
+        .innerJoin(cities, eq(cities.id, branches.cityId))
+        .where(eq(branches.providerId, provider.id))
+        .orderBy(sql`${branches.isMain} DESC`, asc(branches.name));
+      const scheduleRows = await scheduleQuery(
+        db,
+        and(visible(jakartaToday(c.var.now())), eq(schedules.providerId, provider.id)),
+      )
+        .orderBy(asc(schedules.startDate), asc(schedules.id))
+        .limit(PROVIDER_SCHEDULES_LIMIT);
 
-    const body = providerProfileSchema.parse({
-      slug: provider.slug,
-      name: provider.name,
-      type: provider.type,
-      verified: provider.verificationStatus === 'verified',
-      isSample: provider.isSample,
-      description: provider.description,
-      contact: {
-        whatsapp: provider.whatsapp,
-        email: provider.email,
-        phone: provider.phone,
-        website: provider.website,
-      },
-      branches: branchRows.map((b) => ({
-        name: b.name,
-        address: b.address,
-        isMain: b.isMain,
-        city: { slug: b.citySlug, name: b.cityName },
-      })),
-      licenses: await licensesOf(db, provider.id),
-      schedules: scheduleRows.map(toSummary),
-    });
-    c.header('Cache-Control', PUBLIC_DIRECTORY_CACHE);
-    return c.json(body);
-  })
+      const body = providerProfileSchema.parse({
+        slug: provider.slug,
+        name: provider.name,
+        type: provider.type,
+        verified: provider.verificationStatus === 'verified',
+        isSample: provider.isSample,
+        description: provider.description,
+        contact: {
+          whatsapp: provider.whatsapp,
+          email: provider.email,
+          phone: provider.phone,
+          website: provider.website,
+        },
+        branches: branchRows.map((b) => ({
+          name: b.name,
+          address: b.address,
+          isMain: b.isMain,
+          city: { slug: b.citySlug, name: b.cityName },
+        })),
+        licenses: await licensesOf(db, provider.id),
+        schedules: scheduleRows.map(toSummary),
+      });
+      c.header('Cache-Control', PUBLIC_DIRECTORY_CACHE);
+      return c.json(body);
+    },
+  )
   .get('/cities', validateQuery(citiesQuerySchema), async (c) => {
     const rows = await getDb(c.env)
       .select({ slug: cities.slug, name: cities.name, province: cities.province })

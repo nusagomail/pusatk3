@@ -57,3 +57,28 @@ test('explains invalid filters instead of failing', async ({ page }) => {
   expect(response?.headers()['cache-control']).toBe('no-store');
   await expect(page.getByRole('alert')).toContainText('tidak valid');
 });
+
+test('a repeated search is served from the edge cache with the same headers (ADR 0021)', async ({
+  request,
+}) => {
+  // A query no other test uses, so the first answer is always rendered.
+  const url = `/cari?q=forklift&sort=price&month=2027-01`;
+  const first = await request.get(url);
+  expect(first.status()).toBe(200);
+  expect(first.headers()['x-cache']).toBe('MISS');
+  const second = await request.get(url);
+  expect(second.headers()['x-cache']).toBe('HIT');
+  expect(await second.text()).toBe(await first.text());
+  for (const name of [
+    'cache-control',
+    'content-security-policy',
+    'x-frame-options',
+    'x-robots-tag',
+    'x-content-type-options',
+    'strict-transport-security',
+    'referrer-policy',
+    'permissions-policy',
+  ]) {
+    expect(second.headers()[name], name).toBe(first.headers()[name]);
+  }
+});

@@ -8,7 +8,7 @@ import { PUBLIC_REFERENCE_CACHE } from '../lib/cache';
 import { getDb } from '../lib/db';
 import { validateQuery } from '../lib/validate';
 
-// Public (no login). Purge `/api/v1/categories` when reference data changes.
+// Public (no login). Edge-cached under the data version (ADR 0021): a seed or import refreshes it.
 // Fields without categories are omitted (inner join).
 const byName = new Intl.Collator('id');
 export const categoriesRoutes = new Hono<AppEnv>().get(

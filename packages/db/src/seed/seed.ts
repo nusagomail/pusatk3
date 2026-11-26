@@ -1,6 +1,6 @@
 import { inArray, not } from 'drizzle-orm';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
-import { cities, courseCategories, courseFields } from '../schema';
+import { appMeta, cities, courseCategories, courseFields, DATA_VERSION_KEY } from '../schema';
 import type { CategoriesSeed } from './categories-csv';
 import type { CitySeed } from './cities';
 
@@ -71,6 +71,13 @@ export async function seedReferenceData(db: Db, data: ReferenceData): Promise<Se
   });
   const [firstCategory, ...otherCategories] = categoryStatements;
   if (firstCategory) await db.batch([firstCategory, ...otherCategories]);
+
+  // Cached pages and API responses keyed on the old version go stale (ADR 0021).
+  const version = crypto.randomUUID();
+  await db
+    .insert(appMeta)
+    .values({ key: DATA_VERSION_KEY, value: version, updatedAt: now })
+    .onConflictDoUpdate({ target: appMeta.key, set: { value: version, updatedAt: now } });
 
   const orphanSlugs = async (
     table: typeof courseFields | typeof courseCategories | typeof cities,

@@ -31,13 +31,14 @@ export async function apiGetWith<T>(
   path: string,
   schema: Schema<T>,
   fetchImpl: typeof fetch = fetch,
+  timeoutMs: number = API_TIMEOUT_MS,
 ): Promise<ApiResult<T>> {
   const binding = runtime.API;
   const origin = binding ? INTERNAL_ORIGIN : runtime.API_ORIGIN;
   if (!origin) return { ok: false, status: 503 };
   const request = new Request(`${origin}/api/v1${path}`, {
     headers: { accept: 'application/json' },
-    signal: AbortSignal.timeout(API_TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   try {
     const res = binding ? await binding.fetch(request) : await fetchImpl(request);

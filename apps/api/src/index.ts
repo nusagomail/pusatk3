@@ -1,3 +1,4 @@
 import { createApp } from './app';
 
-export default createApp();
+// Deployed app: public GET responses go through the edge cache (ADR 0021).
+export default createApp({ edgeCache: { cache: () => caches.default } });

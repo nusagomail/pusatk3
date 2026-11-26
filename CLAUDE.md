@@ -28,7 +28,7 @@ Jika instruksi di sini bertentangan dengan `docs/`, ikuti `docs/` dan laporkan k
 ## Stack
 
 - Monorepo pnpm + Turborepo: `apps/web` (Astro), `apps/api` (Hono di Cloudflare Workers), `packages/shared` (tipe + skema Zod), nanti `apps/mobile` (Expo).
-- Database: Cloudflare D1 via Drizzle ORM. Pencarian: Meilisearch/Typesense. File: R2. Background: Queues + Cron Triggers.
+- Database: Cloudflare D1 via Drizzle ORM. Pencarian: D1 dulu (ADR 0020), Meilisearch/Typesense nanti bila perlu. Cache edge: Cache API + versi data (ADR 0021). File: R2. Background: Queues + Cron Triggers.
 - Auth: tanpa password (Google + email OTP), 2FA wajib untuk penyedia dan admin.
 - Deploy: Cloudflare. `staging` otomatis dari setiap commit di `main` lewat Cloudflare Workers Builds (ADR 0015); `production` manual lewat GitHub Actions dengan persetujuan pemilik (ADR 0012). Akun Cloudflare dipakai bersama proyek lain (ADR 0016): jangan sentuh resource selain `pusatk3-*`.
 

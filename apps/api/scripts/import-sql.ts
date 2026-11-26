@@ -13,6 +13,7 @@ import {
   directoryStatements,
   parseCategoriesCsv,
   parseDirectoryCsv,
+  dataVersionStatement,
   referenceStatements,
   SAMPLE_CITIES,
   toSqlScript,
@@ -55,6 +56,8 @@ if (problems.length > 0) {
 const statements = [
   ...referenceStatements({ ...categories, cities: SAMPLE_CITIES }),
   ...directoryStatements(data, { isSample: values.sample }),
+  // Last: announces the new data to the edge caches (ADR 0021).
+  dataVersionStatement(),
 ];
 const out = resolve(values.out);
 mkdirSync(dirname(out), { recursive: true });

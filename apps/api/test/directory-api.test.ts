@@ -245,6 +245,25 @@ describe('GET /api/v1/search (public)', () => {
   });
 });
 
+describe('detail and profile take no query parameters (ADR 0021)', () => {
+  it.each([
+    '/providers/contoh-mitra-k3-jakarta?x=1',
+    '/providers/contoh-mitra-k3-jakarta?__cache=a',
+  ])('%s → 422', async (path) => {
+    await expectApiError(await api(path), 422, 'VALIDATION_ERROR');
+  });
+
+  it('rejects a query on a schedule detail too', async () => {
+    const [first] = (await search('?limit=1')).items;
+    await expectApiError(
+      await api(`/schedules/${first?.id ?? ''}?utm_source=x`),
+      422,
+      'VALIDATION_ERROR',
+    );
+    expect((await api(`/schedules/${first?.id ?? ''}`)).status).toBe(200);
+  });
+});
+
 describe('GET /api/v1/schedules/:id (public)', () => {
   const idOf = async (titleLike: string) =>
     (

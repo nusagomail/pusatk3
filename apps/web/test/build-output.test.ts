@@ -122,6 +122,21 @@ describe('production build', () => {
     for (const file of css) expect(readFileSync(file, 'utf8')).not.toMatch(/url\(\s*["']?data:/);
   });
 
+  it('preloads the body font file that the CSS uses (no layout shift when it arrives, #29)', () => {
+    const html = readFileSync(client('404.html'), 'utf8');
+    const preload =
+      /<link rel="preload" href="(\/_astro\/plus-jakarta-sans-latin-wght-normal\.[^"]+\.woff2)" as="font" type="font\/woff2" crossorigin="anonymous"/.exec(
+        html,
+      );
+    expect(preload?.[1]).toBeTruthy();
+    expect(existsSync(client(preload?.[1] ?? 'missing'))).toBe(true);
+    const css = files(client('_astro'))
+      .filter((file) => file.endsWith('.css'))
+      .map((file) => readFileSync(file, 'utf8'))
+      .join();
+    expect(css).toContain(preload?.[1]);
+  });
+
   it('has a static 404 page that links home and is not indexed', () => {
     const html = readFileSync(client('404.html'), 'utf8');
     expect(html).toMatch(/href="\/"/);

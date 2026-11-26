@@ -60,8 +60,8 @@ Layanan pihak ketiga: Meilisearch/Typesense (pencarian; belum dipakai, Fase 1 me
 ## Alur cache halaman publik
 
 1. Request ke halaman publik → cek cache CDN.
-2. Miss → halaman prerender disajikan dari aset statis; halaman SSR dirender dengan data dari API dan **disimpan lewat Cache API/Cache Rules** (header `s-maxage` + `stale-while-revalidate` saja tidak membuat respons Worker masuk cache). Rincian: ADR 0010.
-3. Penyedia mengubah jadwal/profil → API memasukkan tugas ke Queue → purge URL terkait (profil, detail jadwal, halaman kota × kategori).
+2. Miss → halaman prerender disajikan dari aset statis; halaman SSR dirender dengan data dari API dan **disimpan lewat Cache API** dengan kunci URL + versi data + versi aplikasi (header `s-maxage` + `stale-while-revalidate` saja tidak membuat respons Worker masuk cache). API publik melakukan hal yang sama. Rincian: ADR 0010, ADR 0021.
+3. Data berubah (impor; nanti penyedia mengubah jadwal/profil) → versi data baru di `app_meta` → semua salinan lama tidak terpakai lagi (dalam ±10 detik), tanpa API purge. Deploy baru juga memakai kunci baru.
 
 ## Lingkungan
 

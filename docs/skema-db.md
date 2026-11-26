@@ -27,6 +27,7 @@ Sumber kebenaran skema. Setiap perubahan skema di kode wajib memperbarui file in
 
 | Tabel | Kolom utama | Catatan |
 | --- | --- | --- |
+| `app_meta` **[dibuat]** | key (PK), value, updated_at | Status aplikasi kunci/nilai. `data_version` = versi data publik, ditulis ulang setiap impor/seed; kunci cache edge memakainya (ADR 0021) |
 | `cities` **[dibuat]** | slug (unik), name, province | Seed lokal: 8 kota contoh (`SAMPLE_CITIES`), bukan daftar kurasi |
 | `course_fields` **[dibuat]** | slug (unik), name, sort_order | Bidang (14), lihat `docs/kategori-k3.md`; `sort_order` = urutan di CSV |
 | `course_categories` **[dibuat]** | field_id → course_fields, slug (unik), name, issuers (kemnaker/bnsp/pupr/esdm/intl, array JSON), document_type, typical_validity_years (nullable), regulation_ref, synonyms (array JSON, bawaan `[]`) | Seed dari `docs/data/kategori-k3.csv` (`pnpm db:seed:local`, upsert per slug); sinonim dari kolom `sinonim` CSV, dipakai `GET /search` (ADR 0020) |

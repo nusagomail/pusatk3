@@ -6,3 +6,4 @@ export * from './schemas/categories';
 export * from './schemas/whatsapp';
 export * from './schemas/directory';
 export * from './schemas/directory-public';
+export * from './schemas/meta';

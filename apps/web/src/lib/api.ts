@@ -7,6 +7,10 @@ import { apiGetWith, type ApiResult, type ApiRuntime, type Schema } from './api-
 
 export type { ApiResult };
 
-export function apiGet<T>(path: string, schema: Schema<T>): Promise<ApiResult<T>> {
-  return apiGetWith(env as unknown as ApiRuntime, path, schema);
+export function apiGet<T>(
+  path: string,
+  schema: Schema<T>,
+  { timeoutMs }: { timeoutMs?: number } = {},
+): Promise<ApiResult<T>> {
+  return apiGetWith(env as unknown as ApiRuntime, path, schema, fetch, timeoutMs);
 }

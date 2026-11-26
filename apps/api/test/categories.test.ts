@@ -75,7 +75,8 @@ describe('GET /api/v1/categories (public)', () => {
 describe('GET /api/v1/categories edge cases', () => {
   it('does not cache an empty list at the edge', async () => {
     await env.DB.prepare('DELETE FROM course_categories').run();
-    const res = await SELF.fetch(url);
+    // The app without the edge cache (ADR 0021): this checks the endpoint's own policy.
+    const res = await call(createApp(), '/api/v1/categories');
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ items: [] });
     expect(res.headers.get('cache-control')).toBe('no-store');

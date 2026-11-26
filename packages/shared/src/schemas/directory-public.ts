@@ -152,6 +152,8 @@ export const PROVIDER_SCHEDULES_LIMIT = 50;
 export const scheduleParamsSchema = z.strictObject({ id: z.string().regex(/^[0-9A-Z]{26}$/) });
 export const providerParamsSchema = z.strictObject({ slug: slugSchema });
 export const citiesQuerySchema = z.strictObject({});
+/** Detail and profile take no query parameters (also keeps cache keys canonical, ADR 0021). */
+export const noQuerySchema = z.strictObject({});
 
 export const citiesResponseSchema = z.object({
   items: z.array(cityRefSchema.extend({ province: z.string().min(1) })),
