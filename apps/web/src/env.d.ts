@@ -12,6 +12,7 @@ interface ImportMeta {
 /** Cloudflare runtime bindings (wrangler.jsonc). Only what the web app uses is typed here. */
 declare module 'cloudflare:workers' {
   export const env: Record<string, unknown>;
+  export function waitUntil(promise: Promise<unknown>): void;
 }
 
 /** Unique per build (astro.config.ts `vite.define`); part of the page cache keys (ADR 0021). */

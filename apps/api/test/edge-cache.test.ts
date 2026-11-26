@@ -16,17 +16,25 @@ import cabang from '../../../docs/data/contoh/cabang.csv?raw';
 import jadwal from '../../../docs/data/contoh/jadwal.csv?raw';
 import legalitas from '../../../docs/data/contoh/legalitas.csv?raw';
 import penyedia from '../../../docs/data/contoh/penyedia.csv?raw';
-import { call, expectApiError } from './helpers';
+import { call as callWith, expectApiError } from './helpers';
 
 // Edge cache for public GET responses (ADR 0021), with a private Cache API cache per test.
 // Raw SQL here only prepares the database state under test.
 const TODAY = Date.UTC(2026, 11, 1, 5, 0);
 const run = (query: string) => env.DB.prepare(query).run();
 const bumpVersion = (version: string) => run(dataVersionStatement(version));
+/** A deployed version: the cache is off for the local `dev` version. */
+const DEPLOYED = { ...env, APP_VERSION: 'sha-test' };
+const call = (
+  app: ReturnType<typeof createApp>,
+  path: string,
+  init?: RequestInit,
+  bindings: Cloudflare.Env = DEPLOYED,
+) => callWith(app, path, init, bindings);
 
 let cache: Cache;
 let clock: number;
-const appWith = (versionTtlMs = 0) =>
+const appWith = (versionTtlMs?: number) =>
   createApp({ now: () => clock, edgeCache: { cache: () => cache, versionTtlMs } });
 
 beforeEach(async () => {
@@ -73,7 +81,7 @@ describe('edge cache (ADR 0021)', () => {
   it('stores the copy with the edge TTL, keyed on the data and app versions', async () => {
     await call(appWith(), '/api/v1/cities');
     const stored = await cache.match(
-      edgeCacheKey('https://api.test/api/v1/cities', 'v1', env.APP_VERSION),
+      edgeCacheKey('https://api.test/api/v1/cities', 'v1', 'sha-test', '2026-12-01'),
     );
     expect(stored?.headers.get('cache-control')).toBe(`public, max-age=${EDGE_CACHE_TTL_SECONDS}`);
     expect(stored?.headers.get('x-request-id')).toBeNull();
@@ -103,7 +111,22 @@ describe('edge cache (ADR 0021)', () => {
     expect(res.headers.get('x-cache')).toBe('MISS');
   });
 
-  it('reuses a read data version for a short time per isolate', async () => {
+  it('a new day in Jakarta does not reuse copies (finished schedules disappear)', async () => {
+    const app = appWith();
+    await call(app, '/api/v1/cities');
+    clock = Date.UTC(2026, 11, 1, 17, 0); // 00:00 WIB on 2 December
+    const res = await call(app, '/api/v1/cities');
+    expect(res.headers.get('x-cache')).toBe('MISS');
+  });
+
+  it('reads the data version on every request by default (never older than the web, #29)', async () => {
+    const app = appWith(undefined);
+    await call(app, '/api/v1/cities');
+    await bumpVersion('v2');
+    expect((await call(app, '/api/v1/cities')).headers.get('x-cache')).toBe('MISS');
+  });
+
+  it('can reuse a read data version for a short time when asked', async () => {
     const app = appWith(10_000);
     await call(app, '/api/v1/cities');
     await bumpVersion('v2');
@@ -155,15 +178,37 @@ describe('edge cache (ADR 0021)', () => {
     );
   });
 
-  it('answers the same for anonymous and credentialed requests (no per-user data)', async () => {
+  it.each([
+    ['a cookie', { Cookie: 'session=abc' }],
+    ['an Authorization header', { Authorization: 'Bearer x' }],
+  ])('never reads or fills the shared cache for a request with %s', async (_name, headers) => {
     const app = appWith();
-    const withCredentials = await call(app, '/api/v1/search?limit=2', {
-      headers: { Cookie: 'session=abc', Authorization: 'Bearer x' },
-    });
-    const anonymous = await call(app, '/api/v1/search?limit=2');
-    expect(anonymous.headers.get('x-cache')).toBe('HIT');
-    expect(await anonymous.text()).toBe(await withCredentials.text());
-    expect(anonymous.headers.get('set-cookie')).toBeNull();
+    await call(app, '/api/v1/search?limit=2'); // anonymous copy stored
+    for (let i = 0; i < 2; i++) {
+      const res = await call(app, '/api/v1/search?limit=2', { headers });
+      expect(res.status).toBe(200);
+      expect(res.headers.get('x-cache')).toBeNull();
+    }
+  });
+
+  it('ignores requests that carry the reserved parameter, even with a warm cache', async () => {
+    const app = appWith();
+    for (const path of ['/api/v1/search?limit=3', '/api/v1/providers/contoh-mitra-k3-jakarta']) {
+      expect((await call(app, path)).headers.get('x-cache')).toBe('MISS');
+      const sep = path.includes('?') ? '&' : '?';
+      const res = await call(app, `${path}${sep}__cache=v1.sha-test.2026-12-01`);
+      expect(res.headers.get('x-cache')).toBeNull();
+      await expectApiError(res, 422, 'VALIDATION_ERROR');
+    }
+  });
+
+  it('is off for the local dev version (wrangler dev, pnpm dev)', async () => {
+    const app = appWith();
+    for (let i = 0; i < 2; i++) {
+      const res = await call(app, '/api/v1/cities', undefined, env);
+      expect(env.APP_VERSION).toBe('dev');
+      expect(res.headers.get('x-cache')).toBeNull();
+    }
   });
 
   it('is off unless enabled (the default createApp)', async () => {
@@ -175,10 +220,15 @@ describe('edge cache (ADR 0021)', () => {
 
 describe('GET /api/v1/meta/data-version (public)', () => {
   it('returns the current version without login, never cached', async () => {
-    const res = await call(createApp(), '/api/v1/meta/data-version');
+    const res = await call(createApp(), '/api/v1/meta/data-version', undefined, env);
     expect(res.status).toBe(200);
     expect(res.headers.get('cache-control')).toBe('no-store');
-    expect(dataVersionResponseSchema.parse(await res.json())).toEqual({ version: 'v1' });
+    expect(dataVersionResponseSchema.parse(await res.json())).toEqual({ version: 'v1.dev' });
+    // An API deploy or rollback changes it too (web page keys follow the API output).
+    const deployed = await call(createApp(), '/api/v1/meta/data-version');
+    expect(dataVersionResponseSchema.parse(await deployed.json())).toEqual({
+      version: 'v1.sha-test',
+    });
   });
 
   it('is "0" before any import and changes with every import', async () => {
@@ -187,7 +237,7 @@ describe('GET /api/v1/meta/data-version (public)', () => {
       dataVersionResponseSchema.parse(
         await (await call(createApp(), '/api/v1/meta/data-version')).json(),
       ).version;
-    expect(await read()).toBe('0');
+    expect(await read()).toBe('0.sha-test');
     await run(dataVersionStatement());
     const first = await read();
     await run(dataVersionStatement());

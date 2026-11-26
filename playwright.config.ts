@@ -5,6 +5,10 @@ import { API_URL, WEB_URL } from './e2e/urls';
 // Both run in workerd like on Cloudflare, with local bindings only. Run with `pnpm test:e2e`,
 // which builds the web app first.
 
+// A fresh API version per run: the edge cache (ADR 0021) is off for the local `dev` version and
+// keys on this one, so copies left by an earlier run (.wrangler/state) are never served.
+const E2E_APP_VERSION = `e2e-${Date.now().toString(36)}`;
+
 // Always start fresh servers: a leftover `pnpm dev` or older build on these ports fails the run
 // loudly instead of being tested by mistake. Wrangler telemetry off (local tests only).
 const server = {
@@ -32,7 +36,7 @@ export default defineConfig({
   // The API starts first, so the web app (which calls it over HTTP) never sees it missing.
   webServer: [
     {
-      command: 'pnpm --filter @pusatk3/api exec wrangler dev --ip 127.0.0.1 --port 8787',
+      command: `pnpm --filter @pusatk3/api exec wrangler dev --ip 127.0.0.1 --port 8787 --var APP_VERSION:${E2E_APP_VERSION}`,
       url: `${API_URL}/api/v1/health`,
       ...server,
     },

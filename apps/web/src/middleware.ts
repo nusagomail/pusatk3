@@ -1,8 +1,11 @@
 import { defineMiddleware } from 'astro:middleware';
+import { waitUntil } from 'cloudflare:workers';
 import { dataVersionResponseSchema } from '@pusatk3/shared';
 import { apiGet } from './lib/api';
 import { isProductionDeploy } from './lib/deploy';
+import { jakartaToday } from './lib/format';
 import { memoizedVersion, withPageCache } from './lib/page-cache';
+import { SEARCH_PARAM_KEYS } from './lib/search-params';
 
 // Headers for pages rendered on demand (SSR). `public/_headers` only applies to static assets,
 // so SSR responses get the same security headers here (ADR 0010), plus noindex outside
@@ -22,21 +25,40 @@ export const SECURITY_HEADERS: Record<string, string> = {
 export const SSR_PAGE_CACHE =
   'public, max-age=0, must-revalidate, s-maxage=300, stale-while-revalidate=600';
 
-/** Data version from the API for the page cache keys (ADR 0021); null when unavailable. */
+/** Data + API version for the page cache keys (ADR 0021); null when unavailable. */
 const dataVersion = memoizedVersion(async () => {
-  const result = await apiGet('/meta/data-version', dataVersionResponseSchema);
+  const result = await apiGet('/meta/data-version', dataVersionResponseSchema, {
+    timeoutMs: VERSION_TIMEOUT_MS,
+  });
   return result.ok ? result.data.version : null;
 });
+/** The version is a tiny lookup: a slow answer means the API is in trouble; render without cache. */
+const VERSION_TIMEOUT_MS = 1000;
 
 /** Changes with every build, so a deploy never serves pages that point at old assets. */
 const BUILD_ID: string = __PUSATK3_BUILD_ID__;
 
+/** Query parameters each SSR page reads; any other parameter never splits the page cache. */
+const keptParams = (pathname: string) => (pathname === '/cari' ? SEARCH_PARAM_KEYS : []);
+
 export const onRequest = defineMiddleware(async (context, next) => {
   if (context.isPrerendered) return next();
-  // Deployed: Cache API (edge); no-op on *.workers.dev, absent in unit tests.
-  const cache = (globalThis as { caches?: { default?: Cache } }).caches?.default;
-  return withPageCache(context.request, { cache, dataVersion, buildId: BUILD_ID }, async () =>
-    withSsrHeaders(await next()),
+  // Production builds only (never `astro dev`); deployed: Cache API, a no-op on *.workers.dev.
+  const cache = import.meta.env.PROD
+    ? (globalThis as { caches?: { default?: Cache } }).caches?.default
+    : undefined;
+  return withPageCache(
+    context.request,
+    {
+      cache,
+      dataVersion,
+      buildId: BUILD_ID,
+      today: () => jakartaToday(),
+      keptParams,
+      setsCookies: () => !context.cookies.headers().next().done,
+      defer: waitUntil,
+    },
+    async () => withSsrHeaders(await next()),
   );
 });
 

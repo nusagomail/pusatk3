@@ -1,13 +1,13 @@
 import { z } from 'zod';
 
-/**
- * GET /api/v1/meta/data-version: opaque version of the public directory data (ADR 0021). Caches
- * (API and web) put it in their keys, so a change makes every cached copy stale at once.
- */
-/** No parameters are accepted. */
+/** GET /api/v1/meta/data-version accepts no parameters. */
 export const dataVersionQuerySchema = z.strictObject({});
 
+/**
+ * Opaque version of the public data and of the API deploy (ADR 0021). The web page cache puts it
+ * in its keys, so an import or an API deploy makes every cached page stale at once.
+ */
 export const dataVersionResponseSchema = z.strictObject({
-  version: z.string().min(1).max(64),
+  version: z.string().min(1).max(128),
 });
 export type DataVersionResponse = z.infer<typeof dataVersionResponseSchema>;

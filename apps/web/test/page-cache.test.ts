@@ -4,6 +4,7 @@ import {
   PAGE_CACHE_TTL_SECONDS,
   pageCacheKey,
   withPageCache,
+  type PageCacheDeps,
 } from '../src/lib/page-cache';
 
 // Page cache for SSR pages (ADR 0021), with an in-memory stand-in for the Cache API.
@@ -26,15 +27,19 @@ const page =
 const request = (path = '/cari?q=forklift', init?: RequestInit) =>
   new Request(`https://pusatk3.test${path}`, init);
 
-function setup(version: string | null = 'v1') {
+function setup(version: string | null = 'v1.api1') {
   const cache = new MemoryCache();
   const deps = {
     cache: cache as unknown as Cache,
     dataVersion: vi.fn(async () => version),
     buildId: 'b1',
-  };
+    today: vi.fn(() => '2026-12-01'),
+    keptParams: (pathname: string) => (pathname === '/cari' ? ['q', 'city'] : []),
+    setsCookies: vi.fn(() => false),
+  } satisfies PageCacheDeps;
   return { cache, deps };
 }
+const text = async (res: Promise<Response>) => (await res).text();
 
 describe('withPageCache', () => {
   it('renders and stores a complete public page, then serves it from the cache', async () => {
@@ -54,28 +59,46 @@ describe('withPageCache', () => {
     expect([...second.headers.keys()].join()).not.toMatch(/x-pusatk3/);
   });
 
-  it('stores the copy with the edge TTL under a key with data version and build id', async () => {
+  it('stores the copy with the edge TTL under a key with versions, build id and date', async () => {
     const { cache, deps } = setup();
     await withPageCache(request(), deps, page('x'));
-    const stored = cache.store.get(pageCacheKey(request().url, 'v1', 'b1').url);
+    const key = pageCacheKey(request().url, ['v1.api1', 'b1', '2026-12-01'], ['q', 'city']);
+    expect(key.url).toBe('https://pusatk3.test/cari?q=forklift&__cache=v1.api1.b1.2026-12-01');
+    const stored = cache.store.get(key.url);
     expect(stored?.headers.get('cache-control')).toBe(`public, max-age=${PAGE_CACHE_TTL_SECONDS}`);
     expect(stored?.headers.get('x-cache')).toBeNull();
   });
 
-  it('a new data version or a new build renders again (import or deploy = purge)', async () => {
+  it('a new data/API version, build or day renders again (import, deploy, midnight)', async () => {
     const { cache, deps } = setup();
     await withPageCache(request(), deps, page('old'));
-    deps.dataVersion.mockResolvedValue('v2');
-    expect(await (await withPageCache(request(), deps, page('new'))).text()).toBe('new');
-    const nextBuild = { ...deps, buildId: 'b2' };
-    expect(await (await withPageCache(request(), nextBuild, page('newer'))).text()).toBe('newer');
-    expect(cache.store.size).toBe(3);
+    deps.dataVersion.mockResolvedValue('v2.api1');
+    expect(await text(withPageCache(request(), deps, page('import')))).toBe('import');
+    deps.dataVersion.mockResolvedValue('v2.api2');
+    expect(await text(withPageCache(request(), deps, page('api deploy')))).toBe('api deploy');
+    expect(await text(withPageCache(request(), { ...deps, buildId: 'b2' }, page('web')))).toBe(
+      'web',
+    );
+    deps.today.mockReturnValue('2026-12-02');
+    expect(await text(withPageCache(request(), deps, page('new day')))).toBe('new day');
+    expect(cache.store.size).toBe(5);
   });
 
-  it('keeps different queries apart', async () => {
-    const { deps } = setup();
-    await withPageCache(request('/cari?q=a'), deps, page('a'));
-    expect(await (await withPageCache(request('/cari?q=b'), deps, page('b'))).text()).toBe('b');
+  it('keeps only the parameters a page reads, in a fixed order', async () => {
+    const { cache, deps } = setup();
+    await withPageCache(request('/cari?q=a&city=bekasi'), deps, page('a'));
+    const same = await withPageCache(
+      request('/cari?utm_source=ad&city=bekasi&fbclid=x&q=a'),
+      deps,
+      page('other'),
+    );
+    expect(same.headers.get('x-cache')).toBe('HIT');
+    expect(await text(withPageCache(request('/cari?q=b'), deps, page('b')))).toBe('b');
+    // Pages that read no parameters share one copy whatever the query says.
+    await withPageCache(request('/penyedia/x'), deps, page('profile'));
+    const tagged = await withPageCache(request('/penyedia/x?utm_campaign=y'), deps, page('?'));
+    expect(await tagged.text()).toBe('profile');
+    expect(cache.store.size).toBe(3);
   });
 
   it.each([
@@ -83,7 +106,7 @@ describe('withPageCache', () => {
     ['a 404 page', page('x', PUBLIC, 404)],
     ['a 503 page', page('x', 'no-store', 503)],
     [
-      'a page that sets a cookie',
+      'a page with a Set-Cookie header',
       async () => new Response('x', { headers: { 'Cache-Control': PUBLIC, 'Set-Cookie': 'a=b' } }),
     ],
   ])('never stores %s', async (_name, render) => {
@@ -93,6 +116,37 @@ describe('withPageCache', () => {
     expect(cache.put).not.toHaveBeenCalled();
   });
 
+  it('never stores a page that set cookies through Astro (added after the middleware)', async () => {
+    const { cache, deps } = setup();
+    deps.setsCookies.mockReturnValue(true);
+    await withPageCache(request(), deps, page('x'));
+    expect(cache.put).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['a cookie', { Cookie: 'session=abc' }],
+    ['an Authorization header', { Authorization: 'Bearer x' }],
+  ])('never reads or fills the cache for a request with %s', async (_name, headers) => {
+    const { cache, deps } = setup();
+    await withPageCache(request(), deps, page('anonymous'));
+    const res = await withPageCache(request('/cari?q=forklift', { headers }), deps, page('own'));
+    expect(await res.text()).toBe('own');
+    expect(cache.match).toHaveBeenCalledTimes(1);
+    expect(cache.put).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores requests that carry the reserved parameter, even with a warm cache', async () => {
+    const { cache, deps } = setup();
+    await withPageCache(request(), deps, page('a'));
+    const res = await withPageCache(
+      request('/cari?q=forklift&__cache=v1.api1.b1.2026-12-01'),
+      deps,
+      page('rendered'),
+    );
+    expect(await res.text()).toBe('rendered');
+    expect(cache.put).toHaveBeenCalledTimes(1);
+  });
+
   it('does not cache when the data version is unknown (API down)', async () => {
     const { cache, deps } = setup(null);
     await withPageCache(request(), deps, page('x'));
@@ -100,10 +154,25 @@ describe('withPageCache', () => {
     expect(cache.put).not.toHaveBeenCalled();
   });
 
+  it('writes after answering when it can defer the work (waitUntil)', async () => {
+    const { cache, deps } = setup();
+    const deferred: Promise<unknown>[] = [];
+    const res = await withPageCache(
+      request(),
+      { ...deps, defer: (task) => deferred.push(task) },
+      page('x'),
+    );
+    expect(res.headers.get('x-cache')).toBe('MISS');
+    expect(deferred).toHaveLength(1);
+    await Promise.all(deferred);
+    expect(cache.store.size).toBe(1);
+  });
+
   it('renders normally without a Cache API, for non-GET requests, or when the cache fails', async () => {
     const { deps } = setup();
-    const none = await withPageCache(request(), { ...deps, cache: undefined }, page('a'));
-    expect(await none.text()).toBe('a');
+    expect(await text(withPageCache(request(), { ...deps, cache: undefined }, page('a')))).toBe(
+      'a',
+    );
 
     const { cache, deps: d2 } = setup();
     await withPageCache(request('/cari', { method: 'POST' }), d2, page('b'));
@@ -113,30 +182,35 @@ describe('withPageCache', () => {
       match: vi.fn(async () => {
         throw new Error('cache down');
       }),
-      put: vi.fn(async () => {
-        throw new Error('cache down');
+      put: vi.fn(() => {
+        throw new Error('thrown synchronously');
       }),
     } as unknown as Cache;
-    const res = await withPageCache(request(), { ...deps, cache: broken }, page('c'));
-    expect(await res.text()).toBe('c');
+    expect(await text(withPageCache(request(), { ...deps, cache: broken }, page('c')))).toBe('c');
   });
 });
 
 describe('memoizedVersion', () => {
-  it('reuses a version for the TTL and never remembers failures', async () => {
+  it('reuses a version for the TTL and a failure only briefly', async () => {
     let clock = 0;
     const read = vi
       .fn<() => Promise<string | null>>()
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce('v1')
+      .mockRejectedValueOnce(new Error('down'))
       .mockResolvedValueOnce('v2');
-    const version = memoizedVersion(read, () => clock, 10_000);
+    const version = memoizedVersion(read, () => clock, 10_000, 2_000);
     expect(await version()).toBeNull();
+    clock = 1_999;
+    expect(await version()).toBeNull(); // failure remembered: no second wait
+    clock = 2_000;
     expect(await version()).toBe('v1');
-    clock = 9_999;
+    clock = 11_999;
     expect(await version()).toBe('v1');
-    clock = 10_000;
+    clock = 12_000;
+    expect(await version()).toBeNull(); // a throw counts as a failure
+    clock = 14_000;
     expect(await version()).toBe('v2');
-    expect(read).toHaveBeenCalledTimes(3);
+    expect(read).toHaveBeenCalledTimes(4);
   });
 });
