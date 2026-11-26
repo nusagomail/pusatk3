@@ -1,4 +1,4 @@
-import type { ScheduleSummary } from '@pusatk3/shared';
+import type { LicenseKind, ScheduleSummary } from '@pusatk3/shared';
 
 // Display helpers for directory data (Indonesian UI). Dates are calendar dates "YYYY-MM-DD"
 // without a time zone, so they are formatted from their parts, never through `Date` + local time.
@@ -99,3 +99,19 @@ export const PROVIDER_TYPE_LABELS: Record<ScheduleSummary['provider']['type'], s
   lsp: 'LSP',
   tuk: 'TUK',
 };
+
+export const LICENSE_KIND_LABELS: Record<LicenseKind, string> = {
+  izin_pjk3: 'Izin PJK3',
+  lisensi_lsp: 'Lisensi LSP',
+  tuk: 'Penetapan TUK',
+};
+
+/** Today's calendar date in Asia/Jakarta (UTC+7), "YYYY-MM-DD". */
+export function jakartaToday(now = Date.now()): string {
+  return new Date(now + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+/** A license is shown as expired when its end date lies before today (Asia/Jakarta). */
+export function isExpired(validUntil: string | null, today: string): boolean {
+  return validUntil !== null && validUntil < today;
+}

@@ -1,0 +1,421 @@
+---
+/**
+ * Schedule detail (docs/ui-halaman.md, `Pelatihan.dc.html` / `PelatihanHP.dc.html`). Rendered on
+ * demand from the public API (ADR 0019). PusatK3 never processes registrations or payments.
+ */
+import {
+  normalizeWhatsAppNumber,
+  providerProfileSchema,
+  scheduleDetailSchema,
+  scheduleParamsSchema,
+} from '@pusatk3/shared';
+import Button from '../../components/Button.astro';
+import LicenseList from '../../components/directory/LicenseList.astro';
+import ResultCard from '../../components/directory/ResultCard.astro';
+import JsonLd from '../../components/JsonLd.astro';
+import Pill from '../../components/Pill.astro';
+import VerifiedBadge from '../../components/VerifiedBadge.astro';
+import WhatsAppButton from '../../components/WhatsAppButton.astro';
+import { absoluteUrl } from '../../data/site';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { apiGet } from '../../lib/api';
+import {
+  CERTIFICATE_LABELS,
+  ISSUER_LABELS,
+  MODE_LABELS,
+  PROVIDER_TYPE_LABELS,
+  formatDateRange,
+  formatPrice,
+  jakartaToday,
+} from '../../lib/format';
+import { courseJsonLd, detailPageStatus, scheduleTiming } from '../../lib/schedule-page';
+
+export const prerender = false;
+
+const id = Astro.params.id ?? '';
+const valid = scheduleParamsSchema.safeParse({ id }).success;
+const result = valid ? await apiGet(`/schedules/${id}`, scheduleDetailSchema) : null;
+const schedule = result?.ok ? result.data : null;
+
+const status = detailPageStatus(schedule !== null, result && !result.ok ? result.status : null);
+const unavailable = status === 503;
+if (status !== 200) Astro.response.status = status;
+if (unavailable) Astro.response.headers.set('Retry-After', '60');
+
+const profile = schedule
+  ? await apiGet(`/providers/${encodeURIComponent(schedule.provider.slug)}`, providerProfileSchema)
+  : null;
+const others = profile?.ok ? profile.data.schedules.filter((s) => s.id !== id).slice(0, 3) : [];
+// Without the "other schedules" list the page is incomplete: do not let a cache keep it.
+if (profile && !profile.ok) Astro.response.headers.set('Cache-Control', 'no-store');
+
+const sample = schedule?.provider.isSample ?? false;
+const timing = schedule
+  ? scheduleTiming(schedule.startDate, schedule.endDate, jakartaToday())
+  : 'upcoming';
+/** Only a number that makes a working wa.me link (otherwise the fallback text is shown). */
+const whatsapp = schedule?.provider.contact.whatsapp
+  ? normalizeWhatsAppNumber(schedule.provider.contact.whatsapp)
+  : null;
+const canContact = whatsapp !== null && timing === 'upcoming';
+const waMessage = schedule
+  ? `Halo, saya melihat jadwal "${schedule.title}" (${formatDateRange(schedule.startDate, schedule.endDate)}) di PusatK3. Apakah masih tersedia?`
+  : '';
+const city = schedule ? (schedule.branch ? schedule.branch.city.name : 'Online') : '';
+const jsonLd = schedule ? courseJsonLd(schedule, timing) : null;
+const searchCategory = schedule
+  ? `/cari?category=${encodeURIComponent(schedule.category.slug)}`
+  : '/cari';
+---
+
+{schedule ? (
+  <BaseLayout
+    title={`${schedule.title} | PusatK3`}
+    description={`${schedule.title}, ${formatDateRange(schedule.startDate, schedule.endDate)}, ${city}. Penerbit ${ISSUER_LABELS[schedule.issuer]}. Hubungi penyedia langsung.`}
+    noindex={sample}
+  >
+    <div class="detail">
+      <nav aria-label="Breadcrumb" class="breadcrumb">
+        <a href="/">Beranda</a>
+        <span aria-hidden="true">›</span>
+        <a href="/cari">Cari pelatihan</a>
+        <span aria-hidden="true">›</span>
+        <a href={searchCategory}>{schedule.category.name}</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">{schedule.title}</span>
+      </nav>
+      {jsonLd && <JsonLd data={jsonLd} />}
+      <JsonLd
+        data={{
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Beranda', item: absoluteUrl('/') },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: 'Cari pelatihan',
+              item: absoluteUrl('/cari'),
+            },
+            {
+              '@type': 'ListItem',
+              position: 3,
+              name: schedule.category.name,
+              item: absoluteUrl(searchCategory),
+            },
+            {
+              '@type': 'ListItem',
+              position: 4,
+              name: schedule.title,
+              item: absoluteUrl(`/jadwal/${schedule.id}`),
+            },
+          ],
+        }}
+      />
+
+      <div class="detail__layout">
+        <article class="detail__main">
+          <div class="detail__pills">
+            {sample && <span class="detail__sample">Contoh — data fiktif</span>}
+            <Pill tone="accent">{ISSUER_LABELS[schedule.issuer]}</Pill>
+            <Pill>{MODE_LABELS[schedule.mode]}</Pill>
+          </div>
+          <h1>{schedule.title}</h1>
+          {timing !== 'upcoming' && (
+            <p class="detail__closed" role="status">
+              {timing === 'ended' ? 'Jadwal ini sudah berakhir.' : 'Jadwal ini sudah dimulai.'}{' '}
+              <a href={searchCategory}>Lihat jadwal {schedule.category.name} lainnya</a>
+            </p>
+          )}
+          <p class="detail__provider">
+            <a href={`/penyedia/${encodeURIComponent(schedule.provider.slug)}`}>
+              {schedule.provider.name}
+            </a>
+            <span>· {PROVIDER_TYPE_LABELS[schedule.provider.type]}</span>
+            {schedule.provider.verified && <VerifiedBadge />}
+          </p>
+
+          <dl class="detail__facts">
+            <div>
+              <dt>Tanggal</dt>
+              <dd>{formatDateRange(schedule.startDate, schedule.endDate)}</dd>
+            </div>
+            <div>
+              <dt>Lokasi</dt>
+              <dd>
+                {schedule.branch ? (
+                  <>
+                    {schedule.branch.name}, {schedule.branch.city.name}
+                    <br />
+                    <span class="detail__muted">{schedule.branch.address}</span>
+                  </>
+                ) : (
+                  'Online'
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt>Penerbit sertifikat</dt>
+              <dd>{ISSUER_LABELS[schedule.issuer]}</dd>
+            </div>
+            <div>
+              <dt>Kuota</dt>
+              <dd>{schedule.quota === null ? 'Tanyakan penyedia' : `${schedule.quota} peserta`}</dd>
+            </div>
+            {schedule.level && (
+              <div>
+                <dt>Tingkat</dt>
+                <dd>{schedule.level}</dd>
+              </div>
+            )}
+          </dl>
+
+          <section aria-labelledby="about">
+            <h2 id="about">Tentang pelatihan</h2>
+            <p class="detail__text">
+              {schedule.description ?? 'Penyedia belum menambahkan deskripsi.'}
+            </p>
+          </section>
+          <section aria-labelledby="requirements">
+            <h2 id="requirements">Syarat peserta</h2>
+            <p class="detail__text">
+              {schedule.requirements ?? 'Tanyakan syarat lengkap ke penyedia.'}
+            </p>
+          </section>
+          <section aria-labelledby="outcome">
+            <h2 id="outcome">Yang didapat</h2>
+            <p>
+              {CERTIFICATE_LABELS[schedule.certificateKind]} dari {ISSUER_LABELS[schedule.issuer]}.
+              {schedule.certificateKind === 'training_only' &&
+                ' Sertifikat ini bukan lisensi resmi pemerintah.'}
+            </p>
+          </section>
+          <section aria-labelledby="legal">
+            <h2 id="legal">Legalitas penyedia</h2>
+            <LicenseList
+              licenses={schedule.provider.licenses}
+              verified={schedule.provider.verified}
+            />
+          </section>
+        </article>
+
+        <aside class="detail__contact" id="kontak" aria-labelledby="contact-heading">
+          <h2 id="contact-heading" class="visually-hidden">
+            Kontak penyedia
+          </h2>
+          <p class="detail__price">{formatPrice(schedule.priceIdr)}</p>
+          {canContact ? (
+            <WhatsAppButton phone={whatsapp as string} message={waMessage} block>
+              Chat via WhatsApp
+            </WhatsAppButton>
+          ) : timing !== 'upcoming' ? (
+            <Button href={searchCategory} block>
+              Lihat jadwal lain
+            </Button>
+          ) : (
+            <p class="detail__muted">
+              {sample
+                ? 'Kontak tidak tersedia: ini data contoh fiktif.'
+                : 'Penyedia belum mencantumkan WhatsApp. Lihat profil penyedia untuk kontak lain.'}
+            </p>
+          )}
+          <Button
+            variant="secondary"
+            href={`/penyedia/${encodeURIComponent(schedule.provider.slug)}`}
+            block
+          >
+            Lihat profil penyedia
+          </Button>
+          <p class="detail__muted detail__disclaimer">
+            PusatK3 tidak memproses pendaftaran maupun pembayaran. Daftar dan bayar langsung ke
+            penyedia.
+          </p>
+        </aside>
+      </div>
+
+      {others.length > 0 && (
+        <section class="detail__others" aria-labelledby="others">
+          <h2 id="others">Jadwal lain dari {schedule.provider.name}</h2>
+          <ul class="detail__others-list">
+            {others.map((other) => (
+              <li>
+                <ResultCard schedule={other} hideProvider />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <nav class="detail__bar" aria-label="Aksi cepat">
+        <a class="detail__bar-ask" href="#kontak">
+          Tanya
+        </a>
+        {canContact && (
+          <WhatsAppButton phone={whatsapp as string} message={waMessage}>
+            Chat WhatsApp
+          </WhatsAppButton>
+        )}
+      </nav>
+    </div>
+  </BaseLayout>
+) : (
+  <BaseLayout
+    title={
+      unavailable ? 'Jadwal sedang tidak bisa dimuat — PusatK3' : 'Jadwal tidak ditemukan — PusatK3'
+    }
+    description="Jadwal pelatihan ini tidak ditemukan atau sudah tidak tersedia."
+    noindex
+  >
+    <div class="detail">
+      {unavailable ? (
+        <>
+          <h1>Jadwal sedang tidak bisa dimuat</h1>
+          <p role="alert">Coba beberapa saat lagi.</p>
+        </>
+      ) : (
+        <>
+          <h1>Jadwal tidak ditemukan</h1>
+          <p>Jadwal ini tidak ada atau sudah tidak tersedia.</p>
+        </>
+      )}
+      <Button href="/cari">Cari pelatihan lain</Button>
+    </div>
+  </BaseLayout>
+)}
+
+<style>
+  .detail {
+    max-width: var(--content-width);
+    margin: 0 auto;
+    padding: 1.5rem 1rem 3rem;
+  }
+  /* Room under the whole page (footer included) for the fixed bar on phones. */
+  @media (max-width: 59.99rem) {
+    :global(body) {
+      padding-bottom: calc(var(--touch-target) + 1.75rem + env(safe-area-inset-bottom));
+    }
+  }
+  .detail__closed {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-card);
+    font-weight: var(--font-weight-strong);
+  }
+  .breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    color: var(--color-ink-muted);
+    font-size: 0.9375rem;
+  }
+  .breadcrumb a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-target);
+  }
+  .detail__layout {
+    display: grid;
+    gap: 1.5rem;
+  }
+  @media (min-width: 60rem) {
+    .detail__layout {
+      grid-template-columns: 1fr 20rem;
+      align-items: start;
+    }
+    .detail__contact {
+      position: sticky;
+      top: 1rem;
+    }
+  }
+  .detail__pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+  .detail__sample {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-hero);
+    color: var(--color-on-hero);
+    box-shadow: inset 0 0 0 1px var(--color-border-strong);
+    font-size: var(--font-size-label);
+    font-weight: var(--font-weight-strong);
+  }
+  .detail__provider {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem;
+  }
+  .detail__facts {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    margin: 1rem 0;
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+  }
+  .detail__facts dt {
+    color: var(--color-ink-muted);
+    font-size: 0.875rem;
+  }
+  .detail__facts dd {
+    margin: 0;
+    font-weight: var(--font-weight-strong);
+  }
+  .detail__text {
+    white-space: pre-line;
+  }
+  .detail__muted {
+    color: var(--color-ink-muted);
+  }
+  .detail__contact {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+  }
+  .detail__price {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: var(--font-weight-display);
+  }
+  .detail__disclaimer {
+    font-size: 0.875rem;
+  }
+  .detail__others-list {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .detail__bar {
+    position: fixed;
+    inset: auto 0 0 0;
+    display: flex;
+    gap: 0.5rem;
+    z-index: 10;
+    padding: 0.75rem 1rem max(0.75rem, env(safe-area-inset-bottom));
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg);
+  }
+  .detail__bar-ask {
+    display: inline-flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--touch-target);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    font-weight: var(--font-weight-strong);
+  }
+  @media (min-width: 60rem) {
+    .detail__bar {
+      display: none;
+    }
+  }
+</style>
