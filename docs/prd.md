@@ -30,7 +30,7 @@ PusatK3 adalah **direktori independen** dan tempat bertemu. Bukan situs pemerint
 ## Fitur per area
 
 ### Publik
-- Pencarian: jenis pelatihan, kota, online/offline, penerbit (Kemnaker, BNSP/LSP, PUPR/LPJK, ESDM, internasional; lihat `docs/kategori-k3.md`), tanggal, harga. Tahan salah ketik dan paham sinonim (lihat glosarium).
+- Pencarian: jenis pelatihan, kota, online/offline, penerbit (Kemnaker, BNSP/LSP, PUPR/LPJK, ESDM, internasional; lihat `docs/kategori-k3.md`), tanggal, harga. Tahan salah ketik dan paham sinonim (lihat glosarium). Fase 1: sinonim sudah (ADR 0020); tahan salah ketik menunggu mesin pencari eksternal.
 - Halaman: beranda, hasil pencarian, detail jadwal, profil penyedia, halaman SEO kota × jenis pelatihan, e-course, Untuk Penyedia, pusat bantuan, halaman legal.
 - Kontak penyedia: tombol WhatsApp dan form pertanyaan; setiap klik/kiriman dicatat sebagai lead.
 

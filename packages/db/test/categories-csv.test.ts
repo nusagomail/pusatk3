@@ -7,7 +7,8 @@ const csv = readFileSync(
   resolve(import.meta.dirname, '../../../docs/data/kategori-k3.csv'),
   'utf8',
 );
-const HEADER = 'bidang_slug,bidang,slug,nama,penerbit,dokumen,masa_berlaku,catatan,regulasi';
+const HEADER =
+  'bidang_slug,bidang,slug,nama,penerbit,dokumen,masa_berlaku,catatan,regulasi,sinonim';
 const row = (overrides: Partial<Record<string, string>> = {}) => {
   const base = {
     bidang_slug: 'k3-umum',
@@ -19,6 +20,7 @@ const row = (overrides: Partial<Record<string, string>> = {}) => {
     masa_berlaku: '3 th',
     catatan: 'x',
     regulasi: 'UU 1/1970',
+    sinonim: 'ak3u; ahli k3',
     ...overrides,
   };
   return Object.values(base)
@@ -55,7 +57,14 @@ describe('parseCategoriesCsv on docs/data/kategori-k3.csv', () => {
       typicalValidityYears: 3,
       regulationRef:
         'UU 1/1970; Permenaker PER.02/MEN/1992 (Ahli K3); PP 50/2012 (SMK3); Permenaker 13/2025 (P2K3)',
+      synonyms: ['ak3u', 'ak3 umum', 'ahli k3', 'skp ahli k3', 'keselamatan kerja', 'ohs', 'hse'],
     });
+  });
+
+  it('gives every category search synonyms (#26)', () => {
+    for (const c of data.categories) {
+      expect(c.synonyms.length, c.slug).toBeGreaterThan(0);
+    }
   });
 
   it('uses only known issuers and valid validity values', () => {
@@ -132,6 +141,21 @@ describe('parseCategoriesCsv rules', () => {
   it('rejects empty required values and a wrong header', () => {
     expect(() => parse(row({ nama: '' }))).toThrow(/nama/);
     expect(() => parseCategoriesCsv('a,b\n1,2')).toThrow(/header/i);
+  });
+
+  it('reads synonyms separated by ";": trimmed, lower case, without duplicates', () => {
+    expect(parse(row({ sinonim: ' AK3U ;Ahli K3; ak3u ;  ' })).categories[0]?.synonyms).toEqual([
+      'ak3u',
+      'ahli k3',
+    ]);
+  });
+
+  it.each([
+    ['empty synonyms', ''],
+    ['a synonym that is too long', 'x'.repeat(61)],
+    ['too many synonyms', Array.from({ length: 21 }, (_, i) => `s${i}`).join(';')],
+  ])('rejects %s', (_name, sinonim) => {
+    expect(() => parse(row({ sinonim }))).toThrow(/sinonim/);
   });
 
   it('rejects an unterminated quote', () => {

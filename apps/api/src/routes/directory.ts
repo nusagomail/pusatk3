@@ -21,7 +21,7 @@ import {
   type ScheduleSummary,
   type SearchQuery,
 } from '@pusatk3/shared';
-import { and, asc, eq, gte, lt, lte, ne, sql, type SQL } from 'drizzle-orm';
+import { and, asc, eq, gte, lt, lte, ne, sql, type AnyColumn, type SQL } from 'drizzle-orm';
 import { Hono } from 'hono';
 import type { AppEnv } from '../env';
 import { PUBLIC_DIRECTORY_CACHE, PUBLIC_REFERENCE_CACHE } from '../lib/cache';
@@ -45,9 +45,115 @@ function nextMonthStart(month: string): string {
   return m === 12 ? `${year + 1}-01-01` : `${year}-${String(m + 1).padStart(2, '0')}-01`;
 }
 
-/** LIKE pattern for free text, with %, _ and \ escaped (used with ESCAPE '\'). */
-function containsPattern(text: string): string {
-  return `%${text.toLowerCase().replace(/[\\%_]/g, (ch) => `\\${ch}`)}%`;
+/** At most this many words of free text are used (more only slow the query down). */
+const MAX_SEARCH_TOKENS = 6;
+
+/**
+ * Words that say "a course" rather than which course. They are dropped when other words remain,
+ * so "pelatihan forklift" finds forklift schedules even when the title says "Operator Forklift".
+ */
+const FILLER_WORDS = new Set([
+  'pelatihan',
+  'training',
+  'kursus',
+  'diklat',
+  'sertifikasi',
+  'sertifikat',
+  'pembinaan',
+  'uji',
+  'kompetensi',
+  'kelas',
+  'k3',
+  'di',
+  'dan',
+  'untuk',
+  'yang',
+  'jadwal',
+]);
+
+/**
+ * Free text → words to match (#26): lower case, split on anything that is not a letter or digit,
+ * without duplicates and filler words. Words hold only letters and digits, so they never contain
+ * LIKE wildcards.
+ */
+export function searchTokens(text: string): string[] {
+  const words = [
+    ...new Set(
+      text
+        .toLowerCase()
+        .split(/[^\p{L}\p{N}]+/u)
+        .filter((w) => w !== ''),
+    ),
+  ];
+  const meaningful = words.filter((w) => !FILLER_WORDS.has(w));
+  return (meaningful.length > 0 ? meaningful : words).slice(0, MAX_SEARCH_TOKENS);
+}
+
+/**
+ * Characters turned into spaces in the searched text, so words can be matched from their start.
+ * They are written into the SQL text as constants (like the CHECK constraints in
+ * packages/db/src/schema/directory.ts), not bound: D1 allows only 100 bound parameters per query
+ * and the expression is repeated for every column and word. Never put user input here.
+ */
+const SEARCH_PUNCTUATION: readonly string[] = Object.freeze([
+  ...'()[]{}"\',;/.-&:+!?_*#|@=<>\\',
+  '–', // en dash
+  '—', // em dash
+  '‘',
+  '’',
+  '“',
+  '”',
+  '·',
+  '•',
+  ' ', // no-break space
+  '\t',
+  '\n',
+  '\r',
+]);
+for (const ch of SEARCH_PUNCTUATION) {
+  if ([...ch].length !== 1)
+    throw new Error(`SEARCH_PUNCTUATION entry "${ch}" is not one character`);
+}
+
+/** Text in lower case (ASCII, as SQLite's lower()) with punctuation as spaces; NULL → ''. */
+function searchable(column: SQL | AnyColumn): SQL {
+  let expr: SQL = sql`lower(coalesce(${column}, ''))`;
+  for (const ch of SEARCH_PUNCTUATION) {
+    expr = sql`replace(${expr}, ${sql.raw(`'${ch.replaceAll("'", "''")}'`)}, ' ')`;
+  }
+  return expr;
+}
+
+/** Search words for the issuer and the mode, so "forklift kemnaker" or "ak3u online" match. */
+const issuerWords = sql`CASE ${schedules.issuer} WHEN 'kemnaker' THEN 'kemnaker kemenaker' WHEN 'bnsp' THEN 'bnsp lsp' WHEN 'pupr' THEN 'pupr lpjk' WHEN 'esdm' THEN 'esdm' ELSE 'internasional international' END`;
+const modeWords = sql`CASE ${schedules.mode} WHEN 'online' THEN 'online daring' ELSE 'offline luring tatap muka' END`;
+
+/**
+ * Every word must start a word somewhere in: schedule title, category name or synonyms, field
+ * name, provider name, city name, issuer, mode. Words of one or two characters ("a" in "kelas a",
+ * "ii") must be whole words. Text made only of symbols matches nothing.
+ */
+function textFilter(text: string): SQL {
+  const tokens = searchTokens(text);
+  if (tokens.length === 0) return sql`0`;
+  const haystack = sql.join(
+    [
+      sql`' '`,
+      searchable(schedules.title),
+      searchable(courseCategories.name),
+      searchable(courseCategories.synonyms),
+      searchable(courseFields.name),
+      searchable(providers.name),
+      searchable(cities.name),
+      issuerWords,
+      modeWords,
+      sql`' '`,
+    ],
+    sql` || ' ' || `,
+  );
+  return and(
+    ...tokens.map((t) => sql`(${haystack}) LIKE ${t.length <= 2 ? `% ${t} %` : `% ${t}%`}`),
+  ) as SQL;
 }
 
 const summaryColumns = {
@@ -119,12 +225,6 @@ const visible = (today: string) =>
 
 function searchFilters(q: SearchQuery): (SQL | undefined)[] {
   const filters: (SQL | undefined)[] = [];
-  if (q.q) {
-    const p = containsPattern(q.q);
-    filters.push(
-      sql`(lower(${schedules.title}) LIKE ${p} ESCAPE '\\' OR lower(${courseCategories.name}) LIKE ${p} ESCAPE '\\' OR lower(${courseCategories.synonyms}) LIKE ${p} ESCAPE '\\' OR lower(${providers.name}) LIKE ${p} ESCAPE '\\')`,
-    );
-  }
   if (q.field) filters.push(eq(courseFields.slug, q.field));
   if (q.category) filters.push(eq(courseCategories.slug, q.category));
   if (q.city) filters.push(eq(cities.slug, q.city));
@@ -137,6 +237,8 @@ function searchFilters(q: SearchQuery): (SQL | undefined)[] {
   if (q.priceMin !== undefined) filters.push(gte(schedules.priceIdr, q.priceMin));
   if (q.priceMax !== undefined) filters.push(lte(schedules.priceIdr, q.priceMax));
   if (q.verified) filters.push(eq(providers.verificationStatus, 'verified'));
+  // Last: the cheap filters above narrow the rows first.
+  if (q.q) filters.push(textFilter(q.q));
   return filters;
 }
 
