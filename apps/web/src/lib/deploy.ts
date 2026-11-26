@@ -14,11 +14,24 @@ export function robotsTxt(production: boolean): string {
     : 'User-agent: *\nDisallow: /\n';
 }
 
-const NOINDEX_RULE = '/*\n  X-Robots-Tag: noindex, nofollow\n';
+const NOINDEX_LINE = '  X-Robots-Tag: noindex, nofollow\n';
 
-/** Appends a noindex rule for every path to a Cloudflare `_headers` file (idempotent). */
+/**
+ * Adds `X-Robots-Tag: noindex, nofollow` for every path to a Cloudflare `_headers` file
+ * (idempotent). The line goes INTO the existing `/*` block: Cloudflare does not merge two `/*`
+ * blocks, so a second one would drop the security headers of the first.
+ */
 export function withNoindexHeaders(headers: string): string {
-  // Exact rule check: a noindex rule for one path must not suppress the site-wide one.
-  if (headers.includes(NOINDEX_RULE)) return headers;
-  return `${headers.endsWith('\n') ? headers : `${headers}\n`}\n${NOINDEX_RULE}`;
+  const lines = headers.split('\n');
+  const start = lines.findIndex((line) => line === '/*');
+  if (start === -1) {
+    return `${headers.endsWith('\n') ? headers : `${headers}\n`}\n/*\n${NOINDEX_LINE}`;
+  }
+  let end = start + 1;
+  while (end < lines.length && /^\s+\S/.test(lines[end] ?? '')) end++;
+  if (lines.slice(start + 1, end).some((line) => line.trim() === NOINDEX_LINE.trim())) {
+    return headers;
+  }
+  lines.splice(end, 0, NOINDEX_LINE.trimEnd());
+  return lines.join('\n');
 }

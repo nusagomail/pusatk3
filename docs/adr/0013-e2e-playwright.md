@@ -4,7 +4,7 @@ Status: diterima · 25 November 2026 · issue #9. Desain: `docs/superpowers/spec
 
 ## Keputusan
 - **Uji hasil build asli secara lokal (pilihan pemilik A).** `pnpm test:e2e` mem-build web lewat turbo, lalu Playwright menyalakan dua server:
-  - web hasil build dengan `wrangler dev -c dist/client/wrangler.json` di `127.0.0.1:4322`. Ini workerd yang sama dengan Cloudflare: `_headers`, CSP, dan halaman 404 ikut teruji.
+  - web hasil build dengan `wrangler dev -c dist/server/wrangler.json` (sejak #24 ada halaman SSR; sebelumnya `dist/client/`) di `127.0.0.1:4322`. Ini workerd yang sama dengan Cloudflare: `_headers`, CSP, dan halaman 404 ikut teruji.
   - API dengan `wrangler dev` di `127.0.0.1:8787`.
 
   Hanya binding lokal yang dipakai, tanpa token dan tanpa resource remote. Kami tidak memakai `astro dev`, karena hasilnya berbeda dengan yang di-deploy. Situs staging juga tidak diuji di sini (staging di-deploy Workers Builds, ADR 0015).

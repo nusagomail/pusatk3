@@ -10,7 +10,12 @@ import { API_URL, WEB_URL } from './e2e/urls';
 const server = {
   reuseExistingServer: false,
   timeout: 60_000,
-  env: { WRANGLER_SEND_METRICS: 'false' },
+  env: {
+    WRANGLER_SEND_METRICS: 'false',
+    // The web dev server calls the local API over HTTP (API_ORIGIN); never through a proxy.
+    NO_PROXY: '127.0.0.1,localhost',
+    no_proxy: '127.0.0.1,localhost',
+  },
 };
 
 export default defineConfig({
@@ -24,17 +29,17 @@ export default defineConfig({
     trace: 'off',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  // The API starts first, so the web app (which calls it over HTTP) never sees it missing.
   webServer: [
-    {
-      // Port 4322, so it never collides with `astro dev` on 4321.
-      command:
-        'pnpm --filter @pusatk3/web exec wrangler dev -c dist/client/wrangler.json --ip 127.0.0.1 --port 4322',
-      url: WEB_URL,
-      ...server,
-    },
     {
       command: 'pnpm --filter @pusatk3/api exec wrangler dev --ip 127.0.0.1 --port 8787',
       url: `${API_URL}/api/v1/health`,
+      ...server,
+    },
+    {
+      // Port 4322, so it never collides with `astro dev` on 4321. Waits until the API answers.
+      command: `node e2e/wait-for.mjs ${API_URL}/api/v1/health && pnpm --filter @pusatk3/web exec wrangler dev -c dist/server/wrangler.json --ip 127.0.0.1 --port 4322`,
+      url: WEB_URL,
       ...server,
     },
   ],

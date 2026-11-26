@@ -13,7 +13,7 @@
     "format": "prettier --write .",
     "typecheck": "tsc -p tsconfig.json && turbo run typecheck",
     "test": "vitest run",
-    "test:e2e": "turbo run build --filter=@pusatk3/web && playwright test",
+    "test:e2e": "pnpm db:migrate:local && pnpm db:import:local && turbo run build --filter=@pusatk3/web && playwright test",
     "db:generate": "pnpm --filter @pusatk3/db db:generate",
     "db:migrate:local": "pnpm --filter @pusatk3/api db:migrate:local",
     "db:seed:local": "pnpm --filter @pusatk3/api db:seed:local",

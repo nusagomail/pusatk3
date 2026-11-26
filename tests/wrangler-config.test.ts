@@ -22,7 +22,8 @@ interface Effective {
   vars: Record<string, unknown>;
   d1_databases: D1[];
   routes?: { pattern: string; zone_name?: string }[];
-  assets?: { not_found_handling?: string };
+  assets?: { not_found_handling?: string; run_worker_first?: string[] | boolean };
+  services?: { binding: string; service: string }[];
 }
 
 type App = 'api' | 'web';
@@ -132,6 +133,23 @@ describe('apps/web effective config', () => {
   it('every environment serves the static 404 page', () => {
     for (const env of [read('web'), read('web', 'staging'), read('web', 'production')]) {
       expect(env.assets?.not_found_handling).toBe('404-page');
+      // SSR pages must run the Worker; otherwise browser navigations get 404.html (#24).
+      expect(env.assets?.run_worker_first).toEqual(['/cari', '/jadwal/*', '/penyedia/*']);
     }
+  });
+
+  it('reads the API locally over HTTP and in staging through the staging service binding', () => {
+    const local = read('web');
+    const staging = read('web', 'staging');
+    expect(local.vars.API_ORIGIN).toBe('http://127.0.0.1:8787');
+    expect(local.services ?? []).toEqual([]);
+    expect(staging.services).toEqual([{ binding: 'API', service: 'pusatk3-api-staging' }]);
+    expect(staging.vars.API_ORIGIN).toBeUndefined();
+  });
+
+  it('production never points at a local API; its binding waits for the owner (ADR 0019)', () => {
+    const production = read('web', 'production');
+    expect(production.vars.API_ORIGIN).toBeUndefined();
+    expect((production.services ?? []).map((s) => s.service)).not.toContain('pusatk3-api-staging');
   });
 });

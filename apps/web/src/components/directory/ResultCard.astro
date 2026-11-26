@@ -1,0 +1,140 @@
+---
+/**
+ * One schedule in search results or a provider profile. The badge comes only from the
+ * verification status (rule 5); sample data is always labelled "Contoh".
+ */
+import type { ScheduleSummary } from '@pusatk3/shared';
+import {
+  CERTIFICATE_LABELS,
+  ISSUER_LABELS,
+  MODE_LABELS,
+  dateBlock,
+  formatDateRange,
+  formatPrice,
+} from '../../lib/format';
+import Pill from '../Pill.astro';
+import VerifiedBadge from '../VerifiedBadge.astro';
+
+interface Props {
+  schedule: ScheduleSummary;
+  /** Hide the provider line (already shown on a provider profile). */
+  hideProvider?: boolean;
+}
+
+const { schedule, hideProvider = false } = Astro.props;
+const block = dateBlock(schedule.startDate, schedule.endDate);
+const place = schedule.city?.name ?? 'Online';
+const sample = schedule.provider.isSample;
+---
+
+<article class="result-card">
+  <div class="result-card__date" aria-hidden="true">
+    <span class="result-card__month">{block.month}</span>
+    <span class="result-card__days">{block.days}</span>
+  </div>
+  <div class="result-card__body">
+    <div class="result-card__pills">
+      {sample && (
+        <span class="result-card__sample" aria-hidden="true">
+          Contoh
+        </span>
+      )}
+      <Pill tone="accent">{ISSUER_LABELS[schedule.issuer]}</Pill>
+      <Pill>{MODE_LABELS[schedule.mode]}</Pill>
+      {schedule.certificateKind === 'training_only' && (
+        <Pill>{CERTIFICATE_LABELS.training_only}</Pill>
+      )}
+    </div>
+    <h3 class="result-card__title">
+      <a href={`/jadwal/${encodeURIComponent(schedule.id)}`}>
+        {sample && <span class="visually-hidden">Contoh: </span>}
+        {schedule.title}
+      </a>
+    </h3>
+    <p class="result-card__meta">
+      <span>{formatDateRange(schedule.startDate, schedule.endDate)}</span>
+      <span aria-hidden="true"> · </span>
+      <span>{place}</span>
+    </p>
+    {!hideProvider && (
+      <p class="result-card__provider">
+        <a href={`/penyedia/${encodeURIComponent(schedule.provider.slug)}`}>
+          {schedule.provider.name}
+        </a>
+        {schedule.provider.verified && <VerifiedBadge compact />}
+      </p>
+    )}
+    <p class="result-card__price">{formatPrice(schedule.priceIdr)}</p>
+  </div>
+</article>
+
+<style>
+  .result-card {
+    display: flex;
+    gap: 0.875rem;
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    background: var(--color-bg);
+  }
+  .result-card__date {
+    display: grid;
+    place-content: center;
+    flex: 0 0 4rem;
+    height: 4rem;
+    border-radius: 12px;
+    background: var(--color-accent-soft);
+    color: var(--color-accent-text);
+    text-align: center;
+    line-height: 1.1;
+  }
+  .result-card__month {
+    font-size: 0.75rem;
+    font-weight: var(--font-weight-strong);
+  }
+  .result-card__days {
+    font-weight: var(--font-weight-display);
+  }
+  .result-card__body {
+    min-width: 0;
+  }
+  .result-card__pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+  .result-card__sample {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-hero);
+    color: var(--color-on-hero);
+    box-shadow: inset 0 0 0 1px var(--color-border-strong);
+    font-size: var(--font-size-label);
+    font-weight: var(--font-weight-strong);
+  }
+  .result-card__title {
+    margin: 0.5rem 0 0.25rem;
+    font-size: 1.0625rem;
+  }
+  .result-card__title a {
+    color: inherit;
+  }
+  .result-card__meta,
+  .result-card__provider {
+    margin: 0.125rem 0;
+    color: var(--color-ink-muted);
+    font-size: 0.9375rem;
+  }
+  .result-card__provider {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem;
+  }
+  .result-card__price {
+    margin: 0.375rem 0 0;
+    font-weight: var(--font-weight-strong);
+  }
+</style>
