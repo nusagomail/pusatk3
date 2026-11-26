@@ -8,10 +8,22 @@ import { mutableResponse, requestId } from './middleware/request-id';
 import { categoriesRoutes } from './routes/categories';
 import { directoryRoutes } from './routes/directory';
 import { healthRoutes } from './routes/health';
+import { landingRoutes } from './routes/landing';
 import { leadRoutes } from './routes/leads';
 import { metaRoutes } from './routes/meta';
 
 export const API_BASE_PATH = '/api/v1';
+
+/** Public GET reads: rate limited per visitor and edge cached (ADR 0021, ADR 0022). */
+const PUBLIC_READ_PATHS = [
+  '/search',
+  '/schedules/*',
+  '/providers/*',
+  '/cities',
+  '/categories',
+  '/landing-pages',
+  '/sitemap',
+] as const;
 
 type Router = Hono<AppEnv>;
 
@@ -59,17 +71,18 @@ export function createApp(options: CreateAppOptions = {}) {
   const v1: Router = new Hono<AppEnv>();
   // Public reads: per-visitor limit before the cache, so cached answers count too (ADR 0022).
   const readLimit = rateLimit('RL_READ', 'read');
-  for (const path of ['/search', '/schedules/*', '/providers/*', '/cities', '/categories']) {
+  for (const path of [...PUBLIC_READ_PATHS]) {
     v1.use(path, readLimit);
   }
   if (options.edgeCache) {
     const cached = edgeCache(options.edgeCache);
-    for (const path of ['/search', '/schedules/*', '/providers/*', '/cities', '/categories']) {
+    for (const path of PUBLIC_READ_PATHS) {
       v1.use(path, cached);
     }
   }
   v1.route('/', healthRoutes);
   v1.route('/', metaRoutes);
+  v1.route('/', landingRoutes);
   v1.route('/', leadRoutes({ fetch: options.fetch }));
   v1.route('/', categoriesRoutes);
   v1.route('/', directoryRoutes);

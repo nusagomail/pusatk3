@@ -22,7 +22,7 @@ import legalitas from '../../../docs/data/contoh/legalitas.csv?raw';
 import penyedia from '../../../docs/data/contoh/penyedia.csv?raw';
 import { call, expectApiError } from './helpers';
 
-// Public directory API against the Jabodetabek sample data (11 published + 1 draft schedule).
+// Public directory API against the Jabodetabek sample data (13 published + 1 draft schedule).
 // Raw SQL here only prepares the database state under test.
 // "Today" is pinned so the 2027 sample schedules stay upcoming whenever the tests run.
 const TODAY = Date.UTC(2026, 11, 1, 5, 0);
@@ -57,7 +57,7 @@ describe('GET /api/v1/search (public)', () => {
     expect(res.status).toBe(200);
     expect(res.headers.get('cache-control')).toMatch(/^public, .*s-maxage=/);
     const body = searchResponseSchema.parse(await res.json());
-    expect(body.items).toHaveLength(11);
+    expect(body.items).toHaveLength(13);
     expect(body.sponsored).toEqual([]);
     const dates = body.items.map((s) => s.startDate);
     expect(dates).toEqual([...dates].sort());
@@ -113,7 +113,7 @@ describe('GET /api/v1/search (public)', () => {
   });
 
   it.each([
-    ['?city=bekasi', (s: { city: { slug: string } | null }) => s.city?.slug === 'bekasi', 4],
+    ['?city=bekasi', (s: { city: { slug: string } | null }) => s.city?.slug === 'bekasi', 6],
     [
       '?mode=online',
       (s: { mode: string; city: unknown }) => s.mode === 'online' && s.city === null,
@@ -123,21 +123,21 @@ describe('GET /api/v1/search (public)', () => {
     [
       '?category=operator-forklift',
       (s: { category: { slug: string } }) => s.category.slug === 'operator-forklift',
-      1,
+      3,
     ],
     [
       '?field=kebakaran',
       (s: { category: { slug: string } }) => s.category.slug === 'ahli-k3-kebakaran',
       1,
     ],
-    ['?month=2027-02', (s: { startDate: string }) => s.startDate.startsWith('2027-02'), 4],
+    ['?month=2027-02', (s: { startDate: string }) => s.startDate.startsWith('2027-02'), 5],
     [
       '?priceMin=3500000&priceMax=4000000',
       (s: { priceIdr: number | null }) =>
         (s.priceIdr ?? 0) >= 3_500_000 && (s.priceIdr ?? 0) <= 4_000_000,
-      4,
+      5,
     ],
-    ['?q=forklift', (s: { title: string }) => /forklift/i.test(s.title), 1],
+    ['?q=forklift', (s: { title: string }) => /forklift/i.test(s.title), 3],
     [
       '?q=NUSANTARA',
       (s: { provider: { slug: string } }) => s.provider.slug === 'contoh-lsp-k3-nusantara',
@@ -150,7 +150,7 @@ describe('GET /api/v1/search (public)', () => {
   });
 
   it('treats empty form values as not set', async () => {
-    expect((await search('?q=&city=&mode=&sort=')).items).toHaveLength(11);
+    expect((await search('?q=&city=&mode=&sort=')).items).toHaveLength(13);
   });
 
   it('hides schedules that already started (registration is over), detail still opens', async () => {
@@ -178,7 +178,7 @@ describe('GET /api/v1/search (public)', () => {
     expect(before).toEqual([...before].sort());
     await run(`UPDATE providers SET plan = 'business' WHERE slug = 'contoh-tuk-k3-tangerang'`);
     expect((await search()).items.map((s) => s.id)).toEqual(before);
-    expect((await search('?sort=price')).items.length).toBe(11);
+    expect((await search('?sort=price')).items.length).toBe(13);
   });
 
   it('answers the same for everyone and never sets cookies (safe to cache)', async () => {
@@ -210,10 +210,10 @@ describe('GET /api/v1/search (public)', () => {
     expect(first.nextCursor).toBe('5');
     const second = await search('?limit=5&cursor=5');
     const third = await search('?limit=5&cursor=10');
-    expect(third.items).toHaveLength(1);
+    expect(third.items).toHaveLength(3);
     expect(third.nextCursor).toBeNull();
     const ids = [...first.items, ...second.items, ...third.items].map((s) => s.id);
-    expect(new Set(ids).size).toBe(11);
+    expect(new Set(ids).size).toBe(13);
   });
 
   it('hides drafts, expired and ended schedules, and closed providers', async () => {
@@ -350,7 +350,7 @@ describe('GET /api/v1/providers/:slug (public)', () => {
     });
     expect(body.branches.map((b) => b.name)).toEqual(['Kantor Pusat Jakarta', 'Cabang Bekasi']);
     expect(body.licenses).toHaveLength(1);
-    expect(body.schedules).toHaveLength(4);
+    expect(body.schedules).toHaveLength(5);
   });
 
   it('does not list the draft schedule', async () => {

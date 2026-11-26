@@ -1,0 +1,242 @@
+---
+/**
+ * SEO page "Pelatihan <kategori> di <kota>" (#27, ADR 0023; docs/ui-halaman.md "Hasil
+ * pencarian"). Published only when the API lists it (thin-content rule: ≥3 upcoming offline
+ * schedules from ≥2 providers); otherwise 404. Sample data is shown but never indexed and gets
+ * no Course structured data. No FAQ until an Ahli K3 reviewed the text (CLAUDE.md).
+ */
+import { landingPagesResponseSchema, searchResponseSchema, slugSchema } from '@pusatk3/shared';
+import Button from '../../../components/Button.astro';
+import JsonLd from '../../../components/JsonLd.astro';
+import VerifiedBadge from '../../../components/VerifiedBadge.astro';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { apiGet } from '../../../lib/api';
+import { ISSUER_LABELS, formatDate, formatDateRange, formatPrice } from '../../../lib/format';
+import {
+  landingJsonLd,
+  landingPath,
+  landingSummary,
+  relatedPages,
+} from '../../../lib/landing-page';
+
+export const prerender = false;
+
+const category = Astro.params.kategori ?? '';
+const city = Astro.params.kota ?? '';
+const validSlugs = slugSchema.safeParse(category).success && slugSchema.safeParse(city).success;
+
+const pagesResult = validSlugs ? await apiGet('/landing-pages', landingPagesResponseSchema) : null;
+const allPages = pagesResult?.ok ? pagesResult.data.items : [];
+const page = allPages.find((p) => p.category.slug === category && p.city.slug === city) ?? null;
+const results = page
+  ? await apiGet(
+      `/search?category=${encodeURIComponent(category)}&city=${encodeURIComponent(city)}&limit=100`,
+      searchResponseSchema,
+    )
+  : null;
+const schedules = results?.ok ? results.data.items : [];
+
+const unavailable = (pagesResult !== null && !pagesResult.ok) || (results !== null && !results.ok);
+if (unavailable) {
+  Astro.response.status = 503;
+  Astro.response.headers.set('Retry-After', '60');
+} else if (!page) {
+  Astro.response.status = 404;
+}
+
+const summary = landingSummary(schedules);
+const related = page ? relatedPages(page, allPages) : { sameCategory: [], sameCity: [] };
+const jsonLd = page && !unavailable ? landingJsonLd(page, schedules) : [];
+const heading = page ? `Pelatihan ${page.category.name} di ${page.city.name}` : '';
+const answer = page
+  ? `Ada ${summary.schedules} jadwal ${page.category.name} di ${page.city.name} dari ${summary.providers.length} penyedia` +
+    (summary.firstStart ? `, mulai ${formatDate(summary.firstStart, { long: true })}` : '') +
+    (summary.minPrice !== null ? `, harga mulai ${formatPrice(summary.minPrice)}` : '') +
+    `. Penerbit sertifikat: ${summary.issuers.join(', ')}.`
+  : '';
+---
+
+{page && !unavailable ? (
+  <BaseLayout title={`${heading} | PusatK3`} description={answer} noindex={page.isSample}>
+    <div class="landing">
+      <nav aria-label="Breadcrumb" class="breadcrumb">
+        <a href="/">Beranda</a>
+        <span aria-hidden="true">›</span>
+        <a href="/cari">Cari pelatihan</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">{heading}</span>
+      </nav>
+      {page.isSample && <p class="landing__sample">Contoh — data fiktif untuk uji coba</p>}
+      <h1>{heading}</h1>
+      <p class="landing__answer">{answer}</p>
+
+      <section aria-labelledby="jadwal-heading">
+        <h2 id="jadwal-heading">Jadwal terdekat</h2>
+        <div class="landing__table-wrap">
+          <table class="landing__table">
+            <thead>
+              <tr>
+                <th scope="col">Tanggal</th>
+                <th scope="col">Pelatihan</th>
+                <th scope="col">Penyedia</th>
+                <th scope="col">Penerbit</th>
+                <th scope="col">Harga</th>
+              </tr>
+            </thead>
+            <tbody>
+              {schedules.map((s) => (
+                <tr>
+                  <td>{formatDateRange(s.startDate, s.endDate)}</td>
+                  <td>
+                    <a href={`/jadwal/${s.id}`}>{s.title}</a>
+                  </td>
+                  <td>
+                    <a href={`/penyedia/${encodeURIComponent(s.provider.slug)}`}>
+                      {s.provider.name}
+                    </a>
+                  </td>
+                  <td>{ISSUER_LABELS[s.issuer]}</td>
+                  <td>{formatPrice(s.priceIdr)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p class="landing__note">
+          Urutan: tanggal mulai terdekat. Paket langganan penyedia tidak memengaruhi urutan. PusatK3
+          tidak memproses pendaftaran maupun pembayaran.
+        </p>
+      </section>
+
+      <section aria-labelledby="penyedia-heading">
+        <h2 id="penyedia-heading">Penyedia di {page.city.name}</h2>
+        <ul class="landing__providers">
+          {summary.providers.map((p) => (
+            <li>
+              <a href={`/penyedia/${encodeURIComponent(p.slug)}`}>{p.name}</a>
+              {p.verified && <VerifiedBadge />}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {(related.sameCategory.length > 0 || related.sameCity.length > 0) && (
+        <section aria-labelledby="terkait-heading">
+          <h2 id="terkait-heading">Halaman terkait</h2>
+          <ul class="landing__related">
+            {related.sameCategory.map((p) => (
+              <li>
+                <a href={landingPath(p.category.slug, p.city.slug)}>
+                  {p.category.name} di {p.city.name}
+                </a>
+              </li>
+            ))}
+            {related.sameCity.map((p) => (
+              <li>
+                <a href={landingPath(p.category.slug, p.city.slug)}>
+                  {p.category.name} di {p.city.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <Button
+        href={`/cari?category=${encodeURIComponent(category)}&city=${encodeURIComponent(city)}`}
+      >
+        Saring jadwal ini
+      </Button>
+    </div>
+    {jsonLd.map((data) => (
+      <JsonLd data={data} />
+    ))}
+  </BaseLayout>
+) : (
+  <BaseLayout
+    title={
+      unavailable
+        ? 'Halaman sedang tidak bisa dimuat — PusatK3'
+        : 'Halaman tidak ditemukan — PusatK3'
+    }
+    description="Halaman pelatihan ini tidak ditemukan atau belum memiliki cukup jadwal."
+    noindex
+  >
+    <div class="landing">
+      <h1>{unavailable ? 'Halaman sedang tidak bisa dimuat' : 'Halaman belum tersedia'}</h1>
+      <p role={unavailable ? 'alert' : undefined}>
+        {unavailable
+          ? 'Coba beberapa saat lagi.'
+          : 'Belum ada cukup jadwal untuk pelatihan ini di kota ini. Cari jadwal lain di seluruh kota atau online.'}
+      </p>
+      <Button href="/cari">Cari pelatihan</Button>
+    </div>
+  </BaseLayout>
+)}
+
+<style>
+  .landing {
+    display: grid;
+    gap: 1.25rem;
+    max-width: 64rem;
+    margin: 0 auto;
+    padding: 1rem 1rem 3rem;
+  }
+  .breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    color: var(--color-ink-muted);
+    font-size: var(--font-size-label);
+  }
+  .landing h1 {
+    margin: 0;
+  }
+  .landing__sample {
+    justify-self: start;
+    margin: 0;
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-hero);
+    color: var(--color-on-hero);
+    font-size: var(--font-size-label);
+  }
+  .landing__answer {
+    margin: 0;
+    font-size: 1.0625rem;
+  }
+  .landing__table-wrap {
+    overflow-x: auto;
+  }
+  .landing__table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .landing__table th,
+  .landing__table td {
+    padding: 0.625rem 0.5rem;
+    border-bottom: 1px solid var(--color-border);
+    text-align: left;
+    vertical-align: top;
+  }
+  .landing__table a,
+  .landing__providers a,
+  .landing__related a {
+    display: inline-block;
+    min-height: var(--touch-target);
+    line-height: var(--touch-target);
+  }
+  .landing__note {
+    color: var(--color-ink-muted);
+    font-size: var(--font-size-label);
+  }
+  .landing__providers,
+  .landing__related {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+</style>

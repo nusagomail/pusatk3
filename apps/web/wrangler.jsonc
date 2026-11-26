@@ -13,7 +13,15 @@
   // are not static files would otherwise get 404.html without the Worker ever running (#24).
   "assets": {
     "not_found_handling": "404-page",
-    "run_worker_first": ["/", "/cari", "/jadwal/*", "/penyedia/*", "/kontak/*"],
+    "run_worker_first": [
+      "/",
+      "/cari",
+      "/jadwal/*",
+      "/penyedia/*",
+      "/kontak/*",
+      "/pelatihan/*",
+      "/sitemap.xml",
+    ],
   },
   // Invocation logs include full URLs (possible personal data): off unless stated per env.
   "observability": { "enabled": false },

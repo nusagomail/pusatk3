@@ -168,6 +168,8 @@ describe('apps/web effective config', () => {
         '/jadwal/*',
         '/penyedia/*',
         '/kontak/*',
+        '/pelatihan/*',
+        '/sitemap.xml',
       ]);
     }
   });

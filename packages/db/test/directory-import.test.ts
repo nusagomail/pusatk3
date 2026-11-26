@@ -37,13 +37,13 @@ const messages = (files: Partial<DirectoryCsvFiles>) =>
   parse(files).problems.map((p) => `${p.file}:${p.line} ${p.message}`);
 
 describe('sample data (docs/data/contoh)', () => {
-  it('parses without problems: 4 providers, 5 branches, 4 licenses, 12 schedules', () => {
+  it('parses without problems: 4 providers, 5 branches, 4 licenses, 14 schedules', () => {
     const { data, problems } = parseDirectoryCsv(sample, reference);
     expect(problems).toEqual([]);
     expect(data.providers).toHaveLength(4);
     expect(data.branches).toHaveLength(5);
     expect(data.licenses).toHaveLength(4);
-    expect(data.schedules).toHaveLength(12);
+    expect(data.schedules).toHaveLength(14);
   });
 
   it('is clearly fictional: every name says "Contoh" and no contact numbers exist', () => {
