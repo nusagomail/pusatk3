@@ -2,7 +2,7 @@
 
 | File / folder | Isi | Dipakai oleh |
 | --- | --- | --- |
-| `kategori-k3.csv` | 14 bidang dan 59 kategori sertifikasi K3 resmi | `pnpm db:seed:local`, impor (data referensi) |
+| `kategori-k3.csv` | 14 bidang dan 59 kategori sertifikasi K3 resmi; kolom `sinonim` = istilah pencarian dipisah `;` (wajib, maks 20, ADR 0020) | `pnpm db:seed:local`, impor (data referensi) |
 | `contoh/` | Data **contoh** fiktif satu wilayah (Jabodetabek): 4 penyedia, 5 cabang, 4 legalitas, 12 jadwal | `pnpm db:import:local`, deploy staging (ADR 0017) |
 
 Data penyedia asli nanti memakai format yang sama di folder terpisah, **tanpa** tanda contoh (`--sample`), setelah ditinjau pemilik.

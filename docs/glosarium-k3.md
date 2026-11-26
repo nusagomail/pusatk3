@@ -35,6 +35,6 @@ Dipakai untuk penamaan kategori, sinonim pencarian, dan konten. Konten K3 yang t
 | Sertifikasi | Penerbitan sertifikat oleh Kemnaker atau BNSP lewat penyedia berizin | |
 | Pembinaan | Pelatihan sebelum sertifikasi Kemnaker | |
 
-Daftar kategori resmi ada di `docs/kategori-k3.md`.
+Daftar kategori resmi ada di `docs/kategori-k3.md`. Sinonim pencarian per kategori ada di kolom `sinonim` `docs/data/kategori-k3.csv` (ADR 0020).
 
 Tambahkan istilah baru di sini sebelum dipakai di kode atau konten.

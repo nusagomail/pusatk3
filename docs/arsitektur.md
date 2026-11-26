@@ -55,7 +55,7 @@ docs/
 | Keamanan | WAF, rate limiting |
 | Website instan | Cloudflare for SaaS (Custom Hostnames) |
 
-Layanan pihak ketiga: Meilisearch/Typesense (pencarian), Resend (email), Midtrans/Xendit (pembayaran, Fase 4), Sentry, PostHog.
+Layanan pihak ketiga: Meilisearch/Typesense (pencarian; belum dipakai, Fase 1 memakai D1, ADR 0020), Resend (email), Midtrans/Xendit (pembayaran, Fase 4), Sentry, PostHog.
 
 ## Alur cache halaman publik
 

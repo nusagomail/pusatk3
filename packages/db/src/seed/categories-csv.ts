@@ -16,6 +16,8 @@ export interface CategorySeed {
   documentType: string;
   typicalValidityYears: number | null;
   regulationRef: string;
+  /** Search synonyms (#26), lower case, from the `sinonim` column. */
+  synonyms: string[];
 }
 
 export interface CategoriesSeed {
@@ -33,6 +35,7 @@ const HEADER = [
   'masa_berlaku',
   'catatan',
   'regulasi',
+  'sinonim',
 ] as const;
 type Column = (typeof HEADER)[number];
 const REQUIRED: Column[] = [
@@ -44,6 +47,7 @@ const REQUIRED: Column[] = [
   'dokumen',
   'masa_berlaku',
   'regulasi',
+  'sinonim',
 ];
 
 /** "5 th", "3 th*", "3 th (SKP)" → years; "—" / "Skema" (depends on scheme) → null. */
@@ -62,6 +66,32 @@ function parseIssuers(value: string, line: number): Issuer[] {
     return result.data;
   });
   return [...new Set(issuers)];
+}
+
+const MAX_SYNONYMS = 20;
+const MAX_SYNONYM_LENGTH = 60;
+
+/** "AK3U; ahli k3" → ["ak3u", "ahli k3"]: trimmed, lower case, unique. */
+function parseSynonyms(value: string, line: number): string[] {
+  const synonyms = [
+    ...new Set(
+      value
+        .split(';')
+        .map((s) => s.trim().toLowerCase())
+        .filter((s) => s !== ''),
+    ),
+  ];
+  if (synonyms.length === 0) throw new Error(`CSV line ${line}: sinonim is empty`);
+  if (synonyms.length > MAX_SYNONYMS) {
+    throw new Error(`CSV line ${line}: sinonim has more than ${MAX_SYNONYMS} entries`);
+  }
+  const long = synonyms.find((s) => s.length > MAX_SYNONYM_LENGTH);
+  if (long) {
+    throw new Error(
+      `CSV line ${line}: sinonim "${long.slice(0, 20)}…" is longer than ${MAX_SYNONYM_LENGTH}`,
+    );
+  }
+  return synonyms;
 }
 
 function parseSlug(value: string, column: string, line: number): string {
@@ -123,7 +153,7 @@ export function parseCategoriesCsv(text: string): CategoriesSeed {
         `CSV line ${line}: invalid ${issue?.path.join('.') ?? 'row'} (${issue?.message ?? ''})`,
       );
     }
-    categories.push({ fieldSlug, ...category });
+    categories.push({ fieldSlug, ...category, synonyms: parseSynonyms(get('sinonim'), line) });
   });
 
   return { fields: [...fields.values()], categories };
