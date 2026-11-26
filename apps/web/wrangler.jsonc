@@ -9,9 +9,18 @@
   "workers_dev": false,
   "preview_urls": false,
   // Unknown paths get the static 404 page (src/pages/404.astro) instead of an empty body.
-  "assets": { "not_found_handling": "404-page" },
+  // SSR pages run the Worker first: with 404-page handling, browser navigations to paths that
+  // are not static files would otherwise get 404.html without the Worker ever running (#24).
+  "assets": {
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/cari", "/jadwal/*", "/penyedia/*"],
+  },
   // Invocation logs include full URLs (possible personal data): off unless stated per env.
   "observability": { "enabled": false },
+  // SSR pages read the API (ADR 0019). Deployed: through a service binding (`API`, internal).
+  // Local (`pnpm dev`, e2e): over HTTP to the local API dev server, because service bindings
+  // between two local dev processes are unreliable (dev registry).
+  "vars": { "API_ORIGIN": "http://127.0.0.1:8787" },
   "env": {
     "staging": {
       "name": "pusatk3-web-staging",
@@ -19,7 +28,10 @@
       "workers_dev": true,
       "preview_urls": false,
       "observability": { "enabled": true },
+      "services": [{ "binding": "API", "service": "pusatk3-api-staging" }],
     },
+    // Production API binding is added with the owner's approval when production is prepared
+    // (CLAUDE.md: production bindings; checklist /siapkan-rilis).
     "production": {
       "name": "pusatk3-web-production",
       "workers_dev": false,

@@ -103,6 +103,20 @@ describe('guard hook: production deploys stay with the owner', () => {
     },
   );
 
+  it.each(['server', 'client'])(
+    'blocks a plain deploy when the web build output (dist/%s) targets production',
+    (dir) => {
+      const project = mkdtempSync(join(tmpdir(), 'guard-prod-build-'));
+      mkdirSync(join(project, `apps/web/dist/${dir}`), { recursive: true });
+      writeFileSync(
+        join(project, `apps/web/dist/${dir}/wrangler.json`),
+        JSON.stringify({ name: 'pusatk3-web-production', targetEnvironment: 'production' }),
+      );
+      expect(bash('cd apps/web && npx wrangler deploy', project)).toBe(2);
+      expect(bash('pnpm test', project)).toBe(0);
+    },
+  );
+
   it('blocks a plain deploy when the web build output targets production', () => {
     const project = mkdtempSync(join(tmpdir(), 'guard-prod-build-'));
     mkdirSync(join(project, 'apps/web/dist/client'), { recursive: true });

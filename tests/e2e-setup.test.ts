@@ -35,7 +35,7 @@ describe('e2e setup', () => {
   it('serves the built web app and the local API on fixed ports', () => {
     const config = read('playwright.config.ts');
     expect(config).toContain("testDir: './e2e'");
-    expect(config).toContain('dist/client/wrangler.json');
+    expect(config).toContain('dist/server/wrangler.json');
     expect(config).toContain('4322');
     expect(config).toContain('8787');
     // Never against remote resources.

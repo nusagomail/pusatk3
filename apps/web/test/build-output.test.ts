@@ -10,6 +10,8 @@ import { THEME_INIT_SCRIPT } from '../src/lib/theme';
 const root = resolve(import.meta.dirname, '..');
 let out = '';
 const client = (...parts: string[]) => join(out, 'client', ...parts);
+/** Built Worker config: dist/server/ since the site has SSR pages (#24). */
+const server = (...parts: string[]) => join(out, 'server', ...parts);
 const files = (dir: string) =>
   readdirSync(dir, { recursive: true, encoding: 'utf8' }).map((file) => join(dir, file));
 
@@ -74,7 +76,7 @@ describe('non-production build (no CLOUDFLARE_ENV)', () => {
   });
 
   it('builds the private top-level worker', () => {
-    const config = JSON.parse(readFileSync(local('wrangler.json'), 'utf8')) as {
+    const config = JSON.parse(readFileSync(join(localOut, 'server', 'wrangler.json'), 'utf8')) as {
       name?: string;
       workers_dev?: boolean;
     };
@@ -105,7 +107,7 @@ describe('production build', () => {
   });
 
   it('serves 404.html for unknown paths and keeps the Worker private', () => {
-    const config = JSON.parse(readFileSync(client('wrangler.json'), 'utf8')) as {
+    const config = JSON.parse(readFileSync(server('wrangler.json'), 'utf8')) as {
       assets?: { not_found_handling?: string };
       workers_dev?: boolean;
       preview_urls?: boolean;

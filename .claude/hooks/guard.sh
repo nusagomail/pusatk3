@@ -50,11 +50,13 @@ if [[ "$tool" == "Bash" ]]; then
     block "memicu workflow lewat ID angka atau rerun bisa mengenai production; minta pemilik melakukannya."
   fi
   # A web build for production makes a plain `wrangler deploy` target production.
-  web_build="${CLAUDE_PROJECT_DIR:-.}/apps/web/dist/client/wrangler.json"
-  if [[ -f "$web_build" ]] && grep -Eq '"targetEnvironment"[[:space:]]*:[[:space:]]*"production"' "$web_build" \
-    && has 'wrangler' && has '(deploy|versions)'; then
-    block "hasil build web menargetkan production; deploy hanya atas perintah pemilik."
-  fi
+  # Built config: dist/server/ when the site has SSR pages (#24), dist/client/ for static-only builds.
+  for web_build in "${CLAUDE_PROJECT_DIR:-.}"/apps/web/dist/{server,client}/wrangler.json; do
+    if [[ -f "$web_build" ]] && grep -Eq '"targetEnvironment"[[:space:]]*:[[:space:]]*"production"' "$web_build" \
+      && has 'wrangler' && has '(deploy|versions)'; then
+      block "hasil build web menargetkan production; deploy hanya atas perintah pemilik."
+    fi
+  done
 
   # --- Remote databases (CI only) ---
   # Matched anywhere after "d1", so options in between (e.g. `d1 -c file delete`) do not hide it.

@@ -78,7 +78,7 @@ jobs:
           PUBLIC_MEDIA_BASE_URL: ${{ vars.PUBLIC_MEDIA_BASE_URL }}
         run: |
           pnpm --filter @pusatk3/web build
-          name=$(jq -r .name apps/web/dist/client/wrangler.json)
+          name=$(jq -r .name apps/web/dist/server/wrangler.json)
           test "$name" = "pusatk3-web-production" || { echo "::error::web build targets '$name', expected pusatk3-web-production"; exit 1; }
 
       - name: Deploy web (production)

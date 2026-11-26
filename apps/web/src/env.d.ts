@@ -8,3 +8,8 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+/** Cloudflare runtime bindings (wrangler.jsonc). Only what the web app uses is typed here. */
+declare module 'cloudflare:workers' {
+  export const env: Record<string, unknown>;
+}

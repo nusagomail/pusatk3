@@ -1,0 +1,296 @@
+---
+/**
+ * Search results (docs/ui-halaman.md, `Hasil.dc.html`). Rendered on demand from the public API
+ * (ADR 0019). Organic results only; sponsored slots stay separate and labelled (rule 5).
+ */
+import { citiesResponseSchema, searchResponseSchema } from '@pusatk3/shared';
+import Button from '../components/Button.astro';
+import ResultCard from '../components/directory/ResultCard.astro';
+import Input from '../components/Input.astro';
+import JsonLd from '../components/JsonLd.astro';
+import Select from '../components/Select.astro';
+import SponsorLabel from '../components/SponsorLabel.astro';
+import { absoluteUrl } from '../data/site';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { apiGet } from '../lib/api';
+import { ISSUER_LABELS, MODE_LABELS } from '../lib/format';
+import { parseSearchParams, toQueryString } from '../lib/search-params';
+
+export const prerender = false;
+
+const { query, values } = parseSearchParams(Astro.url.searchParams);
+const [results, citiesResult] = await Promise.all([
+  query ? apiGet(`/search${toQueryString(values)}`, searchResponseSchema) : null,
+  apiGet('/cities', citiesResponseSchema),
+]);
+const cities = citiesResult.ok ? citiesResult.data.items : [];
+
+if (!query) Astro.response.status = 400;
+else if (results && !results.ok) Astro.response.status = results.status === 422 ? 400 : 503;
+
+const cityName = cities.find((c) => c.slug === values.city)?.name;
+const heading = [
+  values.q ? `Pelatihan “${values.q}”` : 'Pelatihan K3',
+  cityName ? `di ${cityName}` : '',
+]
+  .filter(Boolean)
+  .join(' ');
+
+// Start months: this month and the next 11 (Asia/Jakarta).
+const jakartaNow = new Date(Date.now() + 7 * 60 * 60 * 1000);
+const MONTH_NAMES = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember',
+];
+const monthOptions = Array.from({ length: 12 }, (_, i) => {
+  const d = new Date(Date.UTC(jakartaNow.getUTCFullYear(), jakartaNow.getUTCMonth() + i, 1));
+  const value = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+  return { value, label: `${MONTH_NAMES[d.getUTCMonth()]} ${d.getUTCFullYear()}` };
+});
+
+const anyOption = (label: string) => ({ value: '', label });
+const nextCursor = results?.ok ? results.data.nextCursor : null;
+const previousCursor = query?.cursor ? Math.max(0, query.cursor - query.limit) : null;
+const pageLink = (cursor: number | string | null) =>
+  `/cari${toQueryString({ ...values, cursor: cursor ? String(cursor) : undefined })}`;
+---
+
+<BaseLayout
+  title={`${heading} — PusatK3`}
+  description="Cari dan bandingkan jadwal pelatihan dan sertifikasi K3 beserta legalitas penyedianya. Gratis untuk peserta."
+>
+  <div class="search">
+    <nav aria-label="Breadcrumb" class="breadcrumb">
+      <a href="/">Beranda</a>
+      <span aria-hidden="true">›</span>
+      <span aria-current="page">Cari pelatihan</span>
+    </nav>
+    <h1>{heading}</h1>
+    <JsonLd
+      data={{
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Beranda', item: absoluteUrl('/') },
+          { '@type': 'ListItem', position: 2, name: 'Cari pelatihan', item: absoluteUrl('/cari') },
+        ],
+      }}
+    />
+
+    <div class="search__layout">
+      <form class="search__filters" method="get" action="/cari" aria-label="Filter pencarian">
+        {values.field && <input type="hidden" name="field" value={values.field} />}
+        {values.category && <input type="hidden" name="category" value={values.category} />}
+        <Input
+          label="Kata kunci"
+          name="q"
+          type="search"
+          value={values.q}
+          placeholder="mis. AK3U, forklift"
+        />
+        <Select
+          label="Kota"
+          name="city"
+          value={values.city}
+          options={[
+            anyOption('Semua kota'),
+            ...cities.map((c) => ({ value: c.slug, label: c.name })),
+          ]}
+        />
+        <Select
+          label="Penerbit sertifikat"
+          name="issuer"
+          value={values.issuer}
+          options={[
+            anyOption('Semua penerbit'),
+            ...Object.entries(ISSUER_LABELS).map(([value, label]) => ({ value, label })),
+          ]}
+        />
+        <Select
+          label="Metode"
+          name="mode"
+          value={values.mode}
+          options={[
+            anyOption('Semua metode'),
+            ...Object.entries(MODE_LABELS).map(([value, label]) => ({ value, label })),
+          ]}
+        />
+        <Select
+          label="Bulan mulai"
+          name="month"
+          value={values.month}
+          options={[anyOption('Kapan saja'), ...monthOptions]}
+        />
+        <Input label="Harga minimum (Rp)" name="priceMin" type="number" value={values.priceMin} />
+        <Input label="Harga maksimum (Rp)" name="priceMax" type="number" value={values.priceMax} />
+        <label class="search__check">
+          <input
+            type="checkbox"
+            name="verified"
+            value="true"
+            checked={values.verified === 'true'}
+          />
+          Hanya penyedia terverifikasi
+        </label>
+        <Select
+          label="Urutkan"
+          name="sort"
+          value={values.sort ?? 'date'}
+          options={[
+            { value: 'date', label: 'Tanggal mulai terdekat' },
+            { value: 'price', label: 'Harga termurah' },
+          ]}
+        />
+        <Button type="submit" block>
+          Terapkan filter
+        </Button>
+        <a class="search__reset" href="/cari">
+          Hapus semua filter
+        </a>
+      </form>
+
+      <section class="search__results" aria-labelledby="results-heading">
+        <h2 id="results-heading" class="visually-hidden">
+          Hasil pencarian
+        </h2>
+        {!query && (
+          <p class="search__notice" role="alert">
+            Ada isian filter yang tidak valid (mis. harga minimum lebih besar dari maksimum).
+            Periksa lagi filter Anda.
+          </p>
+        )}
+        {results && !results.ok && (
+          <p class="search__notice" role="alert">
+            Hasil pencarian sedang tidak bisa dimuat. Coba beberapa saat lagi.
+          </p>
+        )}
+        {results?.ok && results.data.sponsored.length > 0 && (
+          <div class="search__sponsored" aria-label="Sponsor">
+            {results.data.sponsored.map((schedule) => (
+              <div class="search__sponsored-item">
+                <SponsorLabel />
+                <ResultCard schedule={schedule} />
+              </div>
+            ))}
+          </div>
+        )}
+        {results?.ok && results.data.items.length === 0 && (
+          <p class="search__notice">
+            Belum ada jadwal yang cocok. Coba hapus beberapa filter atau cari kota lain.
+          </p>
+        )}
+        {results?.ok && results.data.items.length > 0 && (
+          <ol class="search__list">
+            {results.data.items.map((schedule) => (
+              <li>
+                <ResultCard schedule={schedule} />
+              </li>
+            ))}
+          </ol>
+        )}
+        {results?.ok && (previousCursor !== null || nextCursor) && (
+          <nav class="search__pages" aria-label="Halaman hasil">
+            {previousCursor !== null && <a href={pageLink(previousCursor)}>‹ Sebelumnya</a>}
+            {nextCursor && <a href={pageLink(nextCursor)}>Berikutnya ›</a>}
+          </nav>
+        )}
+        <aside class="search__how" aria-labelledby="how-heading">
+          <h2 id="how-heading">Cara kami mengurutkan hasil</h2>
+          <p>
+            Hasil diurutkan menurut tanggal mulai terdekat (atau harga termurah bila dipilih). Paket
+            langganan penyedia tidak pernah memengaruhi urutan maupun tanda “Terverifikasi”. Slot
+            sponsor, bila ada, selalu terpisah dan berlabel “Sponsor”. Data bertanda “Contoh” adalah
+            data fiktif untuk uji coba.
+          </p>
+        </aside>
+      </section>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .search {
+    max-width: var(--content-width);
+    margin: 0 auto;
+    padding: 1.5rem 1rem 3rem;
+  }
+  .breadcrumb {
+    display: flex;
+    gap: 0.5rem;
+    color: var(--color-ink-muted);
+    font-size: 0.9375rem;
+  }
+  .search__layout {
+    display: grid;
+    gap: 1.5rem;
+  }
+  @media (min-width: 60rem) {
+    .search__layout {
+      grid-template-columns: 18rem 1fr;
+      align-items: start;
+    }
+  }
+  .search__filters {
+    display: grid;
+    gap: 0.875rem;
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+  }
+  .search__check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: var(--touch-target);
+  }
+  .search__reset {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-target);
+  }
+  .search__list {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .search__sponsored {
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .search__notice {
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+  }
+  .search__pages {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+  }
+  .search__pages a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-target);
+    font-weight: var(--font-weight-strong);
+  }
+  .search__how {
+    margin-top: 2rem;
+    color: var(--color-ink-muted);
+    font-size: 0.9375rem;
+  }
+  .search__how h2 {
+    font-size: 1rem;
+  }
+</style>
