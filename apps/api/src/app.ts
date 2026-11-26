@@ -4,6 +4,7 @@ import type { AppEnv } from './env';
 import { notFound, onError } from './middleware/errors';
 import { mutableResponse, requestId } from './middleware/request-id';
 import { categoriesRoutes } from './routes/categories';
+import { directoryRoutes } from './routes/directory';
 import { healthRoutes } from './routes/health';
 
 export const API_BASE_PATH = '/api/v1';
@@ -13,12 +14,19 @@ type Router = Hono<AppEnv>;
 export interface CreateAppOptions {
   /** Test-only hook to mount extra routes under /api/v1. Never used by src/index.ts. */
   extend?: (v1: Router) => void;
+  /** Test-only clock (e.g. to pin "today" for date-based visibility). Defaults to Date.now. */
+  now?: () => number;
 }
 
 export function createApp(options: CreateAppOptions = {}) {
   const app = new Hono<AppEnv>();
   // Order matters: outer middleware sees the final response (including error responses).
   app.use(requestId);
+  const now = options.now ?? Date.now;
+  app.use(async (c, next) => {
+    c.set('now', now);
+    await next();
+  });
   // JSON-only API: nothing may load from it or frame it (docs/keamanan.md).
   app.use(
     secureHeaders({
@@ -43,6 +51,7 @@ export function createApp(options: CreateAppOptions = {}) {
   const v1: Router = new Hono<AppEnv>();
   v1.route('/', healthRoutes);
   v1.route('/', categoriesRoutes);
+  v1.route('/', directoryRoutes);
   options.extend?.(v1);
   app.route(API_BASE_PATH, v1);
   return app;

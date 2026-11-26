@@ -39,11 +39,11 @@
 | Metode | Path | Fungsi |
 | --- | --- | --- |
 | GET | `/health` | Cek layanan: `{ "status": "ok", "version": "<sha commit / dev>" }`, `Cache-Control: no-store` (`healthResponseSchema`) |
-| GET | `/search` | Cari jadwal/penyedia (q, field, city, category, mode, issuer, month, priceMin, priceMax). `field` = slug bidang K3 (mis. `k3-umum`), dipakai tautan bidang di beranda |
-| GET | `/schedules/:id` | Detail jadwal |
-| GET | `/providers/:slug` | Profil publik penyedia |
+| GET | `/search` | Cari jadwal (`searchQuerySchema`): `q` (judul, nama/sinonim kategori, nama penyedia; 1–100 karakter, `%`/`_` dibaca harfiah), `field` (slug bidang K3, mis. `k3-umum`), `category`, `city`, `mode`, `issuer`, `month` (`YYYY-MM`, tanggal mulai), `priceMin`/`priceMax` (rupiah bulat, min ≤ max), `verified=true`, `sort` (`date` bawaan: mulai terdekat; `price`: termurah, harga kosong di akhir), `limit` (1–100, bawaan 20), `cursor` (offset, maks 1000). Respons `{ items, nextCursor, sponsored }`: `sponsored` selalu terpisah dari hasil organik (kosong sampai Fase 4). Hanya jadwal `published`, belum selesai (tanggal Asia/Jakarta), penyedia tidak `closed`. Urutan tidak pernah memakai paket. `Cache-Control: public, max-age=60, s-maxage=300, stale-while-revalidate=600` |
+| GET | `/schedules/:id` | Detail jadwal (`scheduleDetailSchema`): ringkasan + deskripsi, syarat, kuota, cabang (null untuk online), penyedia dengan kontak dan legalitas (tanpa dokumen). `id` = ULID, selain itu 422. Draf, `expired`, atau penyedia `closed` → 404. Cache sama dengan `/search` |
+| GET | `/providers/:slug` | Profil publik penyedia (`providerProfileSchema`): kontak, cabang (kantor pusat dulu), legalitas, maks 50 jadwal yang tampil (mulai terdekat). Penyedia `closed`/tidak ada → 404. Cache sama dengan `/search` |
 | GET | `/categories` | Bidang K3 + kategori sertifikasi (`categoriesResponseSchema`): `{ items: [{ slug, name, categories: [{ slug, name, issuers, documentType, typicalValidityYears, regulationRef }] }] }`, bidang urut `sort_order`, kategori di tiap bidang urut nama (collation `id`, lalu slug); bidang tanpa kategori tidak tampil. Tanpa parameter (parameter apa pun → 422). `Cache-Control: public, max-age=300, s-maxage=3600, stale-while-revalidate=86400`; daftar kosong (DB belum di-seed) → `no-store`. Purge saat seed/kategori berubah: `/api/v1/categories` |
-| GET | `/cities` | Data referensi kota (Fase 1) |
+| GET | `/cities` | Daftar kota `{ items: [{ slug, name, province }] }` urut nama; tanpa parameter (parameter apa pun → 422). Cache seperti `/categories` |
 | POST | `/leads` | Catat lead (Turnstile wajib) |
 
 ### Auth

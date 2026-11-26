@@ -9,6 +9,8 @@ export interface AppEnv {
   Variables: {
     /** Set by the request-id middleware for every request. */
     requestId: string;
+    /** Current time in ms; injectable for tests (`createApp({ now })`). */
+    now: () => number;
   };
 }
 

@@ -43,6 +43,11 @@ export function validateJson<T extends z.ZodType>(schema: T) {
   });
 }
 
+/** Validates path parameters (e.g. `:id`, `:slug`). */
+export function validateParam<T extends z.ZodType>(schema: T) {
+  return validator('param', validateWith(schema));
+}
+
 /** Validates query parameters. A repeated key (`?a=1&a=2`) arrives as an array. */
 export function validateQuery<T extends z.ZodType>(schema: T) {
   return validator('query', validateWith(schema));
