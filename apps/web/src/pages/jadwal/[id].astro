@@ -3,7 +3,12 @@
  * Schedule detail (docs/ui-halaman.md, `Pelatihan.dc.html` / `PelatihanHP.dc.html`). Rendered on
  * demand from the public API (ADR 0019). PusatK3 never processes registrations or payments.
  */
-import { providerProfileSchema, scheduleDetailSchema } from '@pusatk3/shared';
+import {
+  normalizeWhatsAppNumber,
+  providerProfileSchema,
+  scheduleDetailSchema,
+  scheduleParamsSchema,
+} from '@pusatk3/shared';
 import Button from '../../components/Button.astro';
 import LicenseList from '../../components/directory/LicenseList.astro';
 import ResultCard from '../../components/directory/ResultCard.astro';
@@ -21,79 +26,53 @@ import {
   PROVIDER_TYPE_LABELS,
   formatDateRange,
   formatPrice,
+  jakartaToday,
 } from '../../lib/format';
+import { courseJsonLd, detailPageStatus, scheduleTiming } from '../../lib/schedule-page';
 
 export const prerender = false;
 
 const id = Astro.params.id ?? '';
-const valid = /^[0-9A-Z]{26}$/.test(id);
+const valid = scheduleParamsSchema.safeParse({ id }).success;
 const result = valid ? await apiGet(`/schedules/${id}`, scheduleDetailSchema) : null;
 const schedule = result?.ok ? result.data : null;
 
-/** API failure status (null when found or when the id is malformed). */
-const failure = result && !result.ok ? result.status : null;
-/** Not found: malformed id, or the API says 404/422. Anything else is "temporarily unavailable". */
-const unavailable = failure !== null && failure !== 404 && failure !== 422;
-if (!schedule) Astro.response.status = unavailable ? 503 : 404;
+const status = detailPageStatus(schedule !== null, result && !result.ok ? result.status : null);
+const unavailable = status === 503;
+if (status !== 200) Astro.response.status = status;
+if (unavailable) Astro.response.headers.set('Retry-After', '60');
 
 const profile = schedule
   ? await apiGet(`/providers/${encodeURIComponent(schedule.provider.slug)}`, providerProfileSchema)
   : null;
 const others = profile?.ok ? profile.data.schedules.filter((s) => s.id !== id).slice(0, 3) : [];
+// Without the "other schedules" list the page is incomplete: do not let a cache keep it.
+if (profile && !profile.ok) Astro.response.headers.set('Cache-Control', 'no-store');
 
 const sample = schedule?.provider.isSample ?? false;
-const whatsapp = schedule?.provider.contact.whatsapp ?? null;
+const timing = schedule
+  ? scheduleTiming(schedule.startDate, schedule.endDate, jakartaToday())
+  : 'upcoming';
+/** Only a number that makes a working wa.me link (otherwise the fallback text is shown). */
+const whatsapp = schedule?.provider.contact.whatsapp
+  ? normalizeWhatsAppNumber(schedule.provider.contact.whatsapp)
+  : null;
+const canContact = whatsapp !== null && timing === 'upcoming';
 const waMessage = schedule
   ? `Halo, saya melihat jadwal "${schedule.title}" (${formatDateRange(schedule.startDate, schedule.endDate)}) di PusatK3. Apakah masih tersedia?`
   : '';
-const place = schedule
-  ? schedule.branch
-    ? `${schedule.branch.name}, ${schedule.branch.city.name}`
-    : 'Online'
-  : '';
-
-const courseJsonLd = schedule && {
-  '@type': 'Course',
-  name: schedule.title,
-  description: schedule.description ?? `${schedule.category.name} — ${schedule.provider.name}`,
-  provider: {
-    '@type': 'Organization',
-    name: schedule.provider.name,
-    url: absoluteUrl(`/penyedia/${schedule.provider.slug}`),
-  },
-  hasCourseInstance: {
-    '@type': 'CourseInstance',
-    courseMode: schedule.mode === 'online' ? 'online' : 'onsite',
-    startDate: schedule.startDate,
-    endDate: schedule.endDate,
-    ...(schedule.branch && {
-      location: {
-        '@type': 'Place',
-        name: schedule.branch.name,
-        address: {
-          '@type': 'PostalAddress',
-          streetAddress: schedule.branch.address,
-          addressLocality: schedule.branch.city.name,
-          addressCountry: 'ID',
-        },
-      },
-    }),
-    ...(schedule.priceIdr !== null && {
-      offers: {
-        '@type': 'Offer',
-        price: schedule.priceIdr,
-        priceCurrency: 'IDR',
-        category: 'Paid',
-      },
-    }),
-  },
-};
+const city = schedule ? (schedule.branch ? schedule.branch.city.name : 'Online') : '';
+const jsonLd = schedule ? courseJsonLd(schedule, timing) : null;
+const searchCategory = schedule
+  ? `/cari?category=${encodeURIComponent(schedule.category.slug)}`
+  : '/cari';
 ---
 
 {schedule ? (
   <BaseLayout
-    title={`${schedule.title} — ${schedule.provider.name} | PusatK3`}
-    description={`${schedule.title}, ${formatDateRange(schedule.startDate, schedule.endDate)}, ${place}. Penerbit ${ISSUER_LABELS[schedule.issuer]}. Hubungi penyedia langsung; gratis untuk peserta.`}
+    title={`${schedule.title} | PusatK3`}
+    description={`${schedule.title}, ${formatDateRange(schedule.startDate, schedule.endDate)}, ${city}. Penerbit ${ISSUER_LABELS[schedule.issuer]}. Hubungi penyedia langsung.`}
+    noindex={sample}
   >
     <div class="detail">
       <nav aria-label="Breadcrumb" class="breadcrumb">
@@ -101,9 +80,11 @@ const courseJsonLd = schedule && {
         <span aria-hidden="true">›</span>
         <a href="/cari">Cari pelatihan</a>
         <span aria-hidden="true">›</span>
-        <span aria-current="page">{schedule.category.name}</span>
+        <a href={searchCategory}>{schedule.category.name}</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">{schedule.title}</span>
       </nav>
-      <JsonLd data={courseJsonLd as Record<string, unknown>} />
+      {jsonLd && <JsonLd data={jsonLd} />}
       <JsonLd
         data={{
           '@type': 'BreadcrumbList',
@@ -118,6 +99,12 @@ const courseJsonLd = schedule && {
             {
               '@type': 'ListItem',
               position: 3,
+              name: schedule.category.name,
+              item: absoluteUrl(searchCategory),
+            },
+            {
+              '@type': 'ListItem',
+              position: 4,
               name: schedule.title,
               item: absoluteUrl(`/jadwal/${schedule.id}`),
             },
@@ -133,6 +120,12 @@ const courseJsonLd = schedule && {
             <Pill>{MODE_LABELS[schedule.mode]}</Pill>
           </div>
           <h1>{schedule.title}</h1>
+          {timing !== 'upcoming' && (
+            <p class="detail__closed" role="status">
+              {timing === 'ended' ? 'Jadwal ini sudah berakhir.' : 'Jadwal ini sudah dimulai.'}{' '}
+              <a href={searchCategory}>Lihat jadwal {schedule.category.name} lainnya</a>
+            </p>
+          )}
           <p class="detail__provider">
             <a href={`/penyedia/${encodeURIComponent(schedule.provider.slug)}`}>
               {schedule.provider.name}
@@ -210,10 +203,14 @@ const courseJsonLd = schedule && {
             Kontak penyedia
           </h2>
           <p class="detail__price">{formatPrice(schedule.priceIdr)}</p>
-          {whatsapp ? (
-            <WhatsAppButton phone={whatsapp} message={waMessage} block>
+          {canContact ? (
+            <WhatsAppButton phone={whatsapp as string} message={waMessage} block>
               Chat via WhatsApp
             </WhatsAppButton>
+          ) : timing !== 'upcoming' ? (
+            <Button href={searchCategory} block>
+              Lihat jadwal lain
+            </Button>
           ) : (
             <p class="detail__muted">
               {sample
@@ -248,16 +245,16 @@ const courseJsonLd = schedule && {
         </section>
       )}
 
-      <div class="detail__bar" aria-label="Aksi cepat">
+      <nav class="detail__bar" aria-label="Aksi cepat">
         <a class="detail__bar-ask" href="#kontak">
           Tanya
         </a>
-        {whatsapp && (
-          <WhatsAppButton phone={whatsapp} message={waMessage}>
+        {canContact && (
+          <WhatsAppButton phone={whatsapp as string} message={waMessage}>
             Chat WhatsApp
           </WhatsAppButton>
         )}
-      </div>
+      </nav>
     </div>
   </BaseLayout>
 ) : (
@@ -289,7 +286,19 @@ const courseJsonLd = schedule && {
   .detail {
     max-width: var(--content-width);
     margin: 0 auto;
-    padding: 1.5rem 1rem 6rem;
+    padding: 1.5rem 1rem 3rem;
+  }
+  /* Room under the whole page (footer included) for the fixed bar on phones. */
+  @media (max-width: 59.99rem) {
+    :global(body) {
+      padding-bottom: calc(var(--touch-target) + 1.75rem + env(safe-area-inset-bottom));
+    }
+  }
+  .detail__closed {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-card);
+    font-weight: var(--font-weight-strong);
   }
   .breadcrumb {
     display: flex;
@@ -389,7 +398,8 @@ const courseJsonLd = schedule && {
     inset: auto 0 0 0;
     display: flex;
     gap: 0.5rem;
-    padding: 0.75rem 1rem;
+    z-index: 10;
+    padding: 0.75rem 1rem max(0.75rem, env(safe-area-inset-bottom));
     border-top: 1px solid var(--color-border);
     background: var(--color-bg);
   }

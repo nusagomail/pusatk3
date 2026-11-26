@@ -20,6 +20,11 @@ describe('LicenseList', () => {
     expect(html).toContain('Berlaku s.d. 31 Des 2099');
   });
 
+  it('notes expired licenses even for a verified provider', async () => {
+    const html = await render(LicenseList, { licenses: [license('2001-01-01')], verified: true });
+    expect(html).toMatch(/sudah kedaluwarsa/);
+  });
+
   it('warns when the provider is not verified, never when it is', async () => {
     const unverified = await render(LicenseList, { licenses: [license(null)], verified: false });
     expect(unverified).toMatch(/belum diverifikasi/);

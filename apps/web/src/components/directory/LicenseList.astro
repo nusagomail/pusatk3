@@ -13,13 +13,20 @@ interface Props {
 
 const { licenses, verified } = Astro.props;
 const today = jakartaToday();
+const anyExpired = licenses.some((l) => isExpired(l.validUntil, today));
 ---
 
 <div class="licenses">
-  {!verified && (
+  {!verified && licenses.length > 0 && (
     <p class="licenses__note">
       Legalitas di bawah ini <strong>belum diverifikasi</strong> PusatK3. Cek langsung ke
       penerbitnya sebelum mendaftar.
+    </p>
+  )}
+  {anyExpired && (
+    <p class="licenses__note">
+      Ada izin yang <strong>sudah kedaluwarsa</strong>. Tanyakan status terbarunya ke penyedia atau
+      penerbit sebelum mendaftar.
     </p>
   )}
   {licenses.length === 0 ? (

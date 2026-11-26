@@ -15,4 +15,5 @@ Siapkan rilis production. Jangan men-deploy sendiri.
 7. Pastikan rate limit dan Cache API untuk endpoint publik direktori (`/search`, `/schedules/:id`, `/providers/:slug`) sudah aktif (ADR 0018); bila belum, rilis ditunda.
 8. Pastikan web production punya service binding `API` ke `pusatk3-api-production` (ADR 0019; perubahan binding production butuh persetujuan pemilik).
 9. Pastikan rate limit halaman direktori tidak bergantung pada IP yang terlihat API lewat service binding (ADR 0019).
-10. Tampilkan ringkasan ke pemilik dan tunggu perintah eksplisit "deploy production".
+10. Pastikan klik WhatsApp di halaman jadwal/profil tercatat sebagai lead (#28), bukan tautan wa.me langsung (ADR 0019).
+11. Tampilkan ringkasan ke pemilik dan tunggu perintah eksplisit "deploy production".

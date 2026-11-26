@@ -1,4 +1,4 @@
-import type { ScheduleSummary } from '@pusatk3/shared';
+import type { LicenseKind, ScheduleSummary } from '@pusatk3/shared';
 
 // Display helpers for directory data (Indonesian UI). Dates are calendar dates "YYYY-MM-DD"
 // without a time zone, so they are formatted from their parts, never through `Date` + local time.
@@ -100,7 +100,7 @@ export const PROVIDER_TYPE_LABELS: Record<ScheduleSummary['provider']['type'], s
   tuk: 'TUK',
 };
 
-export const LICENSE_KIND_LABELS: Record<'izin_pjk3' | 'lisensi_lsp' | 'tuk', string> = {
+export const LICENSE_KIND_LABELS: Record<LicenseKind, string> = {
   izin_pjk3: 'Izin PJK3',
   lisensi_lsp: 'Lisensi LSP',
   tuk: 'Penetapan TUK',

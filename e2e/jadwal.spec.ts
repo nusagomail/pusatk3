@@ -37,10 +37,14 @@ test('schedule detail shows facts, legality and contact, labelled as sample', as
   await expect(page.getByText(/belum diverifikasi/)).toBeVisible();
   await expect(page.getByText(/tidak memproses pendaftaran maupun pembayaran/)).toBeVisible();
   await expect(page.getByText(/data contoh fiktif/)).toBeVisible();
+  // Sample providers are never verified (rule 5: the badge comes from verification only).
+  await expect(page.getByText('Terverifikasi')).toHaveCount(0);
 
+  // Sample data gets breadcrumbs only, never Course structured data, and is noindex.
   const jsonLd = await page.locator('script[type="application/ld+json"]').allTextContents();
   const types = jsonLd.map((text) => (JSON.parse(text) as { '@type': string })['@type']);
-  expect(types).toEqual(expect.arrayContaining(['Course', 'BreadcrumbList']));
+  expect(types).toEqual(['BreadcrumbList']);
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
 
   await page.waitForLoadState('load');
   expect(errors).toEqual([]);
@@ -60,6 +64,18 @@ test('phones get a bottom action bar', async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
   await openFirstSchedule(page);
-  await expect(page.getByRole('link', { name: 'Tanya' })).toBeVisible();
+  const bar = page.getByRole('navigation', { name: 'Aksi cepat' });
+  await expect(bar.getByRole('link', { name: 'Tanya' })).toBeVisible();
+  // The fixed bar never covers the end of the page (footer).
+  await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
+  const footer = await page.locator('footer').last().boundingBox();
+  const barBox = await bar.boundingBox();
+  expect(footer && barBox && footer.y + footer.height <= barBox.y + 1).toBe(true);
   await context.close();
+});
+
+test('desktop has no bottom bar', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openFirstSchedule(page);
+  await expect(page.getByRole('navigation', { name: 'Aksi cepat' })).toBeHidden();
 });
