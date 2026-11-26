@@ -1,0 +1,78 @@
+---
+/**
+ * Provider licenses as published, never as a guarantee: expired ones are labelled, and an
+ * unverified provider gets an explicit note (ADR 0018). Document files are never public.
+ */
+import type { ScheduleDetail } from '@pusatk3/shared';
+import { LICENSE_KIND_LABELS, formatDate, isExpired, jakartaToday } from '../../lib/format';
+
+interface Props {
+  licenses: ScheduleDetail['provider']['licenses'];
+  verified: boolean;
+}
+
+const { licenses, verified } = Astro.props;
+const today = jakartaToday();
+---
+
+<div class="licenses">
+  {!verified && (
+    <p class="licenses__note">
+      Legalitas di bawah ini <strong>belum diverifikasi</strong> PusatK3. Cek langsung ke
+      penerbitnya sebelum mendaftar.
+    </p>
+  )}
+  {licenses.length === 0 ? (
+    <p>Belum ada data legalitas.</p>
+  ) : (
+    <ul class="licenses__list">
+      {licenses.map((license) => (
+        <li>
+          <span class="licenses__kind">{LICENSE_KIND_LABELS[license.kind]}</span>
+          <span>
+            No. {license.number} · {license.issuer}
+          </span>
+          {license.validUntil && (
+            <span
+              class:list={['licenses__until', isExpired(license.validUntil, today) && 'is-expired']}
+            >
+              {isExpired(license.validUntil, today)
+                ? `Kedaluwarsa sejak ${formatDate(license.validUntil)}`
+                : `Berlaku s.d. ${formatDate(license.validUntil)}`}
+            </span>
+          )}
+        </li>
+      ))}
+    </ul>
+  )}
+</div>
+
+<style>
+  .licenses__note {
+    padding: 0.75rem;
+    border: 1px dashed var(--color-border-strong);
+    border-radius: var(--radius-card);
+  }
+  .licenses__list {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .licenses__list li {
+    display: grid;
+    gap: 0.125rem;
+  }
+  .licenses__kind {
+    font-weight: var(--font-weight-strong);
+  }
+  .licenses__until {
+    color: var(--color-ink-muted);
+    font-size: 0.9375rem;
+  }
+  .licenses__until.is-expired {
+    color: var(--color-ink);
+    font-weight: var(--font-weight-strong);
+  }
+</style>
