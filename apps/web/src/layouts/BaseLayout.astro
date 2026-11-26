@@ -4,6 +4,9 @@ import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import { absoluteUrl } from '../data/site';
 import { THEME_INIT_SCRIPT } from '../lib/theme';
+// The one font file every page uses first (latin, upright). Preloaded so text does not reflow
+// when it arrives (layout shift seen by Lighthouse on /penyedia, #29).
+import bodyFontUrl from '@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2?url';
 
 interface Props {
   title: string;
@@ -32,6 +35,7 @@ const canonical = absoluteUrl(Astro.url.pathname);
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preload" href={bodyFontUrl} as="font" type="font/woff2" crossorigin="anonymous" />
     <script set:html={THEME_INIT_SCRIPT} is:inline />
     <title>{title}</title>
     <meta name="description" content={description} />

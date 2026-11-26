@@ -72,6 +72,8 @@ export default defineConfig({
     build: { assetsInlineLimit: 0 },
     define: {
       'import.meta.env.PUBLIC_MEDIA_BASE_URL': JSON.stringify(mediaBaseUrl),
+      // Page cache keys change with every build (ADR 0021).
+      __PUSATK3_BUILD_ID__: JSON.stringify(`${Date.now().toString(36)}-${process.pid}`),
     },
   },
   adapter: cloudflare({

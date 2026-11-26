@@ -1,10 +1,12 @@
 import { and, eq, ne, sql, type SQL } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/sqlite-proxy';
 import {
+  appMeta,
   branches,
   cities,
   courseCategories,
   courseFields,
+  DATA_VERSION_KEY,
   providerLicenses,
   providers,
   schedules,
@@ -51,6 +53,20 @@ export function inlineQuery({ sql: text, params }: { sql: string; params: unknow
 const stmt = (query: { toSQL(): { sql: string; params: unknown[] } }) => inlineQuery(query.toSQL());
 
 const now = () => new Date();
+
+/**
+ * New data version (ADR 0021): every edge-cached page and API response keyed on the old one goes
+ * stale. Run it last, after the data it announces has been written.
+ */
+export function dataVersionStatement(version: string = crypto.randomUUID()): string {
+  const at = now();
+  return stmt(
+    db
+      .insert(appMeta)
+      .values({ key: DATA_VERSION_KEY, value: version, updatedAt: at })
+      .onConflictDoUpdate({ target: appMeta.key, set: { value: version, updatedAt: at } }),
+  );
+}
 
 /** Reference data: 14 fields, 59 categories, cities (same values as `seedReferenceData`). */
 export function referenceStatements(data: ReferenceData): string[] {

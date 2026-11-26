@@ -1,4 +1,5 @@
 import {
+  appMeta,
   cities,
   courseCategories,
   courseFields,
@@ -21,6 +22,16 @@ const counts = async (db: ReturnType<typeof drizzle>) => ({
 });
 
 describe('seedReferenceData', () => {
+  it('announces a new data version every time (ADR 0021)', async () => {
+    const db = drizzle(env.DB);
+    const version = async () => (await db.select().from(appMeta)).map((r) => [r.key, r.value]);
+    await seedReferenceData(db, data);
+    const first = await version();
+    expect(first).toEqual([['data_version', expect.any(String)]]);
+    await seedReferenceData(db, data);
+    expect(await version()).not.toEqual(first);
+  });
+
   it('loads 14 fields, 59 categories and the sample cities', async () => {
     const db = drizzle(env.DB);
     await seedReferenceData(db, data);

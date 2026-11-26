@@ -1,11 +1,13 @@
 import { Hono } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
 import type { AppEnv } from './env';
+import { edgeCache, type EdgeCacheOptions } from './middleware/edge-cache';
 import { notFound, onError } from './middleware/errors';
 import { mutableResponse, requestId } from './middleware/request-id';
 import { categoriesRoutes } from './routes/categories';
 import { directoryRoutes } from './routes/directory';
 import { healthRoutes } from './routes/health';
+import { metaRoutes } from './routes/meta';
 
 export const API_BASE_PATH = '/api/v1';
 
@@ -16,6 +18,8 @@ export interface CreateAppOptions {
   extend?: (v1: Router) => void;
   /** Test-only clock (e.g. to pin "today" for date-based visibility). Defaults to Date.now. */
   now?: () => number;
+  /** Edge cache for public GET responses (ADR 0021). Off unless given (src/index.ts does). */
+  edgeCache?: EdgeCacheOptions;
 }
 
 export function createApp(options: CreateAppOptions = {}) {
@@ -49,7 +53,14 @@ export function createApp(options: CreateAppOptions = {}) {
   app.notFound(notFound);
 
   const v1: Router = new Hono<AppEnv>();
+  if (options.edgeCache) {
+    const cached = edgeCache(options.edgeCache);
+    for (const path of ['/search', '/schedules/*', '/providers/*', '/cities', '/categories']) {
+      v1.use(path, cached);
+    }
+  }
   v1.route('/', healthRoutes);
+  v1.route('/', metaRoutes);
   v1.route('/', categoriesRoutes);
   v1.route('/', directoryRoutes);
   options.extend?.(v1);

@@ -13,3 +13,6 @@ interface ImportMeta {
 declare module 'cloudflare:workers' {
   export const env: Record<string, unknown>;
 }
+
+/** Unique per build (astro.config.ts `vite.define`); part of the page cache keys (ADR 0021). */
+declare const __PUSATK3_BUILD_ID__: string;

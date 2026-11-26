@@ -1,5 +1,8 @@
 import { defineMiddleware } from 'astro:middleware';
+import { dataVersionResponseSchema } from '@pusatk3/shared';
+import { apiGet } from './lib/api';
 import { isProductionDeploy } from './lib/deploy';
+import { memoizedVersion, withPageCache } from './lib/page-cache';
 
 // Headers for pages rendered on demand (SSR). `public/_headers` only applies to static assets,
 // so SSR responses get the same security headers here (ADR 0010), plus noindex outside
@@ -19,9 +22,26 @@ export const SECURITY_HEADERS: Record<string, string> = {
 export const SSR_PAGE_CACHE =
   'public, max-age=0, must-revalidate, s-maxage=300, stale-while-revalidate=600';
 
+/** Data version from the API for the page cache keys (ADR 0021); null when unavailable. */
+const dataVersion = memoizedVersion(async () => {
+  const result = await apiGet('/meta/data-version', dataVersionResponseSchema);
+  return result.ok ? result.data.version : null;
+});
+
+/** Changes with every build, so a deploy never serves pages that point at old assets. */
+const BUILD_ID: string = __PUSATK3_BUILD_ID__;
+
 export const onRequest = defineMiddleware(async (context, next) => {
-  const response = await next();
-  if (context.isPrerendered) return response;
+  if (context.isPrerendered) return next();
+  // Deployed: Cache API (edge); no-op on *.workers.dev, absent in unit tests.
+  const cache = (globalThis as { caches?: { default?: Cache } }).caches?.default;
+  return withPageCache(context.request, { cache, dataVersion, buildId: BUILD_ID }, async () =>
+    withSsrHeaders(await next()),
+  );
+});
+
+/** Security, robots and cache headers of an SSR page. */
+function withSsrHeaders(response: Response): Response {
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     if (!response.headers.has(name)) response.headers.set(name, value);
   }
@@ -38,4 +58,4 @@ export const onRequest = defineMiddleware(async (context, next) => {
     response.headers.set('Cache-Control', response.ok ? SSR_PAGE_CACHE : 'no-store');
   }
   return response;
-});
+}

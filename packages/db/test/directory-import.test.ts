@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  dataVersionStatement,
   DIRECTORY_CSV_HEADERS,
   inlineQuery,
   parseCategoriesCsv,
@@ -214,5 +215,19 @@ describe('SQL literals', () => {
   it('inlines parameters in order and checks their count', () => {
     expect(inlineQuery({ sql: 'select ? , ?', params: ['a', 1] })).toBe("select 'a' , 1");
     expect(() => inlineQuery({ sql: 'select ?', params: [] })).toThrow(/placeholders/);
+  });
+});
+
+describe('dataVersionStatement (ADR 0021)', () => {
+  it('upserts the data version, with the value as an escaped literal', () => {
+    const sql = dataVersionStatement("v'1");
+    expect(sql).toMatch(/^insert into "app_meta"/);
+    expect(sql).toContain("'data_version'");
+    expect(sql).toContain("'v''1'");
+    expect(sql).toMatch(/on conflict \(.*"key"\) do update/);
+  });
+
+  it('picks a fresh random version by default', () => {
+    expect(dataVersionStatement()).not.toBe(dataVersionStatement());
   });
 });

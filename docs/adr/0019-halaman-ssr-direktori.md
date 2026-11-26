@@ -16,7 +16,7 @@ Status: diterima · 26 November 2026 · issue #24 (PR pertama: `/cari`). Melanju
   - e2e.
 
 ## Konsekuensi
-- **Cache CDN belum efektif.** Header `s-maxage` saja tidak menyimpan respons Worker (ADR 0010), dan Cache API tidak tersedia di `*.workers.dev`. Setiap kunjungan staging memanggil API. Cache API dan purge dikerjakan di #29 setelah ada domain.
+- **Cache CDN belum efektif.** Header `s-maxage` saja tidak menyimpan respons Worker (ADR 0010), dan Cache API tidak tersedia di `*.workers.dev`. Setiap kunjungan staging memanggil API. Cache API dengan versi data sudah dipasang (ADR 0021, #29) dan aktif begitu domain `pusatk3.id` dipakai.
 - Halaman SSR baru wajib ditambahkan ke `run_worker_first` (dijaga tes konfigurasi).
 - **Rate limit berbasis IP di API tidak bisa melihat IP pengunjung** untuk request dari web lewat service binding (semua datang dari Worker web). Rate limit halaman dipasang di Worker web, atau web meneruskan `CF-Connecting-IP` lewat header internal yang hanya dipercaya API bila datang dari binding (#28/#29; checklist `/siapkan-rilis`).
 - Log staging (observability aktif) kini memuat URL `/cari` termasuk kata kunci pencarian. Tidak ada data pribadi yang diminta di halaman ini; tetap diperhatikan saat form lead (#28) dibuat.
