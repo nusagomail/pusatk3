@@ -217,7 +217,7 @@ function scheduleQuery(db: ReturnType<typeof getDb>, where: SQL | undefined) {
     .where(where);
 }
 
-const visible = (today: string) =>
+export const visible = (today: string) =>
   and(
     eq(schedules.status, 'published'),
     gte(schedules.startDate, today),

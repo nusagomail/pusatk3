@@ -38,8 +38,8 @@ Sumber kebenaran skema. Setiap perubahan skema di kode wajib memperbarui file in
 
 | Tabel | Kolom utama | Catatan |
 | --- | --- | --- |
-| `leads` | provider_id, schedule_id, user_id (nullable), channel (whatsapp/form), name, phone, email, message, status (new/contacted/registered/closed) | Data pribadi: patuhi UU PDP |
-| `profile_views` | provider_id, schedule_id, day, count | Agregat harian, bukan per pengunjung |
+| `leads` **[dibuat]** | provider_id, schedule_id (nullable: klik dari profil), user_id (nullable, Fase 2), channel (whatsapp/form), name, phone (`62…`), email, message, consent_at, anonymized_at, status (new/contacted/registered/closed, bawaan new) | UU PDP (ADR 0022): klik WhatsApp tanpa data pribadi (dijaga CHECK); form wajib persetujuan + nama + pesan + HP/email; data pribadi dikosongkan 12 bulan setelah `created_at` (Cron harian). Indeks: (provider_id, created_at), schedule_id, created_at |
+| `profile_views` **[dibuat]** | provider_id, schedule_id (`''` untuk profil), day (tanggal Jakarta), count (≥ 0) | Agregat harian, tanpa data pengunjung; unik per (provider_id, schedule_id, day); diisi Fase 2 bersama statistik dasbor (ADR 0022) |
 | `reviews` | provider_id, user_id, schedule_id, body, status (pending/published/hidden), provider_reply | Hanya dari peserta terverifikasi |
 
 ## Langganan (Fase 4)

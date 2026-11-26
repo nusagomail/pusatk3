@@ -15,6 +15,7 @@ export const DEFAULT_ERROR_MESSAGES: Record<ErrorCode, string> = {
   VALIDATION_ERROR: 'Periksa kembali isian Anda.',
   RATE_LIMITED: 'Terlalu banyak permintaan. Coba lagi nanti.',
   INTERNAL_ERROR: 'Terjadi kesalahan. Coba lagi nanti.',
+  SERVICE_UNAVAILABLE: 'Layanan ini belum tersedia. Coba lagi nanti.',
 };
 
 /** Throw from handlers/middleware to return a standard error body. */

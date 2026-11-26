@@ -2,7 +2,15 @@
 export interface Env {
   APP_VERSION: string;
   DB: D1Database;
+  /** Turnstile secret (Workers secret in staging/production; test key locally). */
+  TURNSTILE_SECRET?: string;
+  /** Rate limiters (staging/production only, ADR 0022). */
+  RL_READ?: RateLimit;
+  RL_LEAD_FORM?: RateLimit;
+  RL_LEAD_CLICK?: RateLimit;
 }
+
+export type RateLimitBindingName = 'RL_READ' | 'RL_LEAD_FORM' | 'RL_LEAD_CLICK';
 
 export interface AppEnv {
   Bindings: Env;

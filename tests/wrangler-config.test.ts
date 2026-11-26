@@ -24,6 +24,8 @@ interface Effective {
   routes?: { pattern: string; zone_name?: string }[];
   assets?: { not_found_handling?: string; run_worker_first?: string[] | boolean };
   services?: { binding: string; service: string }[];
+  ratelimits?: { name: string; namespace_id: string; simple: { limit: number; period: number } }[];
+  triggers?: { crons?: string[] };
 }
 
 type App = 'api' | 'web';
@@ -89,6 +91,7 @@ describe.each(['api', 'web'] as const)('apps/%s/wrangler.jsonc', (app) => {
 });
 
 describe('apps/api effective config', () => {
+  const local = read('api');
   const staging = read('api', 'staging');
   const production = read('api', 'production');
   const migrations = /packages\/db\/migrations$/;
@@ -120,6 +123,24 @@ describe('apps/api effective config', () => {
     );
     expect(db?.database_id).not.toBe(STAGING_D1_ID);
     expect(db?.migrations_dir).toMatch(migrations);
+  });
+
+  it('staging and production have the rate limiters and the daily retention job (ADR 0022)', () => {
+    const ids = new Set<string>();
+    for (const env of [staging, production]) {
+      expect(env.ratelimits?.map((r) => r.name).sort()).toEqual([
+        'RL_LEAD_CLICK',
+        'RL_LEAD_FORM',
+        'RL_READ',
+      ]);
+      for (const r of env.ratelimits ?? []) {
+        expect(r.namespace_id).toMatch(/^28\d{3}$/); // reserved range in the shared account
+        ids.add(r.namespace_id);
+      }
+      expect(env.triggers?.crons).toEqual(['17 19 * * *']);
+    }
+    expect(ids.size).toBe(6); // staging and production never share counters
+    expect(local.ratelimits ?? []).toEqual([]); // local dev and tests run without limits
   });
 
   it('every environment sets APP_VERSION (vars are not inherited)', () => {
