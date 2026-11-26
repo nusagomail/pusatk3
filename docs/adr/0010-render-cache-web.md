@@ -1,6 +1,6 @@
 # ADR 0010: Render dan cache halaman publik di Cloudflare
 
-Status: diterima · 25 November 2026 · issue #5. Desain: `docs/superpowers/specs/2026-11-25-beranda-design.md`. Melanjutkan ADR 0001 dan 0009.
+Status: diterima · 25 November 2026 · issue #5. **Sebagian digantikan ADR 0019:** beranda dan halaman direktori kini SSR (#24, #25); gerbang "jadwal contoh" kini lewat database (`is_sample`) dan uji asap production. Desain: `docs/superpowers/specs/2026-11-25-beranda-design.md`. Melanjutkan ADR 0001 dan 0009.
 
 ## Konteks
 Aturan wajib 4: halaman publik bisa di-cache CDN dan tanpa login. Respons yang dibuat Worker (SSR) **tidak** otomatis tersimpan di cache CDN hanya karena header `Cache-Control`; aset statis Workers Static Assets tersimpan otomatis.

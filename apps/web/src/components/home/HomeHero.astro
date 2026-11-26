@@ -4,6 +4,13 @@ import Button from '../Button.astro';
 import Input from '../Input.astro';
 import Select from '../Select.astro';
 
+interface Props {
+  /** City options for the search form (from GET /cities); static fallback otherwise. */
+  cities?: readonly { value: string; label: string }[];
+}
+
+const { cities = SEARCH_CITIES } = Astro.props;
+
 const trust = [
   'Legalitas penyedia diverifikasi',
   'Sertifikasi Kemnaker & BNSP',
@@ -26,7 +33,7 @@ const trust = [
         type="search"
         placeholder="Mis. Ahli K3 Umum, forklift"
       />
-      <Select id="hero-city" label="Kota" name="city" options={SEARCH_CITIES} />
+      <Select id="hero-city" label="Kota" name="city" options={cities} />
       <Button type="submit">Cari</Button>
     </form>
     <ul class="hero__trust">

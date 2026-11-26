@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { preflightProblems } from '../scripts/production-preflight.mjs';
 
 // Fixtures only: the real repository is expected to fail until the owner fills in the
-// production database ID and real data replaces the sample schedules.
+// production database ID and the web app's production API binding (ADR 0019).
 const repo = resolve(import.meta.dirname, '..');
 const STAGING_ID = 'b8fcd041-9853-4ed2-81db-0901dba670b8';
 
@@ -35,6 +35,16 @@ const apiConfig = (productionId: string) => `// comment
 const READY = {
   'apps/api/wrangler.jsonc': apiConfig('0b8f6c2e-1111-4222-8333-944455556666'),
   'apps/web/src/pages/index.astro': '---\nimport { getSchedules } from "../lib/api";\n---',
+  'apps/web/wrangler.jsonc': `{
+  "name": "pusatk3-web",
+  "env": {
+    "production": {
+      // added with the owner's approval
+      "services": [{ "binding": "API", "service": "pusatk3-api-production" }],
+    },
+  },
+}
+`,
   // The sample data module may stay in the repo as long as nothing uses it.
   'apps/web/src/data/home.ts': 'export const SAMPLE_SCHEDULES = [];',
 };
@@ -54,6 +64,25 @@ describe('production preflight', () => {
   ])('refuses %s as production database ID', (_name, id) => {
     expect(problems({ ...READY, 'apps/api/wrangler.jsonc': apiConfig(id) })).toMatch(
       /ID database production/,
+    );
+  });
+
+  it.each([
+    ['no production API binding', '{ "name": "pusatk3-web", "env": { "production": {} } }'],
+    [
+      'a binding to the staging API',
+      '{ "env": { "production": { "services": [{ "binding": "API", "service": "pusatk3-api-staging" }] } } }',
+    ],
+  ])('refuses %s for the web app', (_name, config) => {
+    expect(problems({ ...READY, 'apps/web/wrangler.jsonc': config })).toMatch(
+      /belum tersambung ke API/,
+    );
+  });
+
+  it('refuses the real web config until the owner adds the production binding', () => {
+    const real = readFileSync(resolve(repo, 'apps/web/wrangler.jsonc'), 'utf8');
+    expect(problems({ ...READY, 'apps/web/wrangler.jsonc': real })).toMatch(
+      /belum tersambung ke API/,
     );
   });
 

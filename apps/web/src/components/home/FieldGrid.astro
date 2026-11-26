@@ -1,5 +1,12 @@
 ---
 import { FEATURED_FIELDS } from '../../data/home';
+
+interface Props {
+  /** Certification count per field slug (from GET /categories); static counts otherwise. */
+  counts?: Readonly<Record<string, number>>;
+}
+
+const { counts = {} } = Astro.props;
 ---
 
 <ul class="fields">
@@ -8,7 +15,7 @@ import { FEATURED_FIELDS } from '../../data/home';
       <a class="fields__card" href={`/cari?field=${field.slug}`}>
         <span class="fields__name">{field.name}</span>
         <span class="fields__meta">
-          {field.count} sertifikasi · {field.note}
+          {counts[field.slug] ?? field.count} sertifikasi · {field.note}
         </span>
       </a>
     </li>

@@ -134,7 +134,7 @@ describe('apps/web effective config', () => {
     for (const env of [read('web'), read('web', 'staging'), read('web', 'production')]) {
       expect(env.assets?.not_found_handling).toBe('404-page');
       // SSR pages must run the Worker; otherwise browser navigations get 404.html (#24).
-      expect(env.assets?.run_worker_first).toEqual(['/cari', '/jadwal/*', '/penyedia/*']);
+      expect(env.assets?.run_worker_first).toEqual(['/', '/cari', '/jadwal/*', '/penyedia/*']);
     }
   });
 

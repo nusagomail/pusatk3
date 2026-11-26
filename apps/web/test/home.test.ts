@@ -2,7 +2,9 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import IntroVideo from '../src/components/home/IntroVideo.astro';
-import { FEATURED_FIELDS, SAMPLE_SCHEDULES } from '../src/data/home';
+import type { ScheduleSummary } from '@pusatk3/shared';
+import UpcomingSchedules from '../src/components/home/UpcomingSchedules.astro';
+import { FEATURED_FIELDS } from '../src/data/home';
 import Home from '../src/pages/index.astro';
 import { attr, render, tag } from './render';
 
@@ -53,28 +55,11 @@ describe('homepage', () => {
     expect(html).toMatch(/Pendaftaran dan pembayaran langsung ke penyedia/);
   });
 
-  it('labels every sample schedule so nobody mistakes it for a real one', async () => {
+  it('still renders when the API is unavailable (tests have no API binding)', async () => {
     const html = await render(Home);
     const section = /<section[^>]*id="jadwal"[\s\S]*?<\/section>/.exec(html)?.[0] ?? '';
-    expect(section).toContain('Contoh tampilan');
-    expect(section.match(/class="[^"]*schedule-card\b/g)).toHaveLength(SAMPLE_SCHEDULES.length);
-    expect(section.match(/>Contoh</g)).toHaveLength(SAMPLE_SCHEDULES.length);
-  });
-
-  it('makes the sample status audible and never links a sample to a detail page', async () => {
-    const html = await render(Home);
-    const cards = [...html.matchAll(/<article[^>]*schedule-card[\s\S]*?<\/article>/g)].map(
-      (m) => m[0],
-    );
-    expect(cards).toHaveLength(SAMPLE_SCHEDULES.length);
-    for (const [index, card] of cards.entries()) {
-      const title = SAMPLE_SCHEDULES[index]?.title ?? '';
-      expect(card).toMatch(/<h3[^>]*>[\s\S]*class="visually-hidden"[^>]*>Contoh: <\/span>/);
-      expect(card).not.toContain('Lihat detail');
-      expect(card).toContain(`href="/cari?q=${encodeURIComponent(title)}"`);
-      expect(card).toContain(`Cari jadwal ${title}`);
-      expect(card).toMatch(/Desember/);
-    }
+    expect(section).toContain('Jadwal terdekat sedang tidak bisa dimuat');
+    expect(section).not.toMatch(/result-card/);
   });
 
   it('offers every seeded city in the search form', async () => {
@@ -141,5 +126,45 @@ describe('IntroVideo', () => {
     const html = await render(IntroVideo, { mediaBaseUrl: 'javascript:alert(1)//' });
     expect(html).not.toContain('<video');
     expect(html).not.toContain('javascript:');
+  });
+});
+
+describe('UpcomingSchedules', () => {
+  const schedule = (isSample: boolean, id: string): ScheduleSummary => ({
+    id,
+    title: 'Pembinaan Ahli K3 Umum',
+    category: { slug: 'ahli-k3-umum', name: 'Ahli K3 Umum' },
+    issuer: 'kemnaker',
+    mode: 'online',
+    startDate: '2027-01-11',
+    endDate: '2027-01-22',
+    priceIdr: 5_500_000,
+    level: null,
+    certificateKind: 'official',
+    city: null,
+    provider: { slug: 'pt-a', name: 'PT A', type: 'pjk3', verified: false, isSample },
+  });
+
+  it('labels sample schedules and links each card to its detail page', async () => {
+    const html = await render(UpcomingSchedules, {
+      schedules: [schedule(true, '01JAAAAAAAAAAAAAAAAAAAAAAA')],
+    });
+    expect(html).toContain('Data contoh.');
+    expect(html).toMatch(/>Contoh</);
+    expect(html).toContain('href="/jadwal/01JAAAAAAAAAAAAAAAAAAAAAAA"');
+  });
+
+  it('shows real schedules without the sample note', async () => {
+    const html = await render(UpcomingSchedules, {
+      schedules: [schedule(false, '01JBBBBBBBBBBBBBBBBBBBBBBB')],
+    });
+    expect(html).not.toContain('Data contoh.');
+    expect(html).not.toMatch(/>Contoh</);
+  });
+
+  it('says so when there is nothing upcoming', async () => {
+    expect(await render(UpcomingSchedules, { schedules: [] })).toContain(
+      'Belum ada jadwal yang akan datang',
+    );
   });
 });

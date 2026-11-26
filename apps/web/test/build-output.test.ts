@@ -108,8 +108,8 @@ describe('production build', () => {
     expect(middleware).toContain('isProductionDeploy("production")');
   });
 
-  it('prerenders the homepage', () => {
-    expect(existsSync(client('index.html'))).toBe(true);
+  it('renders the homepage on demand (data from the API, #25), not as a static file', () => {
+    expect(existsSync(client('index.html'))).toBe(false);
   });
 
   it('does not ship the internal component showcase', () => {
@@ -167,13 +167,6 @@ describe('_headers', () => {
     expect(all).not.toMatch(/Cache-Control/);
   });
 
-  it('lets the CDN cache the homepage and revalidate in the background', () => {
-    const home = (rules().get('/') ?? []).join('\n');
-    expect(home).toMatch(
-      /Cache-Control: public, max-age=0, must-revalidate, s-maxage=3600, stale-while-revalidate=86400/,
-    );
-  });
-
   it('production builds are indexable (no X-Robots-Tag)', () => {
     expect(readFileSync(client('_headers'), 'utf8')).not.toContain('X-Robots-Tag');
     expect(readFileSync(client('robots.txt'), 'utf8')).toContain('Allow: /');
@@ -187,7 +180,8 @@ describe('_headers', () => {
 });
 
 describe('Content-Security-Policy <meta>', () => {
-  const html = () => readFileSync(client('index.html'), 'utf8');
+  // The static 404 page carries the same CSP <meta> as every page (the homepage is SSR since #25).
+  const html = () => readFileSync(client('404.html'), 'utf8');
   const csp = () =>
     /<meta http-equiv="content-security-policy" content="([^"]+)"/i.exec(html())?.[1] ?? '';
 

@@ -27,8 +27,17 @@ test('home page shows without login and without console errors', async ({ page }
   // Public page: no redirect to a login page.
   expect(new URL(page.url()).pathname).toBe('/');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('pelatihan & sertifikasi K3');
-  // Sample schedules are always labelled (owner decision, #5).
-  await expect(page.getByText('Contoh tampilan').first()).toBeVisible();
+  // Upcoming schedules come from the API (#25); sample data is always labelled "Contoh".
+  const upcoming = page.locator('#jadwal article.result-card');
+  await expect(upcoming.first()).toBeVisible();
+  expect(await upcoming.count()).toBeLessThanOrEqual(4);
+  await expect(upcoming.first().getByText('Contoh', { exact: true })).toBeVisible();
+  // Cities in the search form come from GET /cities.
+  await expect(page.locator('#hero-city option[value="bekasi"]')).toHaveCount(1);
+  // SSR page: cacheable when complete, with the CSP meta and frame-ancestors header.
+  expect(response?.headers()['cache-control']).toMatch(/^public, .*s-maxage=300/);
+  expect(response?.headers()['content-security-policy']).toContain("frame-ancestors 'none'");
+  expect(response?.headers()['content-security-policy']).toContain('script-src');
 
   // CSP violations and script errors are reported before the load event.
   await page.waitForLoadState('load');
