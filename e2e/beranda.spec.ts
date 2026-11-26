@@ -34,6 +34,10 @@ test('home page shows without login and without console errors', async ({ page }
   await expect(upcoming.first().getByText('Contoh', { exact: true })).toBeVisible();
   // Cities in the search form come from GET /cities.
   await expect(page.locator('#hero-city option[value="bekasi"]')).toHaveCount(1);
+  // SSR page: cacheable when complete, with the CSP meta and frame-ancestors header.
+  expect(response?.headers()['cache-control']).toMatch(/^public, .*s-maxage=300/);
+  expect(response?.headers()['content-security-policy']).toContain("frame-ancestors 'none'");
+  expect(response?.headers()['content-security-policy']).toContain('script-src');
 
   // CSP violations and script errors are reported before the load event.
   await page.waitForLoadState('load');

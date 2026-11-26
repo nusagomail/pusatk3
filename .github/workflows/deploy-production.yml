@@ -100,3 +100,7 @@ jobs:
           if grep -qi '^x-robots-tag: noindex' headers.txt; then echo "::error::production homepage is noindex"; exit 1; fi
           grep -q 'PusatK3' index.html || { echo "::error::production homepage content not found"; exit 1; }
           curl -fsS --retry 5 --retry-delay 5 --retry-all-errors https://pusatk3.id/robots.txt | grep -qx 'Allow: /' || { echo "::error::production robots.txt must allow crawling"; exit 1; }
+          # Owner decision #5: production never shows sample data (ADR 0017, ADR 0019).
+          curl -fsS --retry 5 --retry-delay 5 --retry-all-errors -o search.json 'https://pusatk3.id/api/v1/search?limit=100'
+          if grep -q '"isSample":true' search.json; then echo "::error::production shows sample (Contoh) data"; exit 1; fi
+          curl -fsS --retry 5 --retry-delay 5 --retry-all-errors -o cari.html https://pusatk3.id/cari || { echo "::error::production /cari does not answer (API binding?)"; exit 1; }

@@ -21,28 +21,36 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 // always renders; a degraded page is not cached.
 export const prerender = false;
 
+/** Chips stay short once the real city list (hundreds of regencies) is imported. */
+const MAX_CITY_CHIPS = 10;
+
 const [schedulesResult, citiesResult, categoriesResult] = await Promise.all([
   apiGet('/search?limit=4', searchResponseSchema),
   apiGet('/cities', citiesResponseSchema),
   apiGet('/categories', categoriesResponseSchema),
 ]);
-if (!schedulesResult.ok || !citiesResult.ok || !categoriesResult.ok) {
+// An empty list means the database is not seeded (the API does not cache it either): fall back.
+const citiesOk = citiesResult.ok && citiesResult.data.items.length > 0;
+const categoriesOk = categoriesResult.ok && categoriesResult.data.items.length > 0;
+if (!schedulesResult.ok || !citiesOk || !categoriesOk) {
   Astro.response.headers.set('Cache-Control', 'no-store');
 }
 const upcoming = schedulesResult.ok ? schedulesResult.data.items : null;
-const cityOptions = citiesResult.ok
+const cityOptions = citiesOk
   ? [
       { value: '', label: 'Semua kota & online' },
       ...citiesResult.data.items.map((c) => ({ value: c.slug, label: c.name })),
     ]
   : SEARCH_CITIES;
-const cityChips = citiesResult.ok
+const cityChips = citiesOk
   ? [
-      ...citiesResult.data.items.map((c) => ({ label: c.name, query: `city=${c.slug}` })),
+      ...citiesResult.data.items
+        .slice(0, MAX_CITY_CHIPS)
+        .map((c) => ({ label: c.name, query: `city=${c.slug}` })),
       { label: 'Online', query: 'mode=online' },
     ]
   : CITY_CHIPS;
-const fieldCounts = categoriesResult.ok
+const fieldCounts = categoriesOk
   ? Object.fromEntries(categoriesResult.data.items.map((f) => [f.slug, f.categories.length]))
   : {};
 

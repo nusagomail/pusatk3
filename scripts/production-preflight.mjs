@@ -50,7 +50,26 @@ export function preflightProblems(root) {
     );
   }
 
-  // Sample data may stay in src/data/, but nothing else in the web app may use it.
+  // SSR pages read the API through the `API` service binding (ADR 0019). Without it every
+  // directory page and the homepage would only say "cannot be loaded" in production.
+  let webServices;
+  try {
+    webServices = readJsonc(join(root, 'apps/web/wrangler.jsonc')).env?.production?.services;
+  } catch {
+    webServices = undefined;
+  }
+  if (!Array.isArray(webServices)) webServices = [];
+  const hasApiBinding = webServices.some(
+    (s) => s?.binding === 'API' && s?.service === 'pusatk3-api-production',
+  );
+  if (!hasApiBinding) {
+    problems.push(
+      'Situs production belum tersambung ke API: tambahkan service binding API → pusatk3-api-production di env.production apps/web/wrangler.jsonc (persetujuan pemilik, ADR 0019).',
+    );
+  }
+
+  // No hard-coded sample schedules in the web app (owner decision #5). Since #25 samples live in
+  // the database (is_sample) and the production smoke test refuses them.
   const src = join(root, 'apps/web/src');
   const users = filesUnder(src)
     .filter((file) => /\.(astro|ts|tsx|js|mjs|md|mdx)$/.test(file))
