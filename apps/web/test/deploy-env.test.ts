@@ -23,14 +23,16 @@ describe('robotsTxt', () => {
 });
 
 describe('withNoindexHeaders', () => {
-  it('adds X-Robots-Tag for every path, keeping existing rules', () => {
-    const before = '/*\n  X-Content-Type-Options: nosniff\n';
+  it('adds X-Robots-Tag inside the existing /* block (one /* block only)', () => {
+    const before = '/*\n  X-Content-Type-Options: nosniff\n\n/\n  Cache-Control: x\n';
     const after = withNoindexHeaders(before);
-    expect(after.startsWith(before)).toBe(true);
-    expect(after).toMatch(/\n\/\*\n {2}X-Robots-Tag: noindex, nofollow\n$/);
+    expect(after).toBe(
+      '/*\n  X-Content-Type-Options: nosniff\n  X-Robots-Tag: noindex, nofollow\n\n/\n  Cache-Control: x\n',
+    );
+    expect(after.match(/^\/\*$/gm)).toHaveLength(1);
   });
 
-  it('still adds the site-wide rule when only one path is noindex', () => {
+  it('adds a site-wide block when there is none, even if one path is noindex', () => {
     const before = '/internal/*\n  X-Robots-Tag: noindex\n';
     expect(withNoindexHeaders(before)).toMatch(/\n\/\*\n {2}X-Robots-Tag: noindex, nofollow\n$/);
   });

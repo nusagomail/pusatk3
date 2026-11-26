@@ -30,7 +30,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   if (!csp?.includes('frame-ancestors')) {
     response.headers.set(
       'Content-Security-Policy',
-      csp ? `${csp}; frame-ancestors 'none'` : "frame-ancestors 'none'",
+      csp ? `${csp.replace(/;\s*$/, '')}; frame-ancestors 'none'` : "frame-ancestors 'none'",
     );
   }
   if (!PRODUCTION) response.headers.set('X-Robots-Tag', 'noindex, nofollow');

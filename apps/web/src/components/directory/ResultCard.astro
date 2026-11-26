@@ -34,7 +34,11 @@ const sample = schedule.provider.isSample;
   </div>
   <div class="result-card__body">
     <div class="result-card__pills">
-      {sample && <span class="result-card__sample">Contoh</span>}
+      {sample && (
+        <span class="result-card__sample" aria-hidden="true">
+          Contoh
+        </span>
+      )}
       <Pill tone="accent">{ISSUER_LABELS[schedule.issuer]}</Pill>
       <Pill>{MODE_LABELS[schedule.mode]}</Pill>
       {schedule.certificateKind === 'training_only' && (
@@ -42,7 +46,7 @@ const sample = schedule.provider.isSample;
       )}
     </div>
     <h3 class="result-card__title">
-      <a href={`/jadwal/${schedule.id}`}>
+      <a href={`/jadwal/${encodeURIComponent(schedule.id)}`}>
         {sample && <span class="visually-hidden">Contoh: </span>}
         {schedule.title}
       </a>
@@ -54,7 +58,9 @@ const sample = schedule.provider.isSample;
     </p>
     {!hideProvider && (
       <p class="result-card__provider">
-        <a href={`/penyedia/${schedule.provider.slug}`}>{schedule.provider.name}</a>
+        <a href={`/penyedia/${encodeURIComponent(schedule.provider.slug)}`}>
+          {schedule.provider.name}
+        </a>
         {schedule.provider.verified && <VerifiedBadge compact />}
       </p>
     )}

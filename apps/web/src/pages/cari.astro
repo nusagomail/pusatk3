@@ -27,6 +27,8 @@ const cities = citiesResult.ok ? citiesResult.data.items : [];
 
 if (!query) Astro.response.status = 400;
 else if (results && !results.ok) Astro.response.status = results.status === 422 ? 400 : 503;
+// A page with an empty city list must not stay in a cache.
+if (!citiesResult.ok) Astro.response.headers.set('Cache-Control', 'no-store');
 
 const cityName = cities.find((c) => c.slug === values.city)?.name;
 const heading = [
@@ -174,14 +176,14 @@ const pageLink = (cursor: number | string | null) =>
           </p>
         )}
         {results?.ok && results.data.sponsored.length > 0 && (
-          <div class="search__sponsored" aria-label="Sponsor">
+          <section class="search__sponsored" aria-label="Sponsor">
             {results.data.sponsored.map((schedule) => (
               <div class="search__sponsored-item">
                 <SponsorLabel />
                 <ResultCard schedule={schedule} />
               </div>
             ))}
-          </div>
+          </section>
         )}
         {results?.ok && results.data.items.length === 0 && (
           <p class="search__notice">

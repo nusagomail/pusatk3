@@ -18,5 +18,8 @@ Status: diterima · 26 November 2026 · issue #24 (PR pertama: `/cari`). Melanju
 ## Konsekuensi
 - **Cache CDN belum efektif.** Header `s-maxage` saja tidak menyimpan respons Worker (ADR 0010), dan Cache API tidak tersedia di `*.workers.dev`. Setiap kunjungan staging memanggil API. Cache API dan purge dikerjakan di #29 setelah ada domain.
 - Halaman SSR baru wajib ditambahkan ke `run_worker_first` (dijaga tes konfigurasi).
+- **Rate limit berbasis IP di API tidak bisa melihat IP pengunjung** untuk request dari web lewat service binding (semua datang dari Worker web). Rate limit halaman dipasang di Worker web, atau web meneruskan `CF-Connecting-IP` lewat header internal yang hanya dipercaya API bila datang dari binding (#28/#29; checklist `/siapkan-rilis`).
+- Log staging (observability aktif) kini memuat URL `/cari` termasuk kata kunci pencarian. Tidak ada data pribadi yang diminta di halaman ini; tetap diperhatikan saat form lead (#28) dibuat.
+- Perbaikan ikutan: `_headers` non-production sebelumnya berisi dua blok `/*`, dan blok kedua (noindex) membuat header keamanan halaman statis hilang di staging. Kini noindex disisipkan ke blok `/*` yang sama, dan tes build menolak blok ganda.
 - e2e mengisi D1 lokal dengan data contoh (`pnpm db:migrate:local && pnpm db:import:local`) sebelum build dan tes. Jadwal contoh bertanggal Januari–Maret 2027 dan harus diperbarui sebelum itu, agar staging dan e2e tetap punya jadwal yang akan datang.
 - Kartu hasil menautkan ke `/jadwal/[id]` dan `/penyedia/[slug]`. Kedua halaman itu dibuat di PR berikutnya (#24); sampai saat itu tautannya 404.

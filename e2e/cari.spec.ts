@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// /cari renders on demand from the local API (service binding) with the Jabodetabek sample data
+// /cari renders on demand from the local API (HTTP via API_ORIGIN) with the Jabodetabek sample data
 // imported by `pnpm test:e2e` (pnpm db:import:local).
 
 function collectErrors(page: Page): string[] {
@@ -54,5 +54,6 @@ test('ignores unknown parameters such as utm_*', async ({ page }) => {
 test('explains invalid filters instead of failing', async ({ page }) => {
   const response = await page.goto('/cari?priceMin=9000000&priceMax=1');
   expect(response?.status()).toBe(400);
+  expect(response?.headers()['cache-control']).toBe('no-store');
   await expect(page.getByRole('alert')).toContainText('tidak valid');
 });

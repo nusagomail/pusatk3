@@ -68,6 +68,23 @@ afterAll(() => {
 describe('non-production build (no CLOUDFLARE_ENV)', () => {
   const local = (...parts: string[]) => join(localOut, 'client', ...parts);
 
+  it('has exactly one /* block, with security headers and noindex together', () => {
+    const text = readFileSync(local('_headers'), 'utf8');
+    expect(text.match(/^\/\*$/gm)).toHaveLength(1);
+    const rules = headerRules(text);
+    expect(rules.get('/*')).toEqual(
+      expect.arrayContaining(['X-Frame-Options: DENY', 'X-Robots-Tag: noindex, nofollow']),
+    );
+  });
+
+  it('builds the SSR middleware for a non-production target (noindex at runtime)', () => {
+    const middleware = readFileSync(
+      join(localOut, 'server', 'virtual_astro_middleware.mjs'),
+      'utf8',
+    );
+    expect(middleware).not.toContain('isProductionDeploy("production")');
+  });
+
   it('is noindex on every path and blocks crawlers', () => {
     const rules = headerRules(readFileSync(local('_headers'), 'utf8'));
     expect(rules.get('/*')).toContain('X-Robots-Tag: noindex, nofollow');
@@ -86,6 +103,11 @@ describe('non-production build (no CLOUDFLARE_ENV)', () => {
 });
 
 describe('production build', () => {
+  it('builds the SSR middleware for production (no runtime noindex)', () => {
+    const middleware = readFileSync(server('virtual_astro_middleware.mjs'), 'utf8');
+    expect(middleware).toContain('isProductionDeploy("production")');
+  });
+
   it('prerenders the homepage', () => {
     expect(existsSync(client('index.html'))).toBe(true);
   });
