@@ -58,3 +58,53 @@ test('opening the question page directly goes to the search page', async ({ page
   await page.goto('/kontak/pertanyaan');
   await expect(page).toHaveURL(/\/cari$/);
 });
+
+// e2e/fixtures.sql: the sample TUK Tangerang has a (fictional) WhatsApp number and claimed its
+// profile, so its schedule page shows both the tracked WhatsApp button and the question form.
+async function tangerangScheduleId(request: APIRequestContext) {
+  const res = await request.get(`${API_URL}/api/v1/providers/contoh-tuk-k3-tangerang`);
+  const body = (await res.json()) as { schedules: { id: string }[] };
+  const id = body.schedules[0]?.id;
+  if (!id) throw new Error('fixture provider has no schedule');
+  return id;
+}
+
+test('a WhatsApp click opens wa.me and sends the lead beacon (no personal data)', async ({
+  page,
+}) => {
+  const id = await tangerangScheduleId(page.request);
+  await page.goto(`/jadwal/${id}`);
+  const button = page.locator('aside a.wa[data-lead]');
+  await expect(button).toHaveAttribute('href', /^https:\/\/wa\.me\/6281200000000/);
+  // wa.me itself is never loaded in tests.
+  await page.context().route('https://wa.me/**', (route) => route.abort());
+  const beacon = page.waitForRequest('**/kontak/klik-wa');
+  await button.click();
+  const request = await beacon;
+  expect(request.method()).toBe('POST');
+  expect(JSON.parse(request.postData() ?? '{}')).toEqual({ scheduleId: id });
+});
+
+test('the question form shows for a claimed provider, with Turnstile allowed on that page only', async ({
+  request,
+}) => {
+  const res = await request.get(`/jadwal/${await tangerangScheduleId(request)}`);
+  const html = await res.text();
+  expect(html).toContain('class="question');
+  expect(html).toContain('data-action="lead-form"');
+  const csp = res.headers()['content-security-policy'] ?? '';
+  expect(csp).toMatch(/script-src 'self' https:\/\/challenges\.cloudflare\.com/);
+  expect(csp).toContain('frame-src https://challenges.cloudflare.com');
+
+  const other = await request.get(`/jadwal/${await sampleScheduleId(request)}`);
+  expect(other.headers()['content-security-policy']).not.toContain('challenges.cloudflare.com');
+});
+
+test('the API stores a WhatsApp click for the fixture provider (202, not a hidden 500)', async ({
+  request,
+}) => {
+  const res = await request.post(`${API_URL}/api/v1/leads/whatsapp`, {
+    data: { scheduleId: await tangerangScheduleId(request) },
+  });
+  expect(res.status()).toBe(202);
+});

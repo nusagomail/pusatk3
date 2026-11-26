@@ -10,6 +10,7 @@ Status 25 November 2026:
 | R2 (video) | `pusatk3-media-staging` ✅ dibuat, belum publik | `pusatk3-media-production` ⬜ dibuat pemilik |
 | Domain | `*.workers.dev` (sementara) | `pusatk3.id` ⬜ pindah ke Cloudflare |
 | Worker | dibuat otomatis saat deploy pertama (#8) | dibuat saat rilis pertama |
+| Turnstile (form pertanyaan) | ⬜ widget dibuat pemilik (langkah 5a) | ⬜ widget dibuat pemilik (langkah 5a) |
 
 ## 1. Pindahkan domain `pusatk3.id` ke Cloudflare (sekali)
 
@@ -59,6 +60,16 @@ Langkah production:
 4. Environment variable `production`: `PUBLIC_MEDIA_BASE_URL` = `https://media.pusatk3.id` (setelah bagian 3, R2 production).
 
 Variabel build staging (mis. `PUBLIC_MEDIA_BASE_URL` untuk video staging) diisi sebagai **build variable** Worker `pusatk3-web-staging` di Cloudflare (Settings → Build), bukan di GitHub.
+
+## 5a. Turnstile untuk form "Kirim pertanyaan" (ADR 0022)
+
+Form pertanyaan baru tampil bila penyedia sudah klaim profil **dan** Turnstile terpasang. Di production, form juga menunggu halaman kebijakan privasi (dijaga tes).
+1. Dashboard Cloudflare → **Turnstile** → **Add widget**. Nama `pusatk3-staging` (atau `pusatk3-production`), hostname `pusatk3-web-staging.nusagomail.workers.dev` (atau `pusatk3.id`), mode **Managed**.
+2. **Site key** (publik): kirim ke developer. Nilainya diisi di `TURNSTILE_SITE` pada `apps/web/wrangler.jsonc` env yang sama, lewat PR.
+3. **Secret key** (rahasia, jangan dikirim ke siapa pun): Workers & Pages → `pusatk3-api-staging` (atau `-production`) → **Settings → Variables and Secrets** → **Add** → tipe **Secret**, nama `TURNSTILE_SECRET`, tempel secret key → **Deploy**.
+4. Tanpa secret, API menjawab form dengan 503 ("belum tersedia"); kunci uji Cloudflare ditolak di luar lokal.
+
+Variabel lingkungan terkait: `ENVIRONMENT` di `apps/api/wrangler.jsonc` (`local`/`staging`/`production`; hanya `local` menerima kunci uji Turnstile).
 
 ## 6. Cara kerja deploy (#8, ADR 0012)
 

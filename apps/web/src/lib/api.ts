@@ -18,6 +18,8 @@ export type { ApiPostResult, ApiResult };
 /**
  * The visitor of the request being rendered (set by the middleware), so every API call carries
  * the visitor IP for the API's per-visitor rate limits (ADR 0022) without passing it around.
+ * Call the API from page/endpoint frontmatter (as all pages do): code that runs later while the
+ * response streams may run outside this context, and then the API sees no visitor IP.
  */
 export const visitorContext = new AsyncLocalStorage<{ ip: string | null }>();
 

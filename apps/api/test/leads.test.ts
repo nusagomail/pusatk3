@@ -218,6 +218,15 @@ describe('POST /api/v1/leads (question form, public)', () => {
       expect(await leadRows()).toEqual([]);
     });
 
+    it('treats a missing ENVIRONMENT as deployed (test keys refused, 503)', async () => {
+      const unnamed = {
+        ...env,
+        ENVIRONMENT: undefined,
+        TURNSTILE_SECRET: TURNSTILE_TEST_SECRETS.alwaysPasses,
+      };
+      await expectApiError(await post('/leads', await form(), unnamed), 503, 'SERVICE_UNAVAILABLE');
+    });
+
     it('checks the token with Cloudflare siteverify using the secret', async () => {
       const siteverify = vi.fn(async (_url: string, _init: RequestInit) =>
         Response.json({ success: true, action: 'lead-form' }),

@@ -1,11 +1,13 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { LEAD_CONSENT_TEXT } from '@pusatk3/shared';
-import { describe, expect, it, vi } from 'vitest';
+import { env } from 'cloudflare:workers';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import QuestionForm from '../src/components/directory/QuestionForm.astro';
 import WhatsAppButton from '../src/components/WhatsAppButton.astro';
 import { apiGetWith, apiPostWith, VISITOR_IP_HEADER } from '../src/lib/api-client';
 import { visitorContext } from '../src/lib/api';
-import { parseClickBeacon, questionFromForm, questionOutcome } from '../src/lib/leads';
+import { fieldErrors, parseClickBeacon, questionFromForm, questionOutcome } from '../src/lib/leads';
+import { canAskQuestions } from '../src/lib/schedule-page';
 import { POST as clickBeacon } from '../src/pages/kontak/klik-wa';
 import QuestionPage from '../src/pages/kontak/pertanyaan.astro';
 import { attr, render, tag } from './render';
@@ -13,6 +15,44 @@ import { attr, render, tag } from './render';
 // Web side of leads (#28, ADR 0022). The API checks everything again; these tests cover what the
 // web sends, shows and never does (block the WhatsApp link, leak data, cache results).
 const SCHEDULE = '01M89PMTFMP52DZ0X42EEQV2RH';
+const runtime = env as Record<string, unknown>;
+
+/** Fake API binding in the stubbed Workers env; reset after each test. */
+function fakeApi(answer: () => Response) {
+  const binding = { fetch: vi.fn(async (_request: Request) => answer()) };
+  runtime.API = binding;
+  return binding;
+}
+afterEach(() => {
+  delete runtime.API;
+  delete runtime.TURNSTILE_SITE;
+});
+
+describe('canAskQuestions', () => {
+  const schedule = (acceptsQuestions: boolean) => ({ provider: { acceptsQuestions } }) as never;
+  it.each([
+    [schedule(true), 'upcoming', 'key', true],
+    [schedule(false), 'upcoming', 'key', false],
+    [schedule(true), 'started', 'key', false],
+    [schedule(true), 'upcoming', null, false],
+    [null, 'upcoming', 'key', false],
+  ])('%#', (s, timing, key, expected) => {
+    expect(canAskQuestions(s, timing, key)).toBe(expected);
+  });
+});
+
+describe('fieldErrors', () => {
+  it('keeps the first message of known form fields only', () => {
+    expect(
+      fieldErrors([
+        { path: 'phone', message: 'A' },
+        { path: 'phone', message: 'B' },
+        { path: 'providerId', message: 'C' },
+        { path: 'consent', message: 'D' },
+      ]),
+    ).toEqual({ phone: 'A', consent: 'D' });
+  });
+});
 
 describe('parseClickBeacon', () => {
   it.each([
@@ -166,6 +206,34 @@ describe('QuestionForm', () => {
   });
 });
 
+describe('/kontak/klik-wa forwarding', () => {
+  const beacon = (body: string, length = String(new TextEncoder().encode(body).length)) =>
+    new Request('https://pusatk3.test/kontak/klik-wa', {
+      method: 'POST',
+      body,
+      headers: { 'content-length': length },
+    });
+
+  it('forwards a valid click to the API with the visitor IP', async () => {
+    const api = fakeApi(() => new Response(null, { status: 202 }));
+    const res = await visitorContext.run({ ip: '203.0.113.20' }, () =>
+      clickBeacon({ request: beacon(`{"scheduleId":"${SCHEDULE}"}`) } as never),
+    );
+    expect(res.status).toBe(204);
+    const sent = api.fetch.mock.calls[0]?.[0];
+    expect(new URL(sent?.url ?? '').pathname).toBe('/api/v1/leads/whatsapp');
+    expect(await sent?.text()).toBe(`{"scheduleId":"${SCHEDULE}"}`);
+    expect(sent?.headers.get(VISITOR_IP_HEADER)).toBe('203.0.113.20');
+  });
+
+  it('never reads a body that declares more than 1 KB, or no length at all', async () => {
+    const api = fakeApi(() => new Response(null, { status: 202 }));
+    await clickBeacon({ request: beacon(`{"scheduleId":"${SCHEDULE}"}`, '5000') } as never);
+    await clickBeacon({ request: beacon(`{"scheduleId":"${SCHEDULE}"}`, '0') } as never);
+    expect(api.fetch).not.toHaveBeenCalled();
+  });
+});
+
 describe('/kontak/klik-wa', () => {
   it('always answers 204 without content, whatever was sent', async () => {
     for (const body of [`{"scheduleId":"${SCHEDULE}"}`, 'rubbish', '']) {
@@ -183,17 +251,72 @@ describe('/kontak/pertanyaan', () => {
     const container = await AstroContainer.create();
     const form = new FormData();
     form.set('scheduleId', SCHEDULE);
-    const res = await container.renderToResponse(QuestionPage, {
-      request: new Request('https://pusatk3.test/kontak/pertanyaan', {
-        method: 'POST',
-        body: form,
-      }),
-    });
+    const res = await container.renderToResponse(QuestionPage, { request: post(form) });
     expect(res.status).toBe(503);
     expect(res.headers.get('cache-control')).toBe('no-store');
     const html = await res.text();
     expect(html).toContain('Pertanyaan belum bisa dikirim');
     expect(html).toContain(`href="/jadwal/${SCHEDULE}#kontak"`);
+  });
+
+  const post = (form: FormData) => {
+    const body = new URLSearchParams(form as unknown as Record<string, string>).toString();
+    return new Request('https://pusatk3.test/kontak/pertanyaan', {
+      method: 'POST',
+      body,
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        'content-length': String(body.length),
+      },
+    });
+  };
+
+  it('shows the form again with what the visitor typed and the error per field', async () => {
+    runtime.TURNSTILE_SITE = '1x00000000000000000000AA';
+    fakeApi(() =>
+      Response.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'x',
+            fields: [{ path: 'phone', message: 'Nomor HP Indonesia tidak valid' }],
+          },
+        },
+        { status: 422 },
+      ),
+    );
+    const form = new FormData();
+    form.set('scheduleId', SCHEDULE);
+    form.set('name', 'Budi');
+    form.set('phone', '123');
+    form.set('message', 'Apakah masih ada kuota?');
+    const container = await AstroContainer.create();
+    const res = await container.renderToResponse(QuestionPage, { request: post(form) });
+    expect(res.status).toBe(422);
+    const html = await res.text();
+    expect(html).toContain('value="Budi"');
+    expect(html).toContain('Apakah masih ada kuota?</textarea>');
+    expect(html).toContain('Nomor HP Indonesia tidak valid');
+    expect(html).toContain('aria-invalid="true"');
+  });
+
+  it('refuses a body without a declared length or over 16 KB without reading it (413)', async () => {
+    const api = fakeApi(() => new Response(null, { status: 201 }));
+    const container = await AstroContainer.create();
+    for (const length of ['0', '20000']) {
+      const res = await container.renderToResponse(QuestionPage, {
+        request: new Request('https://pusatk3.test/kontak/pertanyaan', {
+          method: 'POST',
+          body: 'name=Budi',
+          headers: {
+            'content-type': 'application/x-www-form-urlencoded',
+            'content-length': length,
+          },
+        }),
+      });
+      expect(res.status).toBe(413);
+    }
+    expect(api.fetch).not.toHaveBeenCalled();
   });
 
   it('sends GET visitors to the search page', async () => {

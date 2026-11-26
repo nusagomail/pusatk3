@@ -16,8 +16,9 @@ const MULTILINE = /^(?:[^\p{Cc}]|[\n\r\t])*$/u;
  */
 export const LEAD_CONSENT_VERSION = '2026-11-26';
 export const LEAD_CONSENT_TEXT =
-  'Saya setuju nama, kontak, dan pertanyaan ini dikirim ke penyedia pelatihan yang saya hubungi ' +
-  'untuk menjawab pertanyaan saya. Data pribadi disimpan paling lama 12 bulan, lalu dihapus.';
+  'Saya setuju PusatK3 meneruskan nama, kontak, dan pertanyaan ini ke penyedia pelatihan yang ' +
+  'saya hubungi, hanya untuk menjawab pertanyaan saya. Data pribadi disimpan paling lama 12 bulan, ' +
+  'lalu dihapus. Saya bisa meminta akses atau penghapusan data lewat kontak PusatK3.';
 
 /** Turnstile widget action of the question form (checked by the API). */
 export const TURNSTILE_LEAD_ACTION = 'lead-form';

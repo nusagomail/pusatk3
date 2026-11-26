@@ -71,3 +71,20 @@ export function courseJsonLd(
     },
   };
 }
+
+/**
+ * "Kirim pertanyaan" is shown only where someone reads it (claimed provider), while the schedule
+ * is still upcoming, and when Turnstile is configured (#28, ADR 0022).
+ */
+export function canAskQuestions(
+  schedule: Pick<ScheduleDetail, 'provider'> | null,
+  timing: string,
+  siteKey: string | null,
+): boolean {
+  return (
+    schedule !== null &&
+    timing === 'upcoming' &&
+    schedule.provider.acceptsQuestions &&
+    siteKey !== null
+  );
+}

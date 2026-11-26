@@ -42,17 +42,21 @@ const href = number
 )}
 
 <script>
-  // One listener for every tracked WhatsApp button; never delays or blocks the link.
-  document.addEventListener('click', (event) => {
+  // One listener for every tracked WhatsApp button; never delays or blocks the link. The body is
+  // a plain string (text/plain): Chromium refuses sendBeacon with an application/json Blob.
+  const track = (event: MouseEvent) => {
+    if (event.type === 'auxclick' && event.button !== 1) return; // middle click only
     const link = (event.target as Element | null)?.closest?.('a.wa[data-lead]');
     const lead = link?.getAttribute('data-lead');
     if (!lead) return;
     try {
-      navigator.sendBeacon('/kontak/klik-wa', new Blob([lead], { type: 'application/json' }));
+      navigator.sendBeacon('/kontak/klik-wa', lead);
     } catch {
       // Counting a click is never worth breaking the link.
     }
-  });
+  };
+  document.addEventListener('click', track);
+  document.addEventListener('auxclick', track);
 </script>
 
 <style>

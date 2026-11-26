@@ -46,3 +46,20 @@ export function questionOutcome(status: number): QuestionOutcome {
   if (status === 429) return 'busy';
   return 'unavailable';
 }
+
+/** The form is at most a few KB; the API refuses more than 8 KB of JSON. */
+export const QUESTION_BODY_MAX_BYTES = 16 * 1024;
+
+type QuestionField = 'name' | 'phone' | 'email' | 'message' | 'consent';
+const QUESTION_FIELDS = new Set<string>(['name', 'phone', 'email', 'message', 'consent']);
+
+/** API field errors (422) → the first message per form field. */
+export function fieldErrors(
+  fields: readonly { path: string; message: string }[],
+): Partial<Record<QuestionField, string>> {
+  const errors: Partial<Record<QuestionField, string>> = {};
+  for (const { path, message } of fields) {
+    if (QUESTION_FIELDS.has(path) && !(path in errors)) errors[path as QuestionField] = message;
+  }
+  return errors;
+}

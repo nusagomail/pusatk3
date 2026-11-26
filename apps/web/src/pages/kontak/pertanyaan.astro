@@ -2,12 +2,22 @@
 /**
  * Result of the "Kirim pertanyaan" form (#28, ADR 0022). The form on /jadwal/[id] posts here;
  * this forwards it to the API (which checks Turnstile, consent, visibility and rate limits) and
- * says what happened. Never cached; Astro's origin check refuses cross-site form posts.
+ * says what happened. When the visitor can fix and resend (invalid, anti-bot, too many), the form
+ * is shown again with what they typed and the error of each field. Never cached; Astro's origin
+ * check refuses cross-site form posts.
  */
 import Button from '../../components/Button.astro';
+import QuestionForm from '../../components/directory/QuestionForm.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { apiPost } from '../../lib/api';
-import { questionFromForm, questionOutcome, type QuestionOutcome } from '../../lib/leads';
+import {
+  QUESTION_BODY_MAX_BYTES,
+  fieldErrors,
+  questionFromForm,
+  questionOutcome,
+  type QuestionOutcome,
+} from '../../lib/leads';
+import { allowTurnstile, turnstileSiteKey } from '../../lib/turnstile';
 
 export const prerender = false;
 
@@ -15,13 +25,31 @@ Astro.response.headers.set('Cache-Control', 'no-store');
 
 if (Astro.request.method !== 'POST') return Astro.redirect('/cari', 303);
 
-const form = await Astro.request.formData().catch(() => new FormData());
+// Never parse a body the API would refuse anyway (8 KB there); a form without a declared length
+// (streamed) is not read either.
+const length = Number(Astro.request.headers.get('content-length') ?? '0');
+const readable = length > 0 && length <= QUESTION_BODY_MAX_BYTES;
+const form = readable ? await Astro.request.formData().catch(() => new FormData()) : new FormData();
 const body = questionFromForm(form);
 const scheduleId = /^[0-9A-Z]{26}$/.test(String(body.scheduleId)) ? String(body.scheduleId) : '';
-const result = await apiPost('/leads', body);
+const result = readable ? await apiPost('/leads', body) : { status: 413 };
 const outcome: QuestionOutcome = questionOutcome(result.status);
-const fields = result.fields ?? [];
 if (outcome !== 'sent') Astro.response.status = result.status;
+if (result.status === 429) Astro.response.headers.set('Retry-After', '60');
+
+const siteKey = turnstileSiteKey();
+const retry =
+  scheduleId !== '' &&
+  siteKey !== null &&
+  (outcome === 'invalid' || outcome === 'blocked' || outcome === 'busy');
+if (retry) allowTurnstile(Astro.csp);
+const values = {
+  name: String(body.name ?? ''),
+  phone: String(body.phone ?? ''),
+  email: String(body.email ?? ''),
+  message: String(body.message ?? ''),
+};
+const errors = fieldErrors('fields' in result ? (result.fields ?? []) : []);
 
 const back = scheduleId ? `/jadwal/${scheduleId}#kontak` : '/cari';
 const MESSAGES: Record<QuestionOutcome, { title: string; text: string }> = {
@@ -31,15 +59,15 @@ const MESSAGES: Record<QuestionOutcome, { title: string; text: string }> = {
   },
   invalid: {
     title: 'Periksa kembali isian Anda',
-    text: 'Ada isian yang belum sesuai. Kembali ke halaman jadwal, perbaiki, lalu kirim lagi.',
+    text: 'Ada isian yang belum sesuai. Perbaiki di bawah ini, lalu kirim lagi.',
   },
   blocked: {
     title: 'Verifikasi anti-bot gagal',
-    text: 'Muat ulang halaman jadwal, lalu kirim pertanyaan sekali lagi.',
+    text: 'Selesaikan verifikasi di bawah ini, lalu kirim pertanyaan sekali lagi.',
   },
   busy: {
     title: 'Terlalu banyak kiriman',
-    text: 'Tunggu sekitar satu menit, lalu coba lagi.',
+    text: 'Tunggu sekitar satu menit, lalu kirim lagi.',
   },
   gone: {
     title: 'Jadwal tidak lagi menerima pertanyaan',
@@ -54,22 +82,22 @@ const message = MESSAGES[outcome];
 ---
 
 <BaseLayout title={`${message.title} — PusatK3`} description={message.text} noindex>
-  <section class="question-result" aria-live="polite">
+  <section class="question-result">
     <h1>{message.title}</h1>
     <p role={outcome === 'sent' ? 'status' : 'alert'}>{message.text}</p>
-    {fields.length > 0 && (
-      <ul class="question-result__fields">
-        {fields.map((field) => (
-          <li>{field.message}</li>
-        ))}
-      </ul>
+    {retry ? (
+      <QuestionForm
+        scheduleId={scheduleId}
+        siteKey={siteKey as string}
+        values={values}
+        errors={errors}
+      />
+    ) : (
+      <Button href={back}>Kembali ke jadwal</Button>
     )}
     <p class="question-result__note">
       PusatK3 tidak memproses pendaftaran maupun pembayaran. Daftar dan bayar langsung ke penyedia.
     </p>
-    <Button href={back}>
-      {outcome === 'sent' ? 'Kembali ke jadwal' : 'Kembali dan coba lagi'}
-    </Button>
   </section>
 </BaseLayout>
 
@@ -78,9 +106,6 @@ const message = MESSAGES[outcome];
     max-width: 40rem;
     margin: 0 auto;
     padding: 2rem 1rem 3rem;
-  }
-  .question-result__fields {
-    color: var(--color-danger);
   }
   .question-result__note {
     color: var(--color-ink-muted);

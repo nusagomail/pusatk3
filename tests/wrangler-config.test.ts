@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -169,6 +170,14 @@ describe('apps/web effective config', () => {
         '/kontak/*',
       ]);
     }
+  });
+
+  it('production gets a Turnstile site key only once the privacy policy page exists (UU PDP, ADR 0022)', () => {
+    const production = read('web', 'production');
+    const privacyPage = ['privasi.astro', 'kebijakan-privasi.astro'].some((file) =>
+      existsSync(resolve(appDir('web'), 'src/pages', file)),
+    );
+    if (!privacyPage) expect(production.vars.TURNSTILE_SITE ?? '').toBe('');
   });
 
   it('reads the API locally over HTTP and in staging through the staging service binding', () => {

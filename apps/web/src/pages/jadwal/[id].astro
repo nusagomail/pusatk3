@@ -17,7 +17,7 @@ import Pill from '../../components/Pill.astro';
 import VerifiedBadge from '../../components/VerifiedBadge.astro';
 import WhatsAppButton from '../../components/WhatsAppButton.astro';
 import QuestionForm from '../../components/directory/QuestionForm.astro';
-import { turnstileSiteKey } from '../../lib/turnstile';
+import { allowTurnstile, turnstileSiteKey } from '../../lib/turnstile';
 import { absoluteUrl } from '../../data/site';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { apiGet } from '../../lib/api';
@@ -30,7 +30,12 @@ import {
   formatPrice,
   jakartaToday,
 } from '../../lib/format';
-import { courseJsonLd, detailPageStatus, scheduleTiming } from '../../lib/schedule-page';
+import {
+  canAskQuestions,
+  courseJsonLd,
+  detailPageStatus,
+  scheduleTiming,
+} from '../../lib/schedule-page';
 
 export const prerender = false;
 
@@ -66,17 +71,8 @@ const waMessage = schedule
 const city = schedule ? (schedule.branch ? schedule.branch.city.name : 'Online') : '';
 // "Kirim pertanyaan" only where someone reads it (claimed provider) and Turnstile is set up.
 const siteKey = turnstileSiteKey();
-const canAsk =
-  schedule !== null &&
-  timing === 'upcoming' &&
-  schedule.provider.acceptsQuestions &&
-  siteKey !== null;
-if (canAsk) {
-  // Turnstile widget: script and frame from challenges.cloudflare.com on this page only.
-  Astro.csp?.insertScriptResource("'self'");
-  Astro.csp?.insertScriptResource('https://challenges.cloudflare.com');
-  Astro.csp?.insertDirective('frame-src https://challenges.cloudflare.com');
-}
+const canAsk = canAskQuestions(schedule, timing, siteKey);
+if (canAsk) allowTurnstile(Astro.csp);
 const jsonLd = schedule ? courseJsonLd(schedule, timing) : null;
 const searchCategory = schedule
   ? `/cari?category=${encodeURIComponent(schedule.category.slug)}`

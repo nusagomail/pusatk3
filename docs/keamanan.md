@@ -15,7 +15,7 @@
 - Secret hanya di Workers Secrets / GitHub Secrets. Tidak pernah di repo atau log.
 - Cookie sesi `HttpOnly; Secure; SameSite=Lax`; rotasi sesi setelah login dan setelah 2FA.
 - Header: CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `frame-ancestors 'none'` (kecuali website instan).
-- Turnstile di semua form publik (lead, kontak, klaim, login).
+- Turnstile di semua form publik (lead, kontak, klaim, login). Script/frame `challenges.cloudflare.com` hanya diizinkan CSP di halaman yang menampilkan widget (ADR 0022).
 - Upload hanya ke R2 lewat URL bertanda tangan; batasi jenis dan ukuran file; dokumen legalitas tidak publik.
 - Data rahasia di DB (secret 2FA) dienkripsi.
 - Dependabot + secret scanning aktif.

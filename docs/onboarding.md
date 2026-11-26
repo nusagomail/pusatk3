@@ -42,7 +42,7 @@ pnpm lint && pnpm typecheck && pnpm test   # cepat, wajib sebelum PR
 pnpm test:e2e                              # tes browser; hentikan `pnpm dev` dulu
 ```
 
-`pnpm test:e2e` butuh Chromium: jalankan sekali `pnpm exec playwright install chromium` di komputer Anda. Daftar lengkap perintah ada di `CLAUDE.md` bagian "Perintah". Secret lokal (bila nanti ada) disimpan di `apps/api/.dev.vars` (contoh: `.dev.vars.example`) dan tidak pernah di-commit.
+`pnpm test:e2e` butuh Chromium: jalankan sekali `pnpm exec playwright install chromium` di komputer Anda. Daftar lengkap perintah ada di `CLAUDE.md` bagian "Perintah". Secret lokal (bila nanti ada) disimpan di `apps/api/.dev.vars` (contoh: `.dev.vars.example`) dan tidak pernah di-commit. Turnstile lokal tidak butuh secret: API dengan `ENVIRONMENT=local` memakai kunci uji publik Cloudflare, dan web memakai site key uji (`TURNSTILE_SITE`, ADR 0022).
 
 ## 4. Struktur repo
 
