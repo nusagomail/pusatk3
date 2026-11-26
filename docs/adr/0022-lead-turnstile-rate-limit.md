@@ -21,7 +21,7 @@ PRD: setiap klik WhatsApp dan kiriman form pertanyaan dicatat sebagai lead. Peng
   - Tanpa secret di lingkungan yang dideploy, form dimatikan (503 `SERVICE_UNAVAILABLE`), bukan dibuka tanpa perlindungan.
   - Kode error konfigurasi atau internal dari Cloudflare (`invalid-input-secret`, `missing-input-secret`, `bad-request`, `internal-error`), Cloudflare tidak terjangkau, atau kunci uji yang terpasang di lingkungan deploy juga menghasilkan 503. Kasus ini dicatat (hanya kode, tanpa token atau data form), jadi secret yang salah tidak tampil sebagai "anti-bot gagal" untuk semua pengunjung.
   - Token ditolak atau dipakai ulang (`timeout-or-duplicate`) → 403.
-  - Lokal (`APP_VERSION=dev`) memakai kunci uji publik Cloudflare "selalu lolos".
+  - Lokal (`ENVIRONMENT=local`, juga e2e) memakai kunci uji publik Cloudflare "selalu lolos"; staging/production menolak kunci uji (503).
 - **Rate limit (binding Workers Rate Limiting, per IP pengunjung, per 60 detik):**
   - baca publik (`/search`, `/schedules/*`, `/providers/*`, `/cities`, `/categories`): 120;
   - form: 5;
@@ -46,6 +46,13 @@ PRD: setiap klik WhatsApp dan kiriman form pertanyaan dicatat sebagai lead. Peng
   - Hapus akun (Fase 2) menganonimkan lead milik user itu lebih awal.
 - **Hak subjek data (pengunjung anonim):** permintaan akses atau hapus lewat email ke pengelola. Admin mencari lead berdasarkan email/HP yang disebut, lalu mengosongkan data pribadinya (sama seperti retensi). Prosedur manual ini berlaku sampai ada alat admin (Fase 2).
 - **`profile_views`** (agregat harian per penyedia dan jadwal, tanpa data pengunjung) dibuat sekarang, tetapi baru diisi bersama statistik dasbor penyedia (Fase 2). Halaman publik di-cache (ADR 0021), sehingga penghitungan butuh beacon terpisah yang dirancang bersama dasbor.
+
+- **Web (PR kedua #28):**
+  - Tombol WhatsApp tetap tautan `wa.me` langsung. Bila tombol membawa `lead`, skrip kecil mengirim `navigator.sendBeacon` ke `/kontak/klik-wa`, yang meneruskannya ke API. Endpoint web itu selalu menjawab 204 tanpa isi. Tanpa JavaScript, klik tidak terhitung, tetapi tautan tetap jalan.
+  - Form "Kirim pertanyaan" di `/jadwal/[id]` hanya muncul bila jadwal belum mulai, `provider.acceptsQuestions` (penyedia `claimed`, dari API), dan site key Turnstile terpasang (`TURNSTILE_SITE`; lokal memakai kunci uji publik, staging/production kosong sampai pemilik mengisi).
+  - Script dan frame `challenges.cloudflare.com` diizinkan CSP **hanya** di halaman yang menampilkan form (`Astro.csp`).
+  - Form dikirim ke `/kontak/pertanyaan` (SSR, `no-store`), yang meneruskannya ke API dan menampilkan hasil. Cek origin Astro (bawaan) menolak POST lintas situs (403).
+  - Setiap panggilan API dari web membawa IP pengunjung lewat `AsyncLocalStorage` yang diisi middleware, sehingga rate limit API berlaku per pengunjung juga untuk halaman.
 
 ## Konsekuensi
 - Selama belum ada penyedia yang klaim (data contoh), form tidak tampil di mana pun. Endpoint dan alurnya sudah diuji dengan data klaim buatan.

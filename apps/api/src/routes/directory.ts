@@ -301,6 +301,7 @@ export const directoryRoutes = new Hono<AppEnv>()
           email: providers.email,
           phone: providers.phone,
           website: providers.website,
+          providerStatus: providers.status,
         })
         .from(schedules)
         .innerJoin(providers, eq(providers.id, schedules.providerId))
@@ -335,6 +336,7 @@ export const directoryRoutes = new Hono<AppEnv>()
             website: row.website,
           },
           licenses: await licensesOf(db, row.providerId),
+          acceptsQuestions: row.providerStatus === 'claimed',
         },
       });
       c.header('Cache-Control', PUBLIC_DIRECTORY_CACHE);

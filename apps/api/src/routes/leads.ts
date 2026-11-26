@@ -38,11 +38,12 @@ const limitBody = (maxSize: number) =>
 
 /**
  * Staging/production: the TURNSTILE_SECRET Workers secret (set by the owner); without it the form
- * is off. Local `dev` only: Cloudflare's public "always passes" test key, so dev and e2e work.
+ * is off. Local only (ENVIRONMENT=local): Cloudflare's public "always passes" test key, so dev
+ * and e2e work.
  */
 function turnstileSecret(env: AppEnv['Bindings']): string | undefined {
   if (env.TURNSTILE_SECRET) return env.TURNSTILE_SECRET;
-  return env.APP_VERSION === 'dev' ? TURNSTILE_TEST_SECRETS.alwaysPasses : undefined;
+  return env.ENVIRONMENT === 'local' ? TURNSTILE_TEST_SECRETS.alwaysPasses : undefined;
 }
 
 export interface LeadRoutesOptions {
@@ -67,7 +68,7 @@ export function leadRoutes(options: LeadRoutesOptions = {}) {
             token: input.turnstileToken,
             secret: turnstileSecret(c.env),
             action: TURNSTILE_LEAD_ACTION,
-            local: c.env.APP_VERSION === 'dev',
+            local: c.env.ENVIRONMENT === 'local',
             fetch: options.fetch,
           });
           if (turnstile === 'unavailable') throw new AppError('SERVICE_UNAVAILABLE');

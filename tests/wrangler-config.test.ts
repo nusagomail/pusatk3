@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -143,6 +144,12 @@ describe('apps/api effective config', () => {
     expect(local.ratelimits ?? []).toEqual([]); // local dev and tests run without limits
   });
 
+  it('names its environment; only local accepts Turnstile test keys (ADR 0022)', () => {
+    expect(local.vars.ENVIRONMENT).toBe('local');
+    expect(staging.vars.ENVIRONMENT).toBe('staging');
+    expect(production.vars.ENVIRONMENT).toBe('production');
+  });
+
   it('every environment sets APP_VERSION (vars are not inherited)', () => {
     expect(read('api').vars.APP_VERSION).toBe('dev');
     expect(staging.vars.APP_VERSION).toBe('staging');
@@ -155,8 +162,22 @@ describe('apps/web effective config', () => {
     for (const env of [read('web'), read('web', 'staging'), read('web', 'production')]) {
       expect(env.assets?.not_found_handling).toBe('404-page');
       // SSR pages must run the Worker; otherwise browser navigations get 404.html (#24).
-      expect(env.assets?.run_worker_first).toEqual(['/', '/cari', '/jadwal/*', '/penyedia/*']);
+      expect(env.assets?.run_worker_first).toEqual([
+        '/',
+        '/cari',
+        '/jadwal/*',
+        '/penyedia/*',
+        '/kontak/*',
+      ]);
     }
+  });
+
+  it('production gets a Turnstile site key only once the privacy policy page exists (UU PDP, ADR 0022)', () => {
+    const production = read('web', 'production');
+    const privacyPage = ['privasi.astro', 'kebijakan-privasi.astro'].some((file) =>
+      existsSync(resolve(appDir('web'), 'src/pages', file)),
+    );
+    if (!privacyPage) expect(production.vars.TURNSTILE_SITE ?? '').toBe('');
   });
 
   it('reads the API locally over HTTP and in staging through the staging service binding', () => {

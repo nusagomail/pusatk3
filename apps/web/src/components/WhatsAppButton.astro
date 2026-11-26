@@ -2,8 +2,9 @@
 /**
  * Contact button to a provider's WhatsApp (opens a new tab). Text is navy on green.
  * The number is normalised with the shared rule (@pusatk3/shared); an invalid number renders
- * nothing instead of a broken link or a failed page. Fase 1: clicks must be recorded as leads,
- * so this will point at an API redirect endpoint instead of wa.me directly.
+ * nothing instead of a broken link or a failed page. With `lead`, a click is also recorded as a
+ * lead (#28, ADR 0022): the link still opens wa.me at once, and a beacon goes to /kontak/klik-wa
+ * (no personal data; without JavaScript the click is simply not counted).
  */
 import { normalizeWhatsAppNumber } from '@pusatk3/shared';
 
@@ -13,9 +14,11 @@ interface Props {
   /** Optional prefilled message. */
   message?: string;
   block?: boolean;
+  /** What the click is about, recorded as a WhatsApp lead. */
+  lead?: { scheduleId: string } | { providerSlug: string };
 }
 
-const { phone, message, block = false } = Astro.props;
+const { phone, message, block = false, lead } = Astro.props;
 const number = normalizeWhatsAppNumber(phone);
 const href = number
   ? `https://wa.me/${number}${message ? `?text=${encodeURIComponent(message)}` : ''}`
@@ -28,6 +31,7 @@ const href = number
     href={href}
     target="_blank"
     rel="noopener noreferrer"
+    data-lead={lead ? JSON.stringify(lead) : undefined}
   >
     <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
       <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7a2.8 2.8 0 0 0 1.8-1.3 2.3 2.3 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3Z" />
@@ -36,6 +40,24 @@ const href = number
     <span class="visually-hidden">(membuka tab baru)</span>
   </a>
 )}
+
+<script>
+  // One listener for every tracked WhatsApp button; never delays or blocks the link. The body is
+  // a plain string (text/plain): Chromium refuses sendBeacon with an application/json Blob.
+  const track = (event: MouseEvent) => {
+    if (event.type === 'auxclick' && event.button !== 1) return; // middle click only
+    const link = (event.target as Element | null)?.closest?.('a.wa[data-lead]');
+    const lead = link?.getAttribute('data-lead');
+    if (!lead) return;
+    try {
+      navigator.sendBeacon('/kontak/klik-wa', lead);
+    } catch {
+      // Counting a click is never worth breaking the link.
+    }
+  };
+  document.addEventListener('click', track);
+  document.addEventListener('auxclick', track);
+</script>
 
 <style>
   .wa {

@@ -13,14 +13,16 @@
   // are not static files would otherwise get 404.html without the Worker ever running (#24).
   "assets": {
     "not_found_handling": "404-page",
-    "run_worker_first": ["/", "/cari", "/jadwal/*", "/penyedia/*"],
+    "run_worker_first": ["/", "/cari", "/jadwal/*", "/penyedia/*", "/kontak/*"],
   },
   // Invocation logs include full URLs (possible personal data): off unless stated per env.
   "observability": { "enabled": false },
   // SSR pages read the API (ADR 0019). Deployed: through a service binding (`API`, internal).
   // Local (`pnpm dev`, e2e): over HTTP to the local API dev server, because service bindings
   // between two local dev processes are unreliable (dev registry).
-  "vars": { "API_ORIGIN": "http://127.0.0.1:8787" },
+  // TURNSTILE_SITE: public Turnstile site key of the question form (ADR 0022). Local: Cloudflare's
+  // public "always passes" test key. Staging/production: the owner's widget key; empty = no form.
+  "vars": { "API_ORIGIN": "http://127.0.0.1:8787", "TURNSTILE_SITE": "1x00000000000000000000AA" },
   "env": {
     "staging": {
       "name": "pusatk3-web-staging",
@@ -29,6 +31,7 @@
       "preview_urls": false,
       "observability": { "enabled": true },
       "services": [{ "binding": "API", "service": "pusatk3-api-staging" }],
+      "vars": { "TURNSTILE_SITE": "" },
     },
     // Production API binding is added with the owner's approval when production is prepared
     // (CLAUDE.md: production bindings; checklist /siapkan-rilis).
@@ -39,6 +42,7 @@
       "observability": { "enabled": false },
       // Needs the pusatk3.id zone on Cloudflare (docs/setup-cloudflare.md).
       "routes": [{ "pattern": "pusatk3.id/*", "zone_name": "pusatk3.id" }],
+      "vars": { "TURNSTILE_SITE": "" },
     },
   },
 }

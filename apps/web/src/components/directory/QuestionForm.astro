@@ -1,0 +1,138 @@
+---
+/**
+ * "Kirim pertanyaan" (#28, ADR 0022): only rendered for providers that claimed their profile
+ * (they read questions in the dashboard) and when a Turnstile site key is configured. Posts to
+ * /kontak/pertanyaan; the API checks everything again. Consent text and its version come from
+ * @pusatk3/shared (UU PDP). The page must allow challenges.cloudflare.com in its CSP
+ * (`allowTurnstile` in lib/turnstile.ts). After a failed send, the result page renders it again
+ * with what the visitor typed and the error of each field.
+ */
+import { LEAD_CONSENT_TEXT, LEAD_MESSAGE_MAX, TURNSTILE_LEAD_ACTION } from '@pusatk3/shared';
+import Button from '../Button.astro';
+import Input from '../Input.astro';
+import Textarea from '../Textarea.astro';
+
+export interface QuestionValues {
+  name?: string;
+  phone?: string;
+  email?: string;
+  message?: string;
+}
+
+interface Props {
+  scheduleId: string;
+  /** Public Turnstile site key (TURNSTILE_SITE). */
+  siteKey: string;
+  values?: QuestionValues;
+  /** Error message per field (`name`, `phone`, `email`, `message`, `consent`). */
+  errors?: Partial<Record<keyof QuestionValues | 'consent', string>>;
+}
+
+const { scheduleId, siteKey, values = {}, errors = {} } = Astro.props;
+---
+
+<form class="question" method="post" action="/kontak/pertanyaan" aria-labelledby="question-title">
+  <h3 id="question-title" class="question__title">
+    Kirim pertanyaan
+  </h3>
+  <p class="question__intro">
+    Kolom bertanda * wajib diisi. Isi minimal salah satu: nomor HP atau email.
+  </p>
+  <input type="hidden" name="scheduleId" value={scheduleId} />
+  <Input
+    label="Nama *"
+    name="name"
+    required
+    autocomplete="name"
+    value={values.name}
+    error={errors.name}
+  />
+  <Input
+    label="Nomor HP"
+    name="phone"
+    type="tel"
+    autocomplete="tel"
+    value={values.phone}
+    error={errors.phone}
+  />
+  <Input
+    label="Email"
+    name="email"
+    type="email"
+    autocomplete="email"
+    value={values.email}
+    error={errors.email}
+  />
+  <Textarea
+    label="Pertanyaan *"
+    name="message"
+    required
+    minlength={10}
+    maxlength={LEAD_MESSAGE_MAX}
+    value={values.message}
+    error={errors.message}
+  />
+  <label class="question__consent">
+    <input
+      type="checkbox"
+      name="consent"
+      required
+      aria-invalid={errors.consent ? 'true' : undefined}
+    />
+    <span>{LEAD_CONSENT_TEXT}</span>
+  </label>
+  {errors.consent && <p class="question__error">{errors.consent}</p>}
+  <div
+    class="cf-turnstile"
+    data-sitekey={siteKey}
+    data-action={TURNSTILE_LEAD_ACTION}
+    data-language="id"
+    data-size="flexible"
+  ></div>
+  <noscript>
+    <p class="question__error">
+      Form ini butuh JavaScript untuk verifikasi anti-bot. Hubungi penyedia lewat WhatsApp.
+    </p>
+  </noscript>
+  <Button type="submit" block>
+    Kirim pertanyaan
+  </Button>
+  <p class="question__note">Dilindungi Cloudflare Turnstile.</p>
+</form>
+<script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+<style>
+  .question {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+  }
+  .question__title {
+    margin: 0;
+    font-size: var(--font-size-h3, 1.125rem);
+  }
+  .question__intro,
+  .question__note {
+    margin: 0;
+    color: var(--color-ink-muted);
+    font-size: var(--font-size-label);
+  }
+  .question__consent {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+  .question__consent input {
+    flex: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.125rem;
+  }
+  .question__error {
+    margin: 0;
+    color: var(--color-danger);
+    font-weight: var(--font-weight-strong);
+  }
+</style>

@@ -16,6 +16,8 @@ import JsonLd from '../../components/JsonLd.astro';
 import Pill from '../../components/Pill.astro';
 import VerifiedBadge from '../../components/VerifiedBadge.astro';
 import WhatsAppButton from '../../components/WhatsAppButton.astro';
+import QuestionForm from '../../components/directory/QuestionForm.astro';
+import { allowTurnstile, turnstileSiteKey } from '../../lib/turnstile';
 import { absoluteUrl } from '../../data/site';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { apiGet } from '../../lib/api';
@@ -28,7 +30,12 @@ import {
   formatPrice,
   jakartaToday,
 } from '../../lib/format';
-import { courseJsonLd, detailPageStatus, scheduleTiming } from '../../lib/schedule-page';
+import {
+  canAskQuestions,
+  courseJsonLd,
+  detailPageStatus,
+  scheduleTiming,
+} from '../../lib/schedule-page';
 
 export const prerender = false;
 
@@ -62,6 +69,10 @@ const waMessage = schedule
   ? `Halo, saya melihat jadwal "${schedule.title}" (${formatDateRange(schedule.startDate, schedule.endDate)}) di PusatK3. Apakah masih tersedia?`
   : '';
 const city = schedule ? (schedule.branch ? schedule.branch.city.name : 'Online') : '';
+// "Kirim pertanyaan" only where someone reads it (claimed provider) and Turnstile is set up.
+const siteKey = turnstileSiteKey();
+const canAsk = canAskQuestions(schedule, timing, siteKey);
+if (canAsk) allowTurnstile(Astro.csp);
 const jsonLd = schedule ? courseJsonLd(schedule, timing) : null;
 const searchCategory = schedule
   ? `/cari?category=${encodeURIComponent(schedule.category.slug)}`
@@ -204,7 +215,12 @@ const searchCategory = schedule
           </h2>
           <p class="detail__price">{formatPrice(schedule.priceIdr)}</p>
           {canContact ? (
-            <WhatsAppButton phone={whatsapp as string} message={waMessage} block>
+            <WhatsAppButton
+              phone={whatsapp as string}
+              message={waMessage}
+              lead={{ scheduleId: schedule.id }}
+              block
+            >
               Chat via WhatsApp
             </WhatsAppButton>
           ) : timing !== 'upcoming' ? (
@@ -225,6 +241,7 @@ const searchCategory = schedule
           >
             Lihat profil penyedia
           </Button>
+          {canAsk && <QuestionForm scheduleId={schedule.id} siteKey={siteKey as string} />}
           <p class="detail__muted detail__disclaimer">
             PusatK3 tidak memproses pendaftaran maupun pembayaran. Daftar dan bayar langsung ke
             penyedia.
@@ -250,7 +267,11 @@ const searchCategory = schedule
           Tanya
         </a>
         {canContact && (
-          <WhatsAppButton phone={whatsapp as string} message={waMessage}>
+          <WhatsAppButton
+            phone={whatsapp as string}
+            message={waMessage}
+            lead={{ scheduleId: schedule.id }}
+          >
             Chat WhatsApp
           </WhatsAppButton>
         )}
