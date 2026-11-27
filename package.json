@@ -17,7 +17,8 @@
     "db:generate": "pnpm --filter @pusatk3/db db:generate",
     "db:migrate:local": "pnpm --filter @pusatk3/api db:migrate:local",
     "db:seed:local": "pnpm --filter @pusatk3/api db:seed:local",
-    "db:import:local": "pnpm --filter @pusatk3/api db:import:local"
+    "db:import:local": "pnpm --filter @pusatk3/api db:import:local",
+    "data:check": "node scripts/data-check.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

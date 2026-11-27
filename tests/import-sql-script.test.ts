@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -20,5 +20,36 @@ describe('apps/api/scripts/import-sql.ts', () => {
     const statements = readFileSync(out, 'utf8').trim().split(';\n');
     expect(statements.at(-1)).toMatch(/^insert into "app_meta"/);
     expect(statements.filter((s) => s.includes('"app_meta"'))).toHaveLength(1);
+    // Reference cities from docs/data/kota.csv (#54), not only the 8 sample cities.
+    expect(statements.filter((s) => s.startsWith('insert into "cities"'))).toHaveLength(65);
+    expect(statements.some((s) => s.includes("'sorong'"))).toBe(true);
+  }, 60_000);
+
+  it('--check only checks: success writes nothing, problems exit 1 with readable lines', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'data-check-'));
+    for (const name of ['penyedia', 'cabang', 'legalitas', 'jadwal']) {
+      const text = readFileSync(resolve(repo, `docs/data/contoh/${name}.csv`), 'utf8');
+      writeFileSync(
+        join(dir, `${name}.csv`),
+        name === 'cabang' ? text.replace(',bekasi,', ',kota-fiktif,') : text,
+      );
+    }
+    const check = (folder: string) =>
+      spawnSync('node', [resolve(repo, 'scripts/data-check.mjs'), folder], {
+        cwd: repo,
+        encoding: 'utf8',
+      });
+    const ok = check('docs/data/contoh');
+    expect(ok.status, ok.stderr).toBe(0);
+    expect(ok.stdout).toMatch(/Cek berhasil.*Tidak ada yang ditulis/);
+    const bad = check(dir);
+    expect(bad.status).toBe(1);
+    expect(bad.stderr).toContain('cabang.csv baris 3: kota_slug "kota-fiktif" tidak dikenal');
+    expect(readdirSync(dir).sort()).toEqual([
+      'cabang.csv',
+      'jadwal.csv',
+      'legalitas.csv',
+      'penyedia.csv',
+    ]);
   }, 60_000);
 });

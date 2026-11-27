@@ -4,13 +4,17 @@
 // path is absolute (same as `wrangler dev` / `db:migrate:local` in apps/api).
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { parseCategoriesCsv, SAMPLE_CITIES, seedReferenceData } from '@pusatk3/db';
+import { parseCategoriesCsv, parseCitiesCsv, seedReferenceData } from '@pusatk3/db';
 import { drizzle } from 'drizzle-orm/d1';
 import { getPlatformProxy } from 'wrangler';
 import type { Env } from '../src/env';
 
-const csvPath = resolve(import.meta.dirname, '../../../docs/data/kategori-k3.csv');
-const data = { ...parseCategoriesCsv(readFileSync(csvPath, 'utf8')), cities: SAMPLE_CITIES };
+const dataDir = resolve(import.meta.dirname, '../../../docs/data');
+// Same reference cities as the import (docs/data/kota.csv, #54).
+const data = {
+  ...parseCategoriesCsv(readFileSync(resolve(dataDir, 'kategori-k3.csv'), 'utf8')),
+  cities: parseCitiesCsv(readFileSync(resolve(dataDir, 'kota.csv'), 'utf8')),
+};
 
 const proxy = await getPlatformProxy<Env>({
   configPath: resolve(import.meta.dirname, '../wrangler.jsonc'),

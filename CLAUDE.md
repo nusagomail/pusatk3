@@ -48,8 +48,9 @@ Prasyarat: Node 22.23.4+ (`.nvmrc`) dan pnpm 10.28 (terkunci di `packageManager`
 | `pnpm test:e2e` | Playwright (Chromium): build web, lalu jalankan web hasil build (port 4322) dan API lokal (8787); tes di `e2e/` |
 | `pnpm db:generate` | Buat file migrasi SQL dari skema Drizzle (`packages/db/migrations`); periksa hasilnya baris demi baris |
 | `pnpm db:migrate:local` | Terapkan migrasi ke D1 **lokal** (`apps/api/.wrangler/state`) |
-| `pnpm db:seed:local` | Isi D1 lokal: 14 bidang + 59 kategori (CSV) + 8 kota contoh; aman diulang |
+| `pnpm db:seed:local` | Isi D1 lokal: 14 bidang + 59 kategori + kota rujukan (`docs/data/kota.csv`); aman diulang |
 | `pnpm db:import:local` | Impor data referensi + data contoh Jabodetabek (`docs/data/contoh/`, format `docs/data/README.md`) ke D1 lokal; aman diulang |
+| `pnpm data:check <folder>` | Cek empat CSV data direktori (format `docs/data/README.md`) terhadap data rujukan tanpa menulis apa pun (`docs/data/panduan-kurasi.md`) |
 
 Migrasi ke D1 staging/production hanya lewat pipeline deploy (Workers Builds untuk staging, GitHub Actions untuk production), tidak pernah dari sesi ini. Jangan push langsung ke `main`: setiap commit di `main` langsung di-deploy ke staging. Di sesi cloud, Chromium untuk Playwright sudah terpasang: jangan jalankan `playwright install` (CI memasangnya sendiri). Hentikan `pnpm dev` sebelum `pnpm test:e2e`: tes selalu menyalakan server sendiri dan gagal bila port 4322/8787 terpakai.
 

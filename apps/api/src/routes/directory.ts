@@ -415,9 +415,14 @@ export const directoryRoutes = new Hono<AppEnv>()
     },
   )
   .get('/cities', validateQuery(citiesQuerySchema), async (c) => {
+    // Only cities with at least one branch of an open provider: the reference list (kota.csv,
+    // #54) holds many cities without any provider yet, which would only lead to empty results.
     const rows = await getDb(c.env)
-      .select({ slug: cities.slug, name: cities.name, province: cities.province })
+      .selectDistinct({ slug: cities.slug, name: cities.name, province: cities.province })
       .from(cities)
+      .innerJoin(branches, eq(branches.cityId, cities.id))
+      .innerJoin(providers, eq(providers.id, branches.providerId))
+      .where(ne(providers.status, 'closed'))
       .orderBy(asc(cities.name), asc(cities.slug));
     const body = citiesResponseSchema.parse({ items: rows });
     c.header('Cache-Control', body.items.length > 0 ? PUBLIC_REFERENCE_CACHE : 'no-store');

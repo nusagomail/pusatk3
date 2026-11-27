@@ -16,7 +16,7 @@ Status: diterima · 25 November 2026 · issue #22 (pilihan pemilik A: data conto
 - **Staging:** perintah deploy Worker `pusatk3-api-staging` menjalankan migrasi → impor data referensi + contoh → deploy. Staging kini berisi 14 bidang, 59 kategori, kota contoh, dan data contoh.
 
 ## Konsekuensi
-- Kota yang dikenal impor saat ini hanya kota contoh (`SAMPLE_CITIES`). Daftar kota asli ditambahkan bersama data asli.
+- ~~Kota yang dikenal impor saat ini hanya kota contoh (`SAMPLE_CITIES`).~~ **Diperbarui #54:** impor dan seed lokal memakai daftar rujukan `docs/data/kota.csv` (65 kota/kabupaten, semua 38 provinsi); kota baru ditambahkan di sana. `GET /cities` hanya menampilkan kota yang punya cabang.
 - Data penyedia asli memakai folder lain, tanpa `--sample`, setelah ditinjau pemilik. Production tidak pernah memuat data contoh: preflight rilis perlu diperluas untuk menolak `is_sample` saat production disiapkan.
 - Menghapus data (penyedia tutup, jadwal batal) bukan tugas impor: penyedia ditandai `closed`, jadwal menjadi `expired` lewat Cron.
 - Atomisitas `wrangler d1 execute --file` di D1 remote tidak diandalkan: bila impor gagal di tengah, sebagian baris bisa sudah tertulis. Karena setiap statement idempoten, perbaiki CSV lalu jalankan ulang. Bila datanya membesar (ribuan baris), file dipecah per tabel.
