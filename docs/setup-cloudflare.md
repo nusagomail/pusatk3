@@ -71,6 +71,33 @@ Form pertanyaan baru tampil bila penyedia sudah klaim profil **dan** Turnstile t
 
 Variabel lingkungan terkait: `ENVIRONMENT` di `apps/api/wrangler.jsonc` (`local`/`staging`/`production`; hanya `local` menerima kunci uji Turnstile).
 
+## 5b. Email kode masuk (Resend, ADR 0024)
+
+Butuh domain `pusatk3.id` aktif di Cloudflare (langkah 1).
+1. Daftar di resend.com (paket gratis) dengan email pemilik.
+2. **Domains → Add Domain** → `pusatk3.id`. Resend menampilkan beberapa catatan DNS (SPF, DKIM).
+3. Di Cloudflare → `pusatk3.id` → **DNS → Records**, tambahkan setiap catatan persis seperti di Resend (tipe, nama, nilai; proxy **mati**/abu-abu). Kembali ke Resend → **Verify**. Tunggu sampai status **Verified**.
+4. Resend → **API Keys → Create** → nama `pusatk3-staging`, izin **Sending access**, domain `pusatk3.id`. Salin kunci (hanya tampil sekali).
+5. Cloudflare → Workers & Pages → `pusatk3-api-staging` → **Settings → Variables and Secrets → Add** → tipe **Secret**, nama `RESEND_API_KEY`, tempel kunci → **Deploy**. Ulangi dengan kunci terpisah `pusatk3-production` untuk `pusatk3-api-production` saat production disiapkan.
+
+## 5c. "Masuk dengan Google" (ADR 0024)
+
+1. Buka console.cloud.google.com dengan akun pemilik → buat project `pusatk3`.
+2. **APIs & Services → OAuth consent screen**: tipe **External**, nama aplikasi "PusatK3", email dukungan pemilik, domain `pusatk3.id`, izin (scope) hanya `email`, `profile`, `openid`.
+3. **Credentials → Create credentials → OAuth client ID** → tipe **Web application**, nama `pusatk3-staging`.
+   - *Authorized JavaScript origins:* `https://pusatk3-web-staging.nusagomail.workers.dev`
+   - *Authorized redirect URIs:* `https://pusatk3-web-staging.nusagomail.workers.dev/api/v1/auth/callback/google`
+4. Salin **Client ID** (publik, boleh dikirim ke developer) dan **Client secret** (rahasia).
+5. Cloudflare → `pusatk3-api-staging` → Variables and Secrets: Secret `GOOGLE_CLIENT_SECRET` = client secret. `GOOGLE_CLIENT_ID` boleh diisi sebagai teks biasa (atau kirim ke developer untuk dimasukkan ke `wrangler.jsonc`).
+6. Untuk production buat client kedua `pusatk3-production` dengan origin `https://pusatk3.id` dan redirect `https://pusatk3.id/api/v1/auth/callback/google`.
+
+## 5d. Kunci rahasia sesi dan 2FA (ADR 0024)
+
+Dua secret acak per lingkungan, dibuat sendiri dan tidak pernah dikirim ke siapa pun:
+1. Buat **dua** nilai acak berbeda, masing-masing minimal 40 karakter, dengan fitur "generate password" di pengelola kata sandi (mis. Bitwarden, 1Password, atau Google Password Manager). Jangan memakai situs pembuat kunci yang tidak dikenal, dan jangan mengirim nilainya ke siapa pun.
+2. Cloudflare → `pusatk3-api-staging` → Variables and Secrets: Secret `AUTH_SECRET` = nilai pertama, Secret `TWO_FACTOR_KEY` = nilai kedua.
+3. Jangan pernah mengganti `TWO_FACTOR_KEY` setelah dipakai (2FA yang sudah aktif tidak bisa dibuka lagi); kalau bocor, hubungi developer untuk prosedur rotasi.
+
 ## 6. Cara kerja deploy (#8, ADR 0012)
 
 - **Staging (Cloudflare Workers Builds, ADR 0015):** otomatis setiap kali ada commit baru di `main`. Dua Worker terhubung ke repo GitHub: `pusatk3-api-staging` (folder `apps/api`: migrasi D1 staging lalu deploy API) dan `pusatk3-web-staging` (folder `apps/web`: build dengan `CLOUDFLARE_ENV=staging` lalu deploy). Status dan log: dashboard Cloudflare → **Workers & Pages** → worker → **Deployments**. Alamat: web https://pusatk3-web-staging.nusagomail.workers.dev, API https://pusatk3-api-staging.nusagomail.workers.dev/api/v1/health.

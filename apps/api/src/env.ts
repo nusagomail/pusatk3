@@ -4,6 +4,8 @@ export interface Env {
   /** Where this Worker runs (wrangler vars). Only `local` accepts Turnstile test keys. */
   ENVIRONMENT?: 'local' | 'staging' | 'production';
   DB: D1Database;
+  /** Resend API key for transactional email (Workers secret, ADR 0024). */
+  RESEND_API_KEY?: string;
   /** Turnstile secret (Workers secret in staging/production; test key locally). */
   TURNSTILE_SECRET?: string;
   /** Rate limiters (staging/production only, ADR 0022). */
