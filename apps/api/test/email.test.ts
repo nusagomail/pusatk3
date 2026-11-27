@@ -64,8 +64,21 @@ describe('sendEmail', () => {
     ['a recipient with a header break', { ...email, to: 'a@b.id\r\nBcc: x@y.id' }],
     ['a subject with a header break', { ...email, subject: 'Hi\r\nBcc: x@y.id' }],
     ['not an address', { ...email, to: 'bukan-email' }],
-  ])('refuses %s', async (_name, bad) => {
+    ['a list of recipients', { ...email, to: 'a@b.id,c@d.id' }],
+    ['a too long subject', { ...email, subject: 'x'.repeat(201) }],
+  ])('refuses %s, also locally', async (_name, bad) => {
     await expect(sendEmail(deployed, bad, vi.fn() as unknown as typeof fetch)).rejects.toThrow();
+    await expect(sendEmail({ ENVIRONMENT: 'local' }, bad)).rejects.toThrow();
+  });
+
+  it('treats a timeout as unavailable', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const timeout = vi.fn(async () => {
+      throw new DOMException('timed out', 'TimeoutError');
+    });
+    expect(await sendEmail(deployed, email, timeout as unknown as typeof fetch)).toBe(
+      'unavailable',
+    );
   });
 });
 

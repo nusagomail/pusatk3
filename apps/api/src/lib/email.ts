@@ -16,19 +16,22 @@ export interface Email {
 
 export type EmailResult = 'sent' | 'logged' | 'unavailable';
 
-/** Only for checks that a recipient looks like an address; real validation is Zod at the edge. */
-const LOOKS_LIKE_EMAIL = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
+/** A single plain address (real validation is Zod at the edge): no lists, quotes or controls. */
+const LOOKS_LIKE_EMAIL = /^[^\s@<>,;"\p{Cc}]+@[^\s@<>,;"\p{Cc}]+\.[^\s@<>,;"\p{Cc}]+$/u;
+const SAFE_SUBJECT = /^[^\p{Cc}]{1,200}$/u;
 
 export async function sendEmail(
-  env: Pick<Env, 'ENVIRONMENT'> & { RESEND_API_KEY?: string },
+  env: Pick<Env, 'ENVIRONMENT' | 'RESEND_API_KEY'>,
   email: Email,
   fetchImpl: typeof fetch = fetch,
 ): Promise<EmailResult> {
-  if (!LOOKS_LIKE_EMAIL.test(email.to) || /[\r\n]/.test(email.subject)) {
+  // Checked in every environment, local included.
+  if (!LOOKS_LIKE_EMAIL.test(email.to) || !SAFE_SUBJECT.test(email.subject)) {
     throw new Error('sendEmail: invalid recipient or subject');
   }
   if (env.ENVIRONMENT === 'local') {
     // Local only (wrangler dev): the developer reads the message here instead of an inbox.
+    // ENVIRONMENT=local exists only in the top-level wrangler config (tests/wrangler-config.test.ts).
     console.log(`[email lokal] Kepada: ${email.to}\nSubjek: ${email.subject}\n\n${email.text}`);
     return 'logged';
   }

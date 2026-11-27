@@ -10,8 +10,8 @@ Daftar akun dan layanan PusatK3, siapa pemiliknya, dan cara memberi atau mencabu
 | Cloudflare (akun "Default account") | Worker web/API, D1, R2, Workers Builds | Pemilik | Aktif | **Dipakai bersama proyek selfgrow** (ADR 0016, lihat di bawah) |
 | Cloudflare Workers Builds | Deploy staging otomatis dari `main` | Pemilik | Aktif | Token build `pusatk3 build token`; pengaturan di Worker → Settings → Build (ADR 0015) |
 | Domain `pusatk3.id` | Alamat production | Pemilik | Belum dibeli | Setelah dibeli, pindahkan DNS ke Cloudflare (`docs/setup-cloudflare.md`) |
-| Email (Resend) | OTP masuk, notifikasi | pemilik | Belum (Fase 2); langkah: `docs/setup-cloudflare.md` 5b | Secret `RESEND_API_KEY` di Worker API |
-| Google Cloud (OAuth) | "Masuk dengan Google" | pemilik | Belum (Fase 2); langkah: `docs/setup-cloudflare.md` 5c | Secret `GOOGLE_CLIENT_SECRET` di Worker API |
+| Email (Resend) | OTP masuk, notifikasi | Pemilik (aktifkan 2FA di akun) | Belum (Fase 2); langkah: `docs/setup-cloudflare.md` 5b | Secret `RESEND_API_KEY` di Worker API |
+| Google Cloud (OAuth) | "Masuk dengan Google" | Pemilik (aktifkan 2FA di akun) | Belum (Fase 2); langkah: `docs/setup-cloudflare.md` 5c | Secret `GOOGLE_CLIENT_SECRET` di Worker API |
 | Pencarian (Meilisearch/Typesense) | Pencarian jadwal | — | Belum diputuskan (#26) | |
 | Pembayaran (Midtrans/Xendit) | Langganan penyedia | — | Belum (Fase 4) | Perubahan pembayaran butuh persetujuan pemilik |
 | Claude Code | Asisten pengembangan | Pemilik | Aktif | Konfigurasi proyek di `.claude/` |

@@ -76,27 +76,26 @@ Variabel lingkungan terkait: `ENVIRONMENT` di `apps/api/wrangler.jsonc` (`local`
 Butuh domain `pusatk3.id` aktif di Cloudflare (langkah 1).
 1. Daftar di resend.com (paket gratis) dengan email pemilik.
 2. **Domains → Add Domain** → `pusatk3.id`. Resend menampilkan beberapa catatan DNS (SPF, DKIM).
-3. Di Cloudflare → `pusatk3.id` → **DNS → Records**, tambahkan setiap catatan persis seperti di Resend (tipe, nama, nilai; proxy **mati**/abu-abu). Kembali ke Resend → **Verify**. Tunggu sampai status **Verified**.
+3. Di Cloudflare → `pusatk3.id` → **DNS → Records**, tambahkan setiap catatan persis seperti di Resend (tipe, nama, nilai; bila ada tombol proxy, biarkan **mati**/abu-abu). Tambahkan juga catatan TXT `_dmarc` dengan nilai `v=DMARC1; p=none;`. Kembali ke Resend → **Verify**. Tunggu sampai status **Verified**. Saat membuat domain di Resend, pilih region terdekat (Tokyo/`ap-northeast-1`). Kuota gratis: 100 email per hari, dipakai bersama staging dan production.
 4. Resend → **API Keys → Create** → nama `pusatk3-staging`, izin **Sending access**, domain `pusatk3.id`. Salin kunci (hanya tampil sekali).
 5. Cloudflare → Workers & Pages → `pusatk3-api-staging` → **Settings → Variables and Secrets → Add** → tipe **Secret**, nama `RESEND_API_KEY`, tempel kunci → **Deploy**. Ulangi dengan kunci terpisah `pusatk3-production` untuk `pusatk3-api-production` saat production disiapkan.
 
 ## 5c. "Masuk dengan Google" (ADR 0024)
 
 1. Buka console.cloud.google.com dengan akun pemilik → buat project `pusatk3`.
-2. **APIs & Services → OAuth consent screen**: tipe **External**, nama aplikasi "PusatK3", email dukungan pemilik, domain `pusatk3.id`, izin (scope) hanya `email`, `profile`, `openid`.
+2. **APIs & Services → OAuth consent screen**: tipe **External**, nama aplikasi "PusatK3", email dukungan pemilik. *Authorized domains:* `pusatk3.id` dan (untuk staging) `nusagomail.workers.dev`. Izin (scope) hanya `email`, `profile`, `openid`. Setelah tersimpan, klik **Publish app**: dalam mode *Testing* hanya akun yang didaftarkan sebagai *test user* yang bisa masuk. Scope dasar ini tidak memerlukan verifikasi Google.
 3. **Credentials → Create credentials → OAuth client ID** → tipe **Web application**, nama `pusatk3-staging`.
-   - *Authorized JavaScript origins:* `https://pusatk3-web-staging.nusagomail.workers.dev`
-   - *Authorized redirect URIs:* `https://pusatk3-web-staging.nusagomail.workers.dev/api/v1/auth/callback/google`
+   - *Authorized redirect URIs:* `https://pusatk3-web-staging.nusagomail.workers.dev/api/v1/auth/callback/google` (harus **persis** sama, termasuk `https` dan tanpa garis miring di akhir). *JavaScript origins* tidak perlu diisi.
 4. Salin **Client ID** (publik, boleh dikirim ke developer) dan **Client secret** (rahasia).
-5. Cloudflare → `pusatk3-api-staging` → Variables and Secrets: Secret `GOOGLE_CLIENT_SECRET` = client secret. `GOOGLE_CLIENT_ID` boleh diisi sebagai teks biasa (atau kirim ke developer untuk dimasukkan ke `wrangler.jsonc`).
+5. Cloudflare → `pusatk3-api-staging` → Variables and Secrets: Secret `GOOGLE_CLIENT_SECRET` = client secret. **Client ID** dikirim ke developer untuk dimasukkan ke `wrangler.jsonc` (variabel biasa yang diisi di dashboard akan tertimpa setiap deploy; secret tidak).
 6. Untuk production buat client kedua `pusatk3-production` dengan origin `https://pusatk3.id` dan redirect `https://pusatk3.id/api/v1/auth/callback/google`.
 
 ## 5d. Kunci rahasia sesi dan 2FA (ADR 0024)
 
 Dua secret acak per lingkungan, dibuat sendiri dan tidak pernah dikirim ke siapa pun:
 1. Buat **dua** nilai acak berbeda, masing-masing minimal 40 karakter, dengan fitur "generate password" di pengelola kata sandi (mis. Bitwarden, 1Password, atau Google Password Manager). Jangan memakai situs pembuat kunci yang tidak dikenal, dan jangan mengirim nilainya ke siapa pun.
-2. Cloudflare → `pusatk3-api-staging` → Variables and Secrets: Secret `AUTH_SECRET` = nilai pertama, Secret `TWO_FACTOR_KEY` = nilai kedua.
-3. Jangan pernah mengganti `TWO_FACTOR_KEY` setelah dipakai (2FA yang sudah aktif tidak bisa dibuka lagi); kalau bocor, hubungi developer untuk prosedur rotasi.
+2. Cloudflare → `pusatk3-api-staging` → Variables and Secrets: Secret `AUTH_SECRET` = nilai pertama, Secret `TWO_FACTOR_KEY` = nilai kedua. Untuk production buat **dua nilai baru lagi** (jangan memakai nilai staging).
+3. Mengganti `AUTH_SECRET` membuat semua orang keluar (harus masuk lagi). Jangan pernah mengganti `TWO_FACTOR_KEY` setelah dipakai (2FA yang sudah aktif tidak bisa dibuka lagi); kalau bocor, hubungi developer untuk prosedur rotasi.
 
 ## 6. Cara kerja deploy (#8, ADR 0012)
 
