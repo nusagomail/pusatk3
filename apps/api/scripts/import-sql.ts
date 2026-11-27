@@ -3,7 +3,9 @@
 // it never connects to a database itself.
 //
 //   tsx scripts/import-sql.ts --dir <folder with the 4 CSV files> [--sample] --out <file.sql>
+//   tsx scripts/import-sql.ts --dir <folder> --check     (only checks the files; writes nothing)
 //
+// Cities: docs/data/kota.csv (reference list, #54).
 // Local: `pnpm db:import:local`. Staging: the Workers Builds deploy command (ADR 0015, ADR 0017).
 // All-or-nothing: any problem in the CSV files → exit code 1 and no SQL file.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -15,7 +17,7 @@ import {
   parseDirectoryCsv,
   dataVersionStatement,
   referenceStatements,
-  SAMPLE_CITIES,
+  parseCitiesCsv,
   toSqlScript,
   type DirectoryCsvFiles,
 } from '@pusatk3/db';
@@ -25,14 +27,21 @@ const { values } = parseArgs({
     dir: { type: 'string' },
     out: { type: 'string' },
     sample: { type: 'boolean', default: false },
+    check: { type: 'boolean', default: false },
   },
 });
-if (!values.dir || !values.out) {
-  console.error('Pakai: tsx scripts/import-sql.ts --dir <folder CSV> [--sample] --out <file.sql>');
+if (!values.dir || (!values.out && !values.check)) {
+  console.error(
+    'Pakai: tsx scripts/import-sql.ts --dir <folder CSV> [--sample] --out <file.sql>\n' +
+      '   atau: tsx scripts/import-sql.ts --dir <folder CSV> --check',
+  );
   process.exit(2);
 }
 
 const dir = resolve(values.dir);
+const cities = parseCitiesCsv(
+  readFileSync(resolve(import.meta.dirname, '../../../docs/data/kota.csv'), 'utf8'),
+);
 const categories = parseCategoriesCsv(
   readFileSync(resolve(import.meta.dirname, '../../../docs/data/kategori-k3.csv'), 'utf8'),
 );
@@ -45,25 +54,36 @@ const files = Object.fromEntries(
 
 const { data, problems } = parseDirectoryCsv(files, {
   categories: categories.categories,
-  citySlugs: new Set(SAMPLE_CITIES.map((c) => c.slug)),
+  citySlugs: new Set(cities.map((c) => c.slug)),
 });
 if (problems.length > 0) {
-  console.error(`Impor dibatalkan: ${problems.length} masalah, tidak ada yang ditulis.`);
+  console.error(
+    values.check
+      ? `Cek gagal: ${problems.length} masalah.`
+      : `Impor dibatalkan: ${problems.length} masalah, tidak ada yang ditulis.`,
+  );
   for (const p of problems) console.error(`  ${p.file}.csv baris ${p.line}: ${p.message}`);
   process.exit(1);
 }
 
+const counts =
+  `${data.providers.length} penyedia, ${data.branches.length} cabang, ` +
+  `${data.licenses.length} legalitas, ${data.schedules.length} jadwal`;
+if (values.check) {
+  console.log(`Cek berhasil, tidak ada masalah: ${counts}. Tidak ada yang ditulis.`);
+  process.exit(0);
+}
+
 const statements = [
-  ...referenceStatements({ ...categories, cities: SAMPLE_CITIES }),
+  ...referenceStatements({ ...categories, cities }),
   ...directoryStatements(data, { isSample: values.sample }),
   // Last: announces the new data to the edge caches (ADR 0021).
   dataVersionStatement(),
 ];
-const out = resolve(values.out);
+const out = resolve(values.out as string);
 mkdirSync(dirname(out), { recursive: true });
 writeFileSync(out, toSqlScript(statements));
 console.log(
-  `SQL impor ditulis ke ${out}: ${data.providers.length} penyedia, ${data.branches.length} cabang, ` +
-    `${data.licenses.length} legalitas, ${data.schedules.length} jadwal` +
+  `SQL impor ditulis ke ${out}: ${counts}` +
     `${values.sample ? ' (ditandai contoh)' : ''}, plus data referensi.`,
 );

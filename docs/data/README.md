@@ -3,9 +3,11 @@
 | File / folder | Isi | Dipakai oleh |
 | --- | --- | --- |
 | `kategori-k3.csv` | 14 bidang dan 59 kategori sertifikasi K3 resmi; kolom `sinonim` = istilah pencarian dipisah `;` (wajib, maks 20, ADR 0020) | `pnpm db:seed:local`, impor (data referensi) |
+| `kota.csv` | Daftar kota rujukan untuk impor (65 kota: ibu kota 38 provinsi + kota industri utama; #54). Kota baru ditambahkan di sini | impor (data referensi) |
+| `template/` | Empat CSV kosong (baris judul saja) untuk mulai mengisi data asli | tim kurasi ([`panduan-kurasi.md`](panduan-kurasi.md)) |
 | `contoh/` | Data **contoh** fiktif satu wilayah (Jabodetabek): 4 penyedia, 5 cabang, 4 legalitas, 14 jadwal | `pnpm db:import:local`, deploy staging (ADR 0017) |
 
-Data penyedia asli nanti memakai format yang sama di folder terpisah, **tanpa** tanda contoh (`--sample`), setelah ditinjau pemilik.
+Data penyedia asli memakai format yang sama di folder terpisah, **tanpa** tanda contoh (`--sample`), setelah ditinjau pemilik. Panduan untuk tim kurasi: [`panduan-kurasi.md`](panduan-kurasi.md). Cek tanpa menulis apa pun: `pnpm data:check <folder>`.
 
 ## Format impor direktori
 
