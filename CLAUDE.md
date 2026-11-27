@@ -48,7 +48,7 @@ Prasyarat: Node 22.23.4+ (`.nvmrc`) dan pnpm 10.28 (terkunci di `packageManager`
 | `pnpm test:e2e` | Playwright (Chromium): build web, lalu jalankan web hasil build (port 4322) dan API lokal (8787); tes di `e2e/` |
 | `pnpm db:generate` | Buat file migrasi SQL dari skema Drizzle (`packages/db/migrations`); periksa hasilnya baris demi baris |
 | `pnpm db:migrate:local` | Terapkan migrasi ke D1 **lokal** (`apps/api/.wrangler/state`) |
-| `pnpm db:seed:local` | Isi D1 lokal: 14 bidang + 59 kategori (CSV) + 8 kota contoh; aman diulang |
+| `pnpm db:seed:local` | Isi D1 lokal: 14 bidang + 59 kategori + kota rujukan (`docs/data/kota.csv`); aman diulang |
 | `pnpm db:import:local` | Impor data referensi + data contoh Jabodetabek (`docs/data/contoh/`, format `docs/data/README.md`) ke D1 lokal; aman diulang |
 | `pnpm data:check <folder>` | Cek empat CSV data direktori (format `docs/data/README.md`) terhadap data rujukan tanpa menulis apa pun (`docs/data/panduan-kurasi.md`) |
 

@@ -31,7 +31,7 @@ Empat file CSV (UTF-8, dipisah koma, teks berkoma ditulis dalam tanda kutip). Ba
 | --- | --- | --- |
 | `penyedia_slug` | ya | `slug` dari `penyedia.csv` |
 | `nama` | ya | Unik per penyedia (dipakai `jadwal.csv`) |
-| `kota_slug` | ya | Kota yang dikenal (saat ini kota contoh: `jakarta`, `bekasi`, `tangerang`, …) |
+| `kota_slug` | ya | `slug` dari [`kota.csv`](kota.csv) (satu slug = wilayah kota/kabupaten, mis. Cikarang → `bekasi`) |
 | `alamat` | ya | |
 | `lat`, `lng` | | Diisi berdua atau dikosongkan berdua |
 | `kantor_pusat` | | `ya` atau `tidak` (kosong = `tidak`); paling banyak satu `ya` per penyedia |

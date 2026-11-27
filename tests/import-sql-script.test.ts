@@ -20,6 +20,9 @@ describe('apps/api/scripts/import-sql.ts', () => {
     const statements = readFileSync(out, 'utf8').trim().split(';\n');
     expect(statements.at(-1)).toMatch(/^insert into "app_meta"/);
     expect(statements.filter((s) => s.includes('"app_meta"'))).toHaveLength(1);
+    // Reference cities from docs/data/kota.csv (#54), not only the 8 sample cities.
+    expect(statements.filter((s) => s.startsWith('insert into "cities"'))).toHaveLength(65);
+    expect(statements.some((s) => s.includes("'sorong'"))).toBe(true);
   }, 60_000);
 
   it('--check only checks: success writes nothing, problems exit 1 with readable lines', () => {

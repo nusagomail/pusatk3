@@ -372,12 +372,20 @@ describe('GET /api/v1/providers/:slug (public)', () => {
 });
 
 describe('GET /api/v1/cities (public)', () => {
-  it('lists cities by name, cacheable', async () => {
+  it('lists only cities with a branch of an open provider, by name, cacheable', async () => {
     const res = await api('/cities');
     expect(res.headers.get('cache-control')).toMatch(/^public, /);
     const names = citiesResponseSchema.parse(await res.json()).items.map((c) => c.name);
-    expect(names).toHaveLength(SAMPLE_CITIES.length);
-    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+    // Sample branches: Jakarta, Bekasi, Tangerang (the other reference cities have none).
+    expect(names).toEqual(['Bekasi', 'Jakarta', 'Tangerang']);
+  });
+
+  it('drops a city whose only provider closed', async () => {
+    await run(`UPDATE providers SET status = 'closed' WHERE slug = 'contoh-tuk-k3-tangerang'`);
+    const names = citiesResponseSchema
+      .parse(await (await api('/cities')).json())
+      .items.map((c) => c.name);
+    expect(names).toEqual(['Bekasi', 'Jakarta']);
   });
 
   it('rejects parameters', async () => {

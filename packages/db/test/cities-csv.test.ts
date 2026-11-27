@@ -9,8 +9,49 @@ const csv = readFileSync(resolve(import.meta.dirname, '../../../docs/data/kota.c
 describe('docs/data/kota.csv', () => {
   const cities = parseCitiesCsv(csv);
 
-  it('covers all 38 provinces with unique slugs and names', () => {
-    expect(new Set(cities.map((c) => c.province)).size).toBe(38);
+  it('covers exactly the 38 provinces (spelled as here) with unique slugs and names', () => {
+    expect([...new Set(cities.map((c) => c.province))].sort()).toEqual(
+      [
+        'Aceh',
+        'Bali',
+        'Banten',
+        'Bengkulu',
+        'DI Yogyakarta',
+        'DKI Jakarta',
+        'Gorontalo',
+        'Jambi',
+        'Jawa Barat',
+        'Jawa Tengah',
+        'Jawa Timur',
+        'Kalimantan Barat',
+        'Kalimantan Selatan',
+        'Kalimantan Tengah',
+        'Kalimantan Timur',
+        'Kalimantan Utara',
+        'Kepulauan Bangka Belitung',
+        'Kepulauan Riau',
+        'Lampung',
+        'Maluku',
+        'Maluku Utara',
+        'Nusa Tenggara Barat',
+        'Nusa Tenggara Timur',
+        'Papua',
+        'Papua Barat',
+        'Papua Barat Daya',
+        'Papua Pegunungan',
+        'Papua Selatan',
+        'Papua Tengah',
+        'Riau',
+        'Sulawesi Barat',
+        'Sulawesi Selatan',
+        'Sulawesi Tengah',
+        'Sulawesi Tenggara',
+        'Sulawesi Utara',
+        'Sumatera Barat',
+        'Sumatera Selatan',
+        'Sumatera Utara',
+      ].sort(),
+    );
     expect(new Set(cities.map((c) => c.slug)).size).toBe(cities.length);
   });
 
@@ -29,6 +70,7 @@ describe('parseCitiesCsv rules', () => {
     ['a duplicate slug', () => parse('a,Kota A,P', 'a,Kota B,P'), /duplicate slug/],
     ['a duplicate name', () => parse('a,Kota,P', 'b,kota,P'), /duplicate name/],
     ['an empty province', () => parse('a,Kota,'), /expected/],
+    ['a missing column', () => parse('a,Kota'), /expected/],
   ])('refuses %s', (_name, run, error) => {
     expect(run).toThrow(error);
   });

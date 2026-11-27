@@ -8,7 +8,7 @@
 // Cities: docs/data/kota.csv (reference list, #54).
 // Local: `pnpm db:import:local`. Staging: the Workers Builds deploy command (ADR 0015, ADR 0017).
 // All-or-nothing: any problem in the CSV files → exit code 1 and no SQL file.
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import {
@@ -45,11 +45,17 @@ const cities = parseCitiesCsv(
 const categories = parseCategoriesCsv(
   readFileSync(resolve(import.meta.dirname, '../../../docs/data/kategori-k3.csv'), 'utf8'),
 );
+function readCsv(name: string): string {
+  const file = resolve(dir, `${name}.csv`);
+  if (!existsSync(file)) {
+    console.error(`File ${name}.csv tidak ada di folder ${dir}.`);
+    process.exit(1);
+  }
+  return readFileSync(file, 'utf8');
+}
+
 const files = Object.fromEntries(
-  (['penyedia', 'cabang', 'legalitas', 'jadwal'] as const).map((name) => [
-    name,
-    readFileSync(resolve(dir, `${name}.csv`), 'utf8'),
-  ]),
+  (['penyedia', 'cabang', 'legalitas', 'jadwal'] as const).map((name) => [name, readCsv(name)]),
 ) as unknown as DirectoryCsvFiles;
 
 const { data, problems } = parseDirectoryCsv(files, {
@@ -71,6 +77,7 @@ const counts =
   `${data.licenses.length} legalitas, ${data.schedules.length} jadwal`;
 if (values.check) {
   console.log(`Cek berhasil, tidak ada masalah: ${counts}. Tidak ada yang ditulis.`);
+  if (data.providers.length === 0) console.warn('Peringatan: folder ini belum berisi penyedia.');
   process.exit(0);
 }
 

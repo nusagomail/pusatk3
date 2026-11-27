@@ -21,4 +21,5 @@ const result = spawnSync(
   ],
   { cwd: api, stdio: 'inherit' },
 );
+if (result.error) console.error(`Cek tidak bisa dijalankan: ${result.error.message}`);
 process.exit(result.status ?? 1);
