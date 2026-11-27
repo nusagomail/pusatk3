@@ -54,11 +54,13 @@
 ### Auth
 | Metode | Path | Fungsi |
 | --- | --- | --- |
-| POST | `/auth/email/start` | Kirim kode OTP |
+| POST | `/auth/email/start` | Kirim kode OTP (Turnstile wajib; jawaban selalu sama, terdaftar atau tidak) |
 | POST | `/auth/email/verify` | Verifikasi kode, buat sesi |
-| GET | `/auth/google/*` | OAuth Google |
-| POST | `/auth/2fa/verify` | Verifikasi 2FA |
+| GET | `/auth/google/start`, `/auth/callback/google` | OAuth Google (`state` + PKCE); callback diteruskan ke handler Better Auth |
+| POST | `/auth/2fa/verify` | Verifikasi TOTP atau kode cadangan, tandai sesi lolos 2FA |
 | POST | `/auth/logout` | Hapus sesi |
+
+Semua endpoint auth adalah rute kita sendiri (Zod ketat, format error kontrak) di atas Better Auth; rincian dan aturan keamanan: ADR 0024. Di staging/lokal, browser memanggilnya lewat proksi web pada path yang sama.
 
 ### Penyedia (login + peran)
 | Metode | Path | Peran |
