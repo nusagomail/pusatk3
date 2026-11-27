@@ -7,6 +7,8 @@
 | `template/` | Empat CSV kosong (baris judul saja) untuk mulai mengisi data asli | tim kurasi ([`panduan-kurasi.md`](panduan-kurasi.md)) |
 | `contoh/` | Data **contoh** fiktif satu wilayah (Jabodetabek): 4 penyedia, 5 cabang, 4 legalitas, 14 jadwal | `pnpm db:import:local`, deploy staging (ADR 0017) |
 
+Data contoh punya masa pakai: semua jadwal contoh selesai paling lambat 18 Maret 2027, lalu ditandai `expired` oleh Cron harian (#57) dan direktori staging menjadi kosong. Untuk memperbarui, ubah tanggal `mulai` (membuat jadwal baru; jadwal yang sudah `expired` tidak dihidupkan lagi oleh impor), bukan hanya `selesai`.
+
 Data penyedia asli memakai format yang sama di folder terpisah, **tanpa** tanda contoh (`--sample`), setelah ditinjau pemilik. Panduan untuk tim kurasi: [`panduan-kurasi.md`](panduan-kurasi.md). Cek tanpa menulis apa pun: `pnpm data:check <folder>`.
 
 ## Format impor direktori

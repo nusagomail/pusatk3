@@ -563,9 +563,12 @@ describe('lead retention (UU PDP, 12 months)', () => {
       } as unknown as D1Database,
     };
     await expect(scheduled(broken)).rejects.toThrow('D1 down');
-    expect(JSON.stringify(errors.mock.calls)).toBe(
-      JSON.stringify([[JSON.stringify({ job: 'lead-retention', error: 'TypeError' })]]),
-    );
+    // Every daily job reports its own failure (names only, no personal data).
+    expect(errors.mock.calls.map((call) => call[0])).toEqual([
+      JSON.stringify({ job: 'lead-retention', error: 'TypeError' }),
+      JSON.stringify({ job: 'schedule-expiry', error: 'TypeError' }),
+      JSON.stringify({ job: 'daily', failed: ['lead-retention', 'schedule-expiry'] }),
+    ]);
   });
 
   it('the database refuses a form lead without consent version or contact', async () => {

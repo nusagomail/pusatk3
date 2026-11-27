@@ -50,7 +50,7 @@ docs/
 | Database | D1 (`pusatk3-staging`, `pusatk3-production`) via Drizzle |
 | File & gambar | R2 + Cloudflare Images |
 | Cache data ringan | KV (mis. query populer) |
-| Proses latar | Queues (notifikasi lead), Cron Triggers (jadwal kedaluwarsa, pengingat, retensi data pribadi lead 12 bulan: ADR 0022) |
+| Proses latar | Queues (notifikasi lead), Cron Triggers harian 02.17 WIB (jadwal selesai → `expired` #57, retensi data pribadi lead 12 bulan ADR 0022; nanti pengingat) |
 | Anti-bot | Turnstile di semua form |
 | Keamanan | WAF, rate limiting (binding Workers Rate Limiting per IP pengunjung di API, ADR 0022), Turnstile di form publik |
 | Website instan | Cloudflare for SaaS (Custom Hostnames) |
