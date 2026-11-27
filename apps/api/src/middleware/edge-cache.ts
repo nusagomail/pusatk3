@@ -2,7 +2,7 @@ import type { MiddlewareHandler } from 'hono';
 import type { AppEnv } from '../env';
 import { readDataVersion } from '../lib/data-version';
 import { getDb } from '../lib/db';
-import { jakartaToday } from '../routes/directory';
+import { jakartaToday } from '../lib/date';
 
 // Edge cache for public GET responses (ADR 0021). Workers responses are not cached by the CDN on
 // their own (ADR 0010), so successful public responses are stored with the Cache API. The key

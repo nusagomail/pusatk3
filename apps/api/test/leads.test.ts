@@ -567,6 +567,7 @@ describe('lead retention (UU PDP, 12 months)', () => {
     expect(errors.mock.calls.map((call) => call[0])).toEqual([
       JSON.stringify({ job: 'lead-retention', error: 'TypeError' }),
       JSON.stringify({ job: 'schedule-expiry', error: 'TypeError' }),
+      JSON.stringify({ job: 'daily', failed: ['lead-retention', 'schedule-expiry'] }),
     ]);
   });
 

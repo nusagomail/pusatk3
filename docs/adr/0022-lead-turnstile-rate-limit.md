@@ -41,7 +41,7 @@ PRD: setiap klik WhatsApp dan kiriman form pertanyaan dicatat sebagai lead. Peng
   - data pribadi tidak pernah masuk log.
 - **Retensi 12 bulan:**
   - Cron harian (02.17 WIB, staging dan production) mengosongkan nama, HP, email, dan pesan lead form yang berumur lebih dari 12 bulan (`anonymized_at` diisi). Baris lead tetap ada untuk statistik.
-  - Handler menunggu pekerjaannya selesai dan melempar ulang error, sehingga kegagalan tercatat di Cron Events. Log hanya berisi jumlah atau nama error.
+  - Cron harian menjalankan beberapa pekerjaan (retensi lead, jadwal `expired` #57) secara terpisah: satu gagal tidak menghentikan yang lain. Setiap kegagalan dicatat namanya, lalu error pertama dilempar ulang sehingga tercatat di Cron Events. Log hanya berisi jumlah atau nama error.
   - D1 Time Travel menyimpan riwayat sekitar 30 hari, jadi masa simpan efektif ±12 bulan + 30 hari. Ini wajib disebut di kebijakan privasi.
   - Hapus akun (Fase 2) menganonimkan lead milik user itu lebih awal.
 - **Hak subjek data (pengunjung anonim):** permintaan akses atau hapus lewat email ke pengelola. Admin mencari lead berdasarkan email/HP yang disebut, lalu mengosongkan data pribadinya (sama seperti retensi). Prosedur manual ini berlaku sampai ada alat admin (Fase 2).

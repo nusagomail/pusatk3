@@ -30,21 +30,26 @@ const DAILY_JOBS: { name: string; key: string; run: (env: Env, now: number) => P
  * Logs hold counts and error names only, never personal data.
  */
 export async function scheduled(env: Env, now: number = Date.now()): Promise<void> {
-  const failures: unknown[] = [];
+  const failures: { job: string; error: unknown }[] = [];
   for (const job of DAILY_JOBS) {
     try {
       const count = await job.run(env, now);
       console.log(JSON.stringify({ job: job.name, [job.key]: count }));
     } catch (err) {
-      failures.push(err);
+      failures.push({ job: job.name, error: err });
       const name = err instanceof Error ? err.name : 'Unknown';
       console.error(JSON.stringify({ job: job.name, error: name }));
     }
   }
-  if (failures.length > 0) throw failures[0];
+  if (failures.length > 0) {
+    // Cron Events shows the first error; this line names every job that failed.
+    console.error(JSON.stringify({ job: 'daily', failed: failures.map((f) => f.job) }));
+    throw failures[0]?.error;
+  }
 }
 
 export default {
   fetch: app.fetch,
-  scheduled: (_controller, env) => scheduled(env),
+  // scheduledTime keeps "today" stable when an invocation is delayed or retried.
+  scheduled: (controller, env) => scheduled(env, controller.scheduledTime),
 } satisfies ExportedHandler<Env>;

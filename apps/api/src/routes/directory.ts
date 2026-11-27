@@ -26,6 +26,7 @@ import { and, asc, eq, gte, lt, lte, ne, sql, type AnyColumn, type SQL } from 'd
 import { Hono } from 'hono';
 import type { AppEnv } from '../env';
 import { PUBLIC_DIRECTORY_CACHE, PUBLIC_REFERENCE_CACHE } from '../lib/cache';
+import { jakartaToday } from '../lib/date';
 import { getDb } from '../lib/db';
 import { AppError } from '../lib/errors';
 import { validateParam, validateQuery } from '../lib/validate';
@@ -35,10 +36,8 @@ import { validateParam, validateQuery } from '../lib/validate';
 // not closed. The detail page also opens published schedules that already started.
 // Organic order never uses the plan (rule 5): soonest start first, or cheapest first.
 
-/** Today's calendar date in Asia/Jakarta (UTC+7, no daylight saving). */
-export function jakartaToday(now = Date.now()): string {
-  return new Date(now + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
-}
+// Re-exported for callers and tests that import it from here.
+export { jakartaToday };
 
 /** "2027-01" → "2027-02-01" (exclusive upper bound of the month). */
 function nextMonthStart(month: string): string {
