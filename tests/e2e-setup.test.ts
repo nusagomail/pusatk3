@@ -32,6 +32,16 @@ describe('e2e setup', () => {
     expect(pkg.devDependencies?.['@playwright/test']).toBe('1.63.0');
   });
 
+  it('keeps the Lighthouse check (#41): pinned package, own project after chromium, no retry', () => {
+    expect(pkg.devDependencies?.['lighthouse']).toBe('13.6.0');
+    const config = read('playwright.config.ts');
+    expect(config).toMatch(
+      /name: 'lighthouse',[\s\S]*?dependencies: \['chromium'\],[\s\S]*?retries: 0,/,
+    );
+    expect(existsSync(resolve(root, 'e2e/lighthouse.spec.ts'))).toBe(true);
+    expect(read('e2e/lighthouse.spec.ts')).toContain('MIN_SCORE = 0.9');
+  });
+
   it('serves the built web app and the local API on fixed ports', () => {
     const config = read('playwright.config.ts');
     expect(config).toContain("testDir: './e2e'");

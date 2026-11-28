@@ -39,12 +39,14 @@ export default defineConfig({
       testIgnore: /lighthouse\.spec\.ts/,
     },
     // Lighthouse ≥ 90 on the public pages (#41, ADR 0021). Runs after the other tests, one page
-    // at a time, so CPU contention does not distort the performance score.
+    // at a time, so CPU contention does not distort the performance score. No retry: a score
+    // below 90 always fails, instead of a lucky second run hiding a downward trend.
     {
       name: 'lighthouse',
       testMatch: /lighthouse\.spec\.ts/,
       dependencies: ['chromium'],
       fullyParallel: false,
+      retries: 0,
     },
   ],
   // The API starts first, so the web app (which calls it over HTTP) never sees it missing.

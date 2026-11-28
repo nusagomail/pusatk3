@@ -26,7 +26,7 @@ Respons Worker tidak masuk cache CDN hanya karena header `s-maxage` (ADR 0010). 
 - **TTL salinan edge 1 jam** (`max-age=3600` pada salinan tersimpan). Klien tetap menerima `Cache-Control` aslinya. Header `X-Cache: HIT|MISS` untuk pemantauan.
 - **Lighthouse ≥ 90** di keempat kategori pada beranda, pencarian, detail, dan profil (mobile dan desktop). Diukur 26 November 2026: semua 100, setelah font utama di-preload (pergeseran tata letak 0,196 di `/penyedia`).
   - Audit `is-crawlable` dilewati di luar production karena `noindex` memang disengaja (ADR 0011).
-  - **Dicek otomatis di CI** sejak #41: proyek Playwright `lighthouse` (`e2e/lighthouse.spec.ts`) berjalan setelah tes e2e lain di job E2E, mengukur keempat halaman (preset mobile) dan gagal bila satu kategori < 90. Paket `lighthouse` dipin 13.6.0 dan memakai Chromium Playwright (tanpa browser tambahan).
+  - **Dicek otomatis di CI** sejak #41: proyek Playwright `lighthouse` (`e2e/lighthouse.spec.ts`) berjalan setelah tes e2e lain di job E2E, mengukur keempat halaman (preset mobile, yang lebih ketat; desktop tidak diotomatiskan), tanpa retry, dan gagal bila satu kategori < 90. Skor dan `benchmarkIndex` runner dicatat setiap run. Paket `lighthouse` dipin 13.6.0 dan memakai Chromium Playwright (tanpa browser tambahan).
 
 ## Konsekuensi
 - **Di `*.workers.dev` (staging) Cache API tidak menyimpan apa pun**, jadi cache baru bekerja di zona `pusatk3.id`. Perilakunya diuji di workerd lokal (tes unit API, tes e2e API dan web).

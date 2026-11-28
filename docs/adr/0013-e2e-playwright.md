@@ -15,6 +15,7 @@ Status: diterima · 25 November 2026 · issue #9. Desain: `docs/superpowers/spec
   - build non-production mengirim `X-Robots-Tag: noindex`;
   - path yang tidak dikenal mendapat 404 beserta halaman 404;
   - `/api/v1/health` mengembalikan `ok`.
+- **Proyek kedua `lighthouse`** (sejak #41, ADR 0021): `e2e/lighthouse.spec.ts` berjalan setelah proyek `chromium` (`dependencies`), satu halaman sekali jalan, tanpa retry, memakai headless shell yang sama (tanpa browser tambahan). Skor setiap halaman dicatat di keluaran setiap run.
 - **CI:** job `e2e` terpisah di `ci.yml`, berjalan sejajar dengan job pemeriksaan, tanpa secret. Laporan HTML tidak diunggah (tanpa action tambahan); keluaran `list` sudah cukup. Trace mati.
 - Struktur ini dijaga oleh `tests/e2e-setup.test.ts`.
 
