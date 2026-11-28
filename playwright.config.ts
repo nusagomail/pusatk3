@@ -32,7 +32,21 @@ export default defineConfig({
     baseURL: WEB_URL,
     trace: 'off',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: /lighthouse\.spec\.ts/,
+    },
+    // Lighthouse ≥ 90 on the public pages (#41, ADR 0021). Runs after the other tests, one page
+    // at a time, so CPU contention does not distort the performance score.
+    {
+      name: 'lighthouse',
+      testMatch: /lighthouse\.spec\.ts/,
+      dependencies: ['chromium'],
+      fullyParallel: false,
+    },
+  ],
   // The API starts first, so the web app (which calls it over HTTP) never sees it missing.
   webServer: [
     {

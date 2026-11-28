@@ -25,7 +25,7 @@ Status: Fase 0 **selesai** (25 November 2026). PR lolos CI termasuk e2e; staging
 - [x] Pencarian dengan filter + sinonim K3 (D1, ADR 0020; sinkronisasi index baru perlu bila pindah ke mesin pencari eksternal)
 - [x] Halaman SEO kota × jenis pelatihan (hanya terbit jika data cukup), sitemap, schema.org (#27, ADR 0023; FAQ menunggu tinjauan Ahli K3)
 - [x] Pencatatan lead (klik WA, form pertanyaan) dengan Turnstile (#28, ADR 0022)
-- [x] Cache edge + purge saat data berubah (Cache API + versi data, ADR 0021; aktif di zona `pusatk3.id`; Lighthouse 100 di 4 halaman, cek otomatis di CI menyusul di #41)
+- [x] Cache edge + purge saat data berubah (Cache API + versi data, ADR 0021; aktif di zona `pusatk3.id`; Lighthouse 100 di 4 halaman, dicek otomatis di CI sejak #41)
 
 **Selesai bila:** data contoh 1 wilayah tampil lengkap, Lighthouse ≥ 90 di halaman publik, lead tercatat.
 
